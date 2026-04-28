@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Slide {
+  id        Int      @id @default(autoincrement())
+  title     String?
+  imageUrl  String
+  order     Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  title       String
+  slug        String   @unique
+  icon        String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subcategories Subcategory[]
+}
+
+model Subcategory {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  categoryId  Int
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products  Product[]
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  title         String
+  slug          String   @unique
+  description   String   @db.Text
+  shortDesc     String?
+  
+  // تصویر اصلی محصول
+  imageUrl      String
+  
+  // گالری تصاویر
+  gallery       Json?    
+  
+  subcategoryId Int
+  // این خط ارتباطی جا افتاده بود! 👇
+  subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
+  
+  order         Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Logo {
+id    Int    @id @default(autoincrement())
+type  String @unique // مقادیر: main, en, favicon
+url   String
+}
