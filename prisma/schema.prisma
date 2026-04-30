@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
 }
 
 datasource db {
@@ -63,7 +64,7 @@ model Product {
   gallery       Json?    
   
   subcategoryId Int
-  // این خط ارتباطی جا افتاده بود! 👇
+
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
   
   order         Int      @default(0)

@@ -26,7 +26,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="fa" dir="rtl">
       <body className={`${vazirLocal.className} bg-ks-dark text-white`}>
         <Header logoUrl={logoUrl} />
-        <main className="pt-20 md:pt-24">   {/* این خط مشکل پنهان شدن محتوا را حل می‌کند */}
+        <main className="">   {/* این خط مشکل پنهان شدن محتوا را حل می‌کند */}
           {children}
         </main>
       </body>
