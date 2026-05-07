@@ -1,49 +1,82 @@
-// src/app/page.tsx
-import db from '@/lib/db'; // وارد کردن کانکشن دیتابیس
+import type { Metadata } from 'next';
+import db from '@/lib/db';
 import HeroSlider from '@/components/sections/HeroSlider';
 import Categories from '@/components/sections/Categories';
 import WhyUs from '@/components/sections/WhyUs';
+import ProductSlider from '@/components/sections/ProductSlider';
 import Footer from '@/components/layout/Footer';
 
-// این خط یک تکنیک پیشرفته (ISR) است: 
-// سایت را هر ۶۰ ثانیه یک بار در بک‌گراند به‌روز می‌کند تا سرعت لود برای کاربر در حد سایت استاتیک (میلی‌ثانیه) بماند اما دیتابیس هم آپدیت شود.
-export const revalidate = 60; 
+export const revalidate = 60; // ISR هر ۶۰ ثانیه
 
-export default async function Home() {
-  // ۱. درخواست به دیتابیس MySQL برای گرفتن اسلایدهای فعال
-  let activeSlides = await db.slide.findMany({
-    where: { 
-      isActive: true 
-    },
-    orderBy: { 
-      order: 'asc' // مرتب‌سازی بر اساس ترتیبی که ادمین مشخص کرده
-    },
+export async function generateMetadata(): Promise<Metadata> {
+  const metaSettings = await db.setting.findMany({
+    where: {
+      key: {
+        in: ['HOME_META_TITLE', 'HOME_META_DESCRIPTION', 'HOME_META_KEYWORDS']
+      }
+    }
   });
 
-  // ۲. مدیریت حالت خالی (Fallback)
-  // اگر دیتابیس تازه نصب شده و خالی است، یک اسلاید پیش‌فرض نشان می‌دهیم تا سایت خراب نشود
-  if (activeSlides.length === 0) {
-    activeSlides = [
-      { 
-        id: 0, 
-        title: 'اسلاید پیش‌فرض', 
-        imageUrl: '/hero-bg.jpg', // عکسی که در پوشه public دارید
-        order: 1, 
-        isActive: true, 
-        createdAt: new Date() 
-      }
-    ];
+  const meta = Object.fromEntries(
+    metaSettings.map(setting => [setting.key, setting.value])
+  );
+
+  return {
+    title: meta.HOME_META_TITLE || 'وب‌سایت شما',
+    description: meta.HOME_META_DESCRIPTION || 'توضیحات پیش‌فرض سایت',
+    keywords: meta.HOME_META_KEYWORDS || '',
+    openGraph: {
+      title: meta.HOME_META_TITLE || 'وب‌سایت شما',
+      description: meta.HOME_META_DESCRIPTION || 'توضیحات پیش‌فرض سایت',
+      siteName: 'نام سایت شما',
+      locale: 'fa_IR',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: meta.HOME_META_TITLE || 'وب‌سایت شما',
+      description: meta.HOME_META_DESCRIPTION || 'توضیحات پیش‌فرض سایت',
+    },
+  };
+}
+
+export default async function Home() {
+  // دریافت اسلایدهای فعال و با نوع MAIN
+  const activeSlides = await db.slide.findMany({
+    where: {
+      isActive: true,
+      type: 'MAIN',          // فقط اسلایدهای MAIN
+    },
+    orderBy: { order: 'asc' },
+  });
+
+  // دریافت تنظیمات اسلایدر
+  let sliderSettings = await db.sliderSettings.findUnique({ where: { id: 1 } });
+  if (!sliderSettings) {
+    sliderSettings = await db.sliderSettings.create({
+      data: {
+        id: 1,
+        heightDesktop: '85vh',
+        heightMobile: '60vh',
+        overlayColor: '#000000',
+        overlayOpacity: 0.7,
+      },
+    });
   }
 
-  // ۳. رندر کردن قطعات سایت
+  const safeSliderSettings = {
+    heightDesktop: sliderSettings.heightDesktop || '85vh',
+    heightMobile: sliderSettings.heightMobile || '60vh',
+    overlayColor: sliderSettings.overlayColor || '#000000',
+    overlayOpacity: sliderSettings.overlayOpacity ?? 0.7,
+  };
+
   return (
     <main className="min-h-screen bg-ks-dark text-white flex flex-col">
-      
-      
-      {/* دیتاهای دیتابیس را به عنوان پراپ (Prop) به اسلایدر می‌فرستیم */}
-      <HeroSlider slides={activeSlides} />
-      
+      {/* حالا تایپ‌ها کاملاً هماهنگ هستند و نیازی به as any نیست */}
+      <HeroSlider slides={activeSlides} settings={safeSliderSettings} />
       <Categories />
+      <ProductSlider />
       <WhyUs />
       <Footer />
     </main>

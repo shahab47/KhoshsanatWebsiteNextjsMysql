@@ -1,70 +1,39 @@
 @import "tailwindcss";
 
+/* ساده و تمیز: پس‌زمینه سفید، متن مشکی */
 :root {
-  /* مقادیر هگزادسیمال رنگ‌های برند */
-  --brand-dark-hex: #35363a; 
-  --brand-blue-hex: #3f78a5; 
-
-  /* مقادیر RGB برای استفاده در ساخت هاله‌های نوری (Mesh Gradient) */
-  --brand-dark-rgb: 53, 54, 58;
-  --brand-blue-rgb: 63, 120, 165;
-}
-
-@theme inline {
-  /* تغییر بک‌گراند و متن پیش‌فرض کل سایت به تم برند */
-  --color-background: var(--brand-dark-hex);
-  --color-foreground: #f8fafc;
-  
-  /* معرفی اختصاصی رنگ‌های برند به تیلویند تا کلاس‌هایی مثل bg-brand-dark کار کنند */
-  --color-brand-dark: var(--brand-dark-hex);
-  --color-brand-blue: var(--brand-blue-hex);
-  --color-ks-dark: var(--brand-dark-hex);
-}
-
-/* لغو دارک‌مود پیش‌فرض مرورگر تا سایت همیشه با رنگ برند شما نمایش داده شود */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: var(--brand-dark-hex);
-    --foreground: #f8fafc;
-  }
+  --background: #ffffff;
+  --foreground: #111111;
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
-  background-color: var(--color-background) !important;
-  color: var(--color-foreground) !important;
-  
-  /* افکت نوری بسیار مدرن و سه‌بعدی با رنگ آبی برند */
-  background-image: 
-    radial-gradient(circle at 15% 0%, rgba(var(--brand-blue-rgb), 0.25) 0%, transparent 45%),
-    radial-gradient(circle at 85% 100%, rgba(var(--brand-blue-rgb), 0.2) 0%, transparent 45%),
-    radial-gradient(circle at 50% 50%, rgba(var(--brand-blue-rgb), 0.08) 0%, transparent 60%) !important;
-  
-  background-attachment: fixed !important;
-  background-repeat: no-repeat !important;
-  background-size: cover !important;
+  background-color: var(--background) !important;
+  color: var(--foreground) !important;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 
-/* شخصی‌سازی اسکرول‌بار مرورگر با رنگ‌های برند */
+/* اسکرول‌بار شیک (اسلایدر عمودی) */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--brand-dark-hex);
+  background: #f1f1f1;
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--brand-blue-hex);
+  background: #c1c1c1;
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #2b5678; 
+  background: #a8a8a8;
 }
 
+/* اسکرول نرم و هایلایت متن معمولی */
 html {
   scroll-behavior: smooth;
 }
-
 ::selection {
-  background-color: rgba(var(--brand-blue-rgb), 0.6);
-  color: white;
+  background-color: #e2e8f0;
+  color: #111111;
 }

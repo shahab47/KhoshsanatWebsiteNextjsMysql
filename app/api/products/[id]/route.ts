@@ -1,20 +1,8 @@
+// مسیر فایل: src/app/api/products/[id]/route.ts
+
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { unlink } from 'fs/promises';
-import path from 'path';
-
-// تابع کمکی برای حذف فیزیکی یک فایل
-async function deleteFileSafe(fileUrl: string) {
-  if (!fileUrl) return;
-  try {
-    const filePath = path.join(process.cwd(), 'public', fileUrl);
-    if (filePath.includes(path.join(process.cwd(), 'public', 'uploads'))) {
-      await unlink(filePath);
-    }
-  } catch (e) {
-    // اگر فایلی پیدا نشد، از آن چشم‌پوشی می‌کنیم
-  }
-}
+import { deleteFromMinio } from '@/lib/minio';
 
 export async function GET(
   request: NextRequest, 
@@ -71,7 +59,7 @@ export async function PUT(
   }
 }
 
-// حذف محصول به همراه تمام عکس‌های فیزیکی
+// حذف محصول به همراه تمام عکس‌های آن از سرور MinIO
 export async function DELETE(
   request: NextRequest, 
   { params }: { params: Promise<{ id: string }> }
@@ -90,12 +78,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'محصول یافت نشد' }, { status: 404 });
     }
 
-    // ۲. تصویر اصلی را از روی سرور پاک می‌کنیم
+    // ۲. تصویر اصلی را از روی MinIO پاک می‌کنیم
     if (product.imageUrl) {
-      await deleteFileSafe(product.imageUrl);
+      await deleteFromMinio(product.imageUrl);
     }
 
-    // ۳. تمام تصاویر گالری را از روی سرور پاک می‌کنیم
+    // ۳. تمام تصاویر گالری را از روی MinIO پاک می‌کنیم
     if (product.gallery) {
       let galleryArray: string[] = [];
       if (typeof product.gallery === 'string') {
@@ -106,7 +94,7 @@ export async function DELETE(
       }
 
       for (const url of galleryArray) {
-        await deleteFileSafe(url);
+        await deleteFromMinio(url);
       }
     }
 

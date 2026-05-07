@@ -1,72 +1,174 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Building2, Zap, TreePine, Factory } from 'lucide-react';
+import { Building2, Zap, TreePine, Factory, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+
+// ======================== types ========================
+type SubcategoryFromAPI = {
+  id: number;
+  title: string;
+  description: string | null;
+  categoryId: number;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type CategoryFromAPI = {
+  id: number;
+  title: string;
+  slug: string;
+  icon: 'Building2' | 'Zap' | 'TreePine' | 'Factory';
+  imageUrl: string;
+  imageSize: number;
+  order: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  subcategories: SubcategoryFromAPI[];
+};
+
+type Subcategory = {
+  id: number;
+  title: string;
+  displayText: string; // title + (description)
+};
 
 type Category = {
   id: number;
   title: string;
+  slug: string;
   icon: React.ReactNode;
-  subCategories: string[];
+  subcategories: Subcategory[];
   image: string;
 };
 
-const categoriesData: Category[] = [
-  {
-    id: 1,
-    title: "ساختمانی",
-    icon: <Building2 size={24} />,
-    subCategories: [
-      "براکت‌های ساختمانی (کرتین وال، سرامیک خشک، درب اتوماتیک)",
-      "پروفیل",
-      "لوور و نمای خشک",
-      "هندریل (اسپیگات، فیکس پوینت)",
-      "اسپایدر (بعد از تکمیل هندریل)"
-    ],
-    image: "/images/construction.jpg",
-  },
-  {
-    id: 2,
-    title: "برق و مخابرات",
-    icon: <Zap size={24} />,
-    subCategories: [
-      "تابلو برق IP55 (داخل و بیرون کار)",
-      "پایه آنتن",
-      "دکل مخابراتی",
-      "رک سرور"
-    ],
-    image: "/images/electrical.jpg",
-  },
-  {
-    id: 3,
-    title: "شهرسازی",
-    icon: <TreePine size={24} />,
-    subCategories: [
-      "میز و صندلی فضای باز (پارک، باغ ویلا)",
-      "روشنایی (چراغ فضای سبز، چراغ اتوبانی)",
-      "سطل زباله (کوچک و بزرگ اختصاصی)"
-    ],
-    image: "/images/urban.jpg",
-  },
-  {
-    id: 4,
-    title: "ماشین‌سازی",
-    icon: <Factory size={24} />,
-    subCategories: [
-      "قاب پک",
-      "بالابر",
-      "خرک شیشه",
-      "(امکان اجاره دستگاه‌ها)"
-    ],
-    image: "/images/machinery.jpg",
-  }
-];
+// ======================== mapping icon names ========================
+const iconMap = {
+  Building2: Building2,
+  Zap: Zap,
+  TreePine: TreePine,
+  Factory: Factory,
+};
 
+function getIconComponent(iconName: string, size = 24) {
+  const Icon = iconMap[iconName as keyof typeof iconMap];
+  if (!Icon) return <Building2 size={size} />;
+  return <Icon size={size} />;
+}
+
+// ======================== transform API data ========================
+function transformCategory(raw: CategoryFromAPI): Category {
+  const subcategories = raw.subcategories.map((sub) => ({
+    id: sub.id,
+    title: sub.title,
+    displayText: sub.description ? `${sub.title} (${sub.description})` : sub.title,
+  }));
+
+  return {
+    id: raw.id,
+    title: raw.title,
+    slug: raw.slug,
+    icon: getIconComponent(raw.icon, 24),
+    subcategories,
+    image: raw.imageUrl,
+  };
+}
+
+// ======================== Small Card Component ========================
+function SmallCard({ category }: { category: Category }) {
+  return (
+    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center gap-3 transition-all hover:bg-white/20 border border-white/20">
+      <div className="p-2 bg-blue-600/60 rounded-full text-white">
+        {category.icon}
+      </div>
+      <div>
+        <h3 className="font-bold text-white text-sm md:text-base">
+          {category.title}
+        </h3>
+        <p className="text-xs text-white/70">
+          {category.subcategories.length} زیرمجموعه
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ======================== Main Component ========================
 export default function CategoryGrid() {
-  const [largeIndex, setLargeIndex] = useState(0);
-  const largeCategory = categoriesData[largeIndex];
-  const smallCategories = categoriesData.filter((_, i) => i !== largeIndex);
+  const router = useRouter();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [largeIndex, setLargeIndex] = useState(0); // شاخص دسته بزرگ
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch('/api/categories');
+        if (!res.ok) throw new Error(`خطا در دریافت داده‌ها: ${res.status}`);
+        const rawData: CategoryFromAPI[] = await res.json();
+        const activeCategories = rawData.filter((cat) => cat.isActive);
+        const transformed = activeCategories.map(transformCategory);
+        setCategories(transformed);
+        setLargeIndex(0);
+      } catch (err) {
+        console.error(err);
+        setError('امکان بارگذاری دسته‌بندی‌ها وجود ندارد.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
+  const navigateToCategory = (slug: string) => {
+    router.push(`/products?category=${slug}`);
+  };
+
+  const navigateToSubcategory = (categorySlug: string, subcategoryId: number) => {
+    router.push(`/products?category=${categorySlug}&subcategory=${subcategoryId}`);
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="max-w-7xl mx-auto text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600 dark:text-gray-300">در حال بارگذاری دسته‌بندی‌ها...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-4 rounded-xl">
+            {error}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-gray-600 dark:text-gray-300">هیچ دسته‌بندی فعالی یافت نشد.</p>
+        </div>
+      </section>
+    );
+  }
+
+  const largeCategory = categories[largeIndex];
+  const smallCategories = categories.filter((_, i) => i !== largeIndex);
 
   return (
     <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
@@ -76,9 +178,7 @@ export default function CategoryGrid() {
         </h2>
         <div className="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-12"></div>
 
-        {/* کانتینر اصلی با گرید دو ستونی (۲/۳ + ۱/۳) */}
         <div className="relative rounded-2xl shadow-2xl overflow-hidden">
-          {/* تصویر پس‌زمینه (برای کل کانتینر) */}
           <AnimatePresence mode="wait">
             <motion.div
               key={largeIndex}
@@ -91,12 +191,10 @@ export default function CategoryGrid() {
             />
           </AnimatePresence>
 
-          {/* لایه تیره عمومی برای خوانایی متن سمت چپ */}
           <div className="absolute inset-0 bg-black/40" />
 
-          {/* گرید اصلی با دو ستون - محتوا روی لایه تیره قرار می‌گیرد */}
           <div className="relative grid grid-cols-1 md:grid-cols-3 gap-0 min-h-[550px]">
-            {/* ستون سمت چپ - ۲/۳ عرض (2 از 3 ستون) */}
+            {/* ستون سمت چپ - دسته بزرگ */}
             <div className="md:col-span-2 flex items-end p-6 md:p-8 text-white">
               <motion.div
                 key={largeIndex}
@@ -116,15 +214,16 @@ export default function CategoryGrid() {
                     زیرمجموعه‌ها
                   </h4>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm md:text-base">
-                    {largeCategory.subCategories.map((sub, idx) => (
+                    {largeCategory.subcategories.map((sub) => (
                       <motion.li
-                        key={idx}
+                        key={sub.id}
                         whileHover={{ x: 5, color: "#93c5fd" }}
                         transition={{ type: "spring", stiffness: 400 }}
-                        className="flex items-start gap-2 cursor-default"
+                        className="flex items-start gap-2 cursor-pointer"
+                        onClick={() => navigateToSubcategory(largeCategory.slug, sub.id)}
                       >
                         <span className="text-blue-400">•</span>
-                        <span>{sub}</span>
+                        <span>{sub.displayText}</span>
                       </motion.li>
                     ))}
                   </ul>
@@ -133,6 +232,7 @@ export default function CategoryGrid() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => navigateToCategory(largeCategory.slug)}
                   className="mt-6 text-blue-300 hover:text-white text-sm font-medium transition"
                 >
                   مشاهده همه محصولات این دسته →
@@ -140,42 +240,29 @@ export default function CategoryGrid() {
               </motion.div>
             </div>
 
-            {/* ستون سمت راست - ۱/۳ عرض (1 از 3 ستون) با افکت بلور و شفافیت */}
+            {/* ستون سمت راست - سایر دسته‌ها (قابل کلیک برای بزرگ شدن) */}
             <div className="md:col-span-1 bg-black/30 backdrop-blur-md border-l border-white/20 p-4 flex flex-col gap-4">
-              {smallCategories.map((cat) => (
-                <motion.div
-                  key={cat.id}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => setLargeIndex(cat.id - 1)}
-                  className="cursor-pointer"
-                >
-                  <SmallCard category={cat} />
-                </motion.div>
-              ))}
+              {smallCategories.length > 0 ? (
+                smallCategories.map((cat) => (
+                  <motion.div
+                    key={cat.id}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setLargeIndex(categories.findIndex(c => c.id === cat.id))}
+                    className="cursor-pointer"
+                  >
+                    <SmallCard category={cat} />
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-white/60 text-center py-8 text-sm">
+                  دسته‌بندی دیگری وجود ندارد
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
     </section>
-  );
-}
-
-// کارت کوچک با شفافیت بالا و حالت شیشه‌ای
-function SmallCard({ category }: { category: Category }) {
-  return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3 flex items-center gap-3 transition-all hover:bg-white/20 border border-white/20">
-      <div className="p-2 bg-blue-600/60 rounded-full text-white">
-        {category.icon}
-      </div>
-      <div>
-        <h3 className="font-bold text-white text-sm md:text-base">
-          {category.title}
-        </h3>
-        <p className="text-xs text-white/70">
-          {category.subCategories.length} زیرمجموعه
-        </p>
-      </div>
-    </div>
   );
 }

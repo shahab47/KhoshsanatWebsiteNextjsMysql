@@ -1,3 +1,5 @@
+// مسیر فایل: prisma/schema.prisma
+
 generator client {
   provider      = "prisma-client-js"
   binaryTargets = ["native"]
@@ -8,73 +10,303 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
+  password      String
+  role          String    @default("CONTENT_ADMIN")
+  resetToken    String?
+  resetTokenExp DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  customerNotes CustomerNote[]
+}
+
 model Slide {
-  id        Int      @id @default(autoincrement())
-  title     String?
-  imageUrl  String
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  imageUrl         String
+  size             Int?     // حجم فایل به بایت
+  title            String?
+  subtitle         String?
+  titleColor       String?  @default("#ffffff")
+  titleFontSize    String?  @default("3rem")
+  subtitleColor    String?  @default("#d1d5db")
+  subtitleFontSize String?  @default("1.25rem")
+  order            Int      @default(0)
+  isActive         Boolean  @default(true)
+  type             SlideType @default(MAIN)
+  createdAt        DateTime @default(now())
+}
+
+model SliderSettings {
+  id            Int     @id @default(1)
+  heightDesktop String? @default("85vh")
+  heightMobile  String? @default("60vh")
+  overlayColor  String? @default("#000000")
+  overlayOpacity Float?  @default(0.7)
+  updatedAt     DateTime @updatedAt
 }
 
 model Setting {
   id    Int    @id @default(autoincrement())
   key   String @unique
-  value String
+  value String @db.LongText
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
-  title       String
-  slug        String   @unique
-  icon        String?
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id            Int           @id @default(autoincrement())
+  title         String
+  slug          String        @unique
+  icon          String?
+  imageUrl      String?       // آدرس تصویر دسته‌بندی (اختیاری)
+  imageSize     Int?          // حجم تصویر به بایت
+  order         Int           @default(0)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   subcategories Subcategory[]
 }
 
 model Subcategory {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String?
   categoryId  Int
-  order       Int      @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  category  Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  products  Product[]
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  products    Product[]
 }
 
 model Product {
-  id            Int      @id @default(autoincrement())
+  id            Int         @id @default(autoincrement())
   title         String
-  slug          String   @unique
-  description   String   @db.Text
+  slug          String      @unique
+  description   String      @db.Text
   shortDesc     String?
-  
-  // تصویر اصلی محصول
   imageUrl      String
-  
-  // گالری تصاویر
-  gallery       Json?    
-  
+  gallery       Json?      
   subcategoryId Int
-
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
-  
-  order         Int      @default(0)
-  isActive      Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  order         Int         @default(0)
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// 🟢 جدول جدید برای مدیریت دسته‌بندی مقالات به صورت مستقل در دیتابیس
+model ArticleCategory {
+  id        Int      @id @default(autoincrement())
+  title     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  excerpt   String?  @db.Text
+  content   String   @db.LongText
+  category  String?  // همچنان نام دسته را ذخیره می‌کنیم تا مقالات قبلی خراب نشوند
+  author    String?
+  readTime  Int?
+  imageUrl  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Project {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  category  String?
+  location  String?
+  content   String   @db.LongText
+  size      String   @default("normal")
+  imageUrl  String
+  gallery   Json?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectCategory {
+  id        Int      @id @default(autoincrement())
+  title     String   @unique
+  createdAt DateTime @default(now())
 }
 
 model Logo {
-id    Int    @id @default(autoincrement())
-type  String @unique // مقادیر: main, en, favicon
-url   String
+  id    Int    @id @default(autoincrement())
+  type  String @unique
+  url   String
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String   @db.LongText
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// مدل مشتری (توسعه یافته)
+model Customer {
+  id          Int       @id @default(autoincrement())
+  name        String
+  email       String    @unique
+  phone       String?
+  address     String?   @db.Text
+  company     String?
+  nationalId  String?   @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // روابط
+  messages    CustomerMessage[]
+  invoices    Invoice[]
+  payments    Payment[]
+  deliveries  Delivery[]
+  notes       CustomerNote[]
+  
+  // اطلاعات مالی
+  totalDebt   Float     @default(0)
+  totalPaid   Float     @default(0)
+  
+  // وضعیت
+  status      CustomerStatus @default(ACTIVE)
+  isViewedByAdmin Boolean @default(false)
+  unreadMessagesCount Int @default(0)
+}
+
+// مدل پیام‌های مشتری
+model CustomerMessage {
+  id         Int       @id @default(autoincrement())
+  customerId Int
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subject    String
+  message    String    @db.LongText
+  isRead     Boolean   @default(false)
+  adminReply String?   @db.LongText
+  createdAt  DateTime  @default(now())
+}
+
+// مدل یادداشت‌های داخلی
+model CustomerNote {
+  id         Int       @id @default(autoincrement())
+  customerId Int
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  adminId    Int?
+  admin      User?     @relation(fields: [adminId], references: [id])
+  note       String    @db.LongText
+  createdAt  DateTime  @default(now())
+  isNew      Boolean   @default(true)
+}
+
+// مدل فاکتور
+model Invoice {
+  id          Int          @id @default(autoincrement())
+  invoiceNo   String       @unique
+  customerId  Int
+  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amount      Float
+  discount    Float        @default(0)
+  tax         Float        @default(0)
+  finalAmount Float
+  description String?      @db.Text
+  status      InvoiceStatus @default(PENDING)
+  issueDate   DateTime     @default(now())
+  dueDate     DateTime?
+  paidAmount  Float        @default(0)
+  
+  // روابط
+  payments    Payment[]
+  items       InvoiceItem[]
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+// مدل آیتم‌های فاکتور
+model InvoiceItem {
+  id        Int     @id @default(autoincrement())
+  invoiceId Int
+  invoice   Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  title     String
+  quantity  Float
+  unitPrice Float
+  total     Float
+}
+
+// مدل پرداختی
+model Payment {
+  id            Int          @id @default(autoincrement())
+  customerId    Int
+  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoiceId     Int?
+  invoice       Invoice?     @relation(fields: [invoiceId], references: [id])
+  amount        Float
+  paymentDate   DateTime     @default(now())
+  paymentMethod PaymentMethod @default(CASH)
+  receiptNo     String?
+  description   String?      @db.Text
+}
+
+// مدل تحویل بار
+model Delivery {
+  id           Int       @id @default(autoincrement())
+  deliveryNo   String    @unique
+  customerId   Int
+  customer     Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  productName  String
+  quantity     Float
+  unit         String?
+  deliveryDate DateTime  @default(now())
+  status       DeliveryStatus @default(PENDING)
+  description  String?   @db.Text
+  signatureUrl String?
+  attachments  Json?
+}
+
+// ==================== Enum ها ====================
+enum SlideType {
+  MAIN      // اسلایدر اصلی سایت
+  PRODUCT   // اسلایدر گالری محصولات
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+  LEAD
+}
+
+enum InvoiceStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CHECK
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum DeliveryStatus {
+  PENDING
+  PREPARING
+  DELIVERED
+  RETURNED
 }

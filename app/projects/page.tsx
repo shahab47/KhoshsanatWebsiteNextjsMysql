@@ -1,158 +1,144 @@
 'use client';
+// مسیر فایل: src/app/projects/page.tsx
 
-import React from 'react';
-import { ArrowLeft, Building2, MapPin, ArrowUpRight } from 'lucide-react';
-
-// داده‌های تستی (Mock) برای نمایش ظاهر سایت. 
-// بعداً می‌توانید این‌ها را از دیتابیس دریافت کنید.
-const mockProjects = [
-  {
-    id: 1,
-    title: 'توسعه خط تولید فولاد مبارکه',
-    category: 'صنعتی و کارخانه‌جات',
-    location: 'اصفهان',
-    imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=1000&auto=format&fit=crop',
-    size: 'large', // کارت بزرگ (مربع بزرگ)
-  },
-  {
-    id: 2,
-    title: 'پالایشگاه نفت ستاره خلیج فارس',
-    category: 'پتروشیمی',
-    location: 'بندرعباس',
-    imageUrl: 'https://images.unsplash.com/photo-1615579122137-b67db9e8d752?q=80&w=1000&auto=format&fit=crop',
-    size: 'wide', // مستطیل افقی
-  },
-  {
-    id: 3,
-    title: 'اسکلت فلزی برج میلاد',
-    category: 'عمران و ساختمان',
-    location: 'تهران',
-    imageUrl: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80&w=1000&auto=format&fit=crop',
-    size: 'tall', // مستطیل عمودی
-  },
-  {
-    id: 4,
-    title: 'نیروگاه سیکل ترکیبی',
-    category: 'نیروگاهی',
-    location: 'یزد',
-    imageUrl: 'https://images.unsplash.com/photo-1466611653911-95081537e5b7?q=80&w=1000&auto=format&fit=crop',
-    size: 'normal', // کارت معمولی (مربع کوچک)
-  },
-  {
-    id: 5,
-    title: 'سوله صنعتی فاز دو',
-    category: 'سوله‌سازی',
-    location: 'شهرک صنعتی شمس‌آباد',
-    imageUrl: 'https://images.unsplash.com/photo-1565610222536-ea43fc951918?q=80&w=1000&auto=format&fit=crop',
-    size: 'normal',
-  },
-  {
-    id: 6,
-    title: 'پایانه صادراتی',
-    category: 'زیرساخت',
-    location: 'بندر امام',
-    imageUrl: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?q=80&w=1000&auto=format&fit=crop',
-    size: 'wide',
-  },
-];
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Building2, MapPin, ArrowUpRight, LayoutGrid, Loader2, ChevronRight } from 'lucide-react';
 
 export default function ProjectsPage() {
-  
-  // تابع کمکی برای تعیین ابعاد کاشی‌ها (Bento Grid)
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // دریافت اطلاعات پروژه‌ها از دیتابیس
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const res = await fetch('/api/projects');
+        if (res.ok) {
+          const data = await res.json();
+          // فقط پروژه‌هایی که تیک "فعال" دارند را نمایش بده
+          setProjects(data.filter((p: any) => p.isActive));
+        }
+      } catch (err) {
+        console.error("خطا در دریافت پروژه‌ها:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProjects();
+  }, []);
+
+  // تابع تعیین ابعاد کارت بر اساس سایز ذخیره شده در دیتابیس
   const getGridSpan = (size: string) => {
     switch (size) {
-      case 'large':
-        return 'col-span-1 md:col-span-2 row-span-1 md:row-span-2';
-      case 'wide':
-        return 'col-span-1 md:col-span-2 row-span-1';
-      case 'tall':
-        return 'col-span-1 row-span-1 md:row-span-2';
-      default: // normal
-        return 'col-span-1 row-span-1';
+      case 'large': return 'col-span-1 md:col-span-2 row-span-1 md:row-span-2';
+      case 'wide': return 'col-span-1 md:col-span-2 row-span-1';
+      case 'tall': return 'col-span-1 row-span-1 md:row-span-2';
+      default: return 'col-span-1 row-span-1';
     }
   };
 
   return (
-    <div className="min-h-screen bg-transparent pb-20 text-white" dir="rtl">
+    // پس‌زمینه روشن، بدون pt یا mt اضافی
+    <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
       
-      {/* هدر معرفی صفحه */}
-      <div className="bg-brand-dark/40 backdrop-blur-md border-b border-white/10 py-20 px-6 relative overflow-hidden mt-16 md:mt-0">
-        <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="flex items-center gap-3 text-brand-blue mb-4 font-bold">
+      {/* Breadcrumb - مشابه صفحه محصولات */}
+      <div className="bg-white border-b border-gray-200 py-4 px-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
+          <a href="/" className="hover:text-blue-600 transition">خانه</a>
+          <ChevronRight size={16} />
+          <span className="text-gray-800 font-bold">پروژه‌ها</span>
+        </div>
+      </div>
+
+      {/* هدر معرفی صفحه (با رنگ‌بندی جدید) */}
+      <div className="bg-white border-b border-gray-200 py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center gap-3 text-blue-600 mb-4 font-bold">
             <Building2 size={24} />
             <span>افتخارات خوش‌صنعت</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-6 text-white tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-black mb-5 text-gray-900 tracking-tight">
             پروژه‌های برجسته
           </h1>
-          <p className="text-gray-300 text-lg md:text-xl max-w-2xl leading-relaxed">
-            ما مفتخریم که در طراحی، تولید و تامین تجهیزات بزرگترین پروژه‌های صنعتی، عمرانی و پتروشیمی کشور نقشی کلیدی ایفا کرده‌ایم. در اینجا نمایی از همکاری‌های ما را مشاهده می‌کنید.
+          <p className="text-gray-600 text-lg md:text-xl max-w-2xl leading-relaxed">
+            ما مفتخریم که در طراحی، تولید و تامین تجهیزات بزرگترین پروژه‌های صنعتی، عمرانی و پتروشیمی کشور نقشی کلیدی ایفا کرده‌ایم.
           </p>
         </div>
       </div>
 
-      {/* شبکه کاشی‌کاری پروژه‌ها (Bento Grid) */}
+      {/* شبکه کاشی‌کاری پروژه‌ها (Bento Grid) - با استایل روشن */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[250px] md:auto-rows-[300px]">
-          
-          {mockProjects.map((project) => (
-            <a 
-              key={project.id}
-              href={`/projects/${project.id}`} 
-              className={`group relative rounded-3xl overflow-hidden border border-white/10 bg-white/5 backdrop-blur-sm cursor-pointer shadow-sm hover:shadow-2xl hover:shadow-brand-blue/20 transition-all duration-500 block ${getGridSpan(project.size)}`}
-            >
-              {/* تصویر پس‌زمینه کارت */}
-              <div className="absolute inset-0 w-full h-full">
-                <img 
-                  src={project.imageUrl} 
-                  alt={project.title} 
-                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                />
-              </div>
-
-              {/* لایه تاریک‌کننده (Gradient Overlay) - در حالت هاور تاریک‌تر می‌شود تا متن خواناتر شود */}
-              <div className="absolute inset-0 bg-gradient-to-t from-brand-dark/95 via-brand-dark/40 to-transparent transition-opacity duration-500 group-hover:from-brand-dark"></div>
-
-              {/* محتوای روی کارت */}
-              <div className="absolute inset-0 p-6 flex flex-col justify-end transition-transform duration-500 ease-out translate-y-4 group-hover:translate-y-0">
-                
-                {/* تگ دسته‌بندی */}
-                <div className="mb-auto flex justify-between items-start opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                  <span className="bg-brand-blue/80 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                    {project.category}
-                  </span>
-                  <div className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 text-white">
-                    <ArrowUpRight size={20} className="transform transition-transform group-hover:rotate-45" />
-                  </div>
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-blue-600">
+            <Loader2 className="animate-spin mb-4" size={48} />
+            <p className="font-bold text-gray-600">در حال دریافت پروژه‌ها...</p>
+          </div>
+        ) : projects.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[250px] md:auto-rows-[300px]">
+            {projects.map((project) => (
+              <a 
+                key={project.id}
+                href={`/projects/${project.slug}`} 
+                className={`group relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-blue-400 block ${getGridSpan(project.size)}`}
+              >
+                {/* تصویر پس‌زمینه کارت */}
+                <div className="absolute inset-0 w-full h-full">
+                  <img 
+                    src={project.imageUrl} 
+                    alt={project.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                  />
                 </div>
 
-                {/* عنوان و مکان پروژه */}
-                <div className="relative z-10">
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight">
-                    {project.title}
-                  </h3>
-                  
-                  <div className="flex items-center gap-1.5 text-gray-300 text-sm font-medium opacity-80 group-hover:opacity-100 transition-opacity">
-                    <MapPin size={14} className="text-brand-blue" />
-                    <span>{project.location}</span>
+                {/* لایه تاریک‌کننده (روشن‌تر از قبل) */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-500"></div>
+
+                {/* محتوای روی کارت */}
+                <div className="absolute inset-0 p-6 flex flex-col justify-end transition-transform duration-500 ease-out translate-y-4 group-hover:translate-y-0">
+                  <div className="mb-auto flex justify-between items-start opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                    <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                      {project.category || 'صنعتی'}
+                    </span>
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 text-white hover:bg-blue-600 hover:border-blue-600 transition-colors">
+                      <ArrowUpRight size={20} className="transform transition-transform group-hover:rotate-45" />
+                    </div>
+                  </div>
+
+                  <div className="relative z-10">
+                    <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight drop-shadow-md">
+                      {project.title}
+                    </h3>
+                    
+                    {project.location && (
+                      <div className="flex items-center gap-1.5 text-gray-200 text-sm font-medium opacity-90 group-hover:opacity-100 transition-opacity">
+                        <MapPin size={14} className="text-blue-400" />
+                        <span>{project.location}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
-            </a>
-          ))}
-          
-        </div>
+              </a>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <LayoutGrid size={64} className="mx-auto text-gray-300 mb-4" />
+            <h3 className="text-xl font-bold text-gray-700 mb-2">پروژه‌ای یافت نشد!</h3>
+            <p className="text-gray-500">در حال حاضر هیچ پروژه فعالی در سیستم ثبت نشده است.</p>
+          </div>
+        )}
         
-        {/* دکمه مشاهده بیشتر یا دعوت به همکاری */}
+        {/* دکمه دعوت به همکاری - مشابه دکمه‌های صفحه محصولات */}
         <div className="mt-16 text-center">
-           <a href="/#contact" className="inline-flex items-center gap-2 bg-white/5 hover:bg-brand-blue border border-white/10 hover:border-brand-blue text-white px-8 py-4 rounded-2xl font-bold transition-all duration-300">
-             شما هم پروژه جدیدی دارید؟ تماس با ما
-             <ArrowLeft size={20} />
-           </a>
+          <a 
+            href="/contact" 
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg"
+          >
+            شما هم پروژه جدیدی دارید؟ تماس با ما
+            <ArrowLeft size={20} />
+          </a>
         </div>
       </div>
-
     </div>
   );
 }

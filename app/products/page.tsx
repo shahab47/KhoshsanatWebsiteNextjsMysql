@@ -1,19 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Search, ChevronLeft, Package, LayoutGrid, Filter, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { Search, Package, LayoutGrid, Filter, ArrowRight, ChevronRight } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
 
-export default function ProductsStorePage() {
+// 🔴 مرحله ۱: تمام کدهای شما را به یک کامپوننت داخلی (بدون export default) منتقل کردیم
+function ProductsStoreContent() {
+  const searchParams = useSearchParams();
+  const categorySlug = searchParams.get('category');
+  const subcategoryIdParam = searchParams.get('subcategory');
+
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // استیت‌های فیلتر
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
 
-  // دریافت اطلاعات از دیتابیس
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -23,12 +26,10 @@ export default function ProductsStorePage() {
         ]);
         const prodData = await prodRes.json();
         const catData = await catRes.json();
-        
-        // فقط محصولاتی که isActive آنها true است را در سایت نشان بده
         setProducts(prodData.filter((p: any) => p.isActive));
         setCategories(catData.filter((c: any) => c.isActive));
       } catch (err) {
-        console.error("خطا در دریافت اطلاعات", err);
+        console.error("Error fetching data", err);
       } finally {
         setLoading(false);
       }
@@ -36,50 +37,77 @@ export default function ProductsStorePage() {
     fetchData();
   }, []);
 
-  // منطق فیلترینگ محصولات
+  useEffect(() => {
+    if (categories.length === 0) return;
+    if (subcategoryIdParam) {
+      const subId = parseInt(subcategoryIdParam, 10);
+      const category = categories.find(c => c.subcategories?.some((sub: any) => sub.id === subId));
+      if (category) {
+        setSelectedCategory(category.id);
+        setSelectedSubcategory(subId);
+      }
+    } 
+    else if (categorySlug) {
+      const matchedCategory = categories.find(c => c.slug === categorySlug);
+      if (matchedCategory) {
+        setSelectedCategory(matchedCategory.id);
+        setSelectedSubcategory(null);
+      }
+    }
+  }, [categories, categorySlug, subcategoryIdParam]);
+
   const filteredProducts = products.filter(product => {
     let match = true;
-    
-    // جستجو در نام محصول
-    if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-      match = false;
-    }
-    
-    // فیلتر زیرمجموعه
+    if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) match = false;
     if (selectedSubcategory) {
       if (product.subcategoryId !== selectedSubcategory) match = false;
-    } 
-    // فیلتر دسته اصلی
-    else if (selectedCategory) {
+    } else if (selectedCategory) {
       const category = categories.find(c => c.id === selectedCategory);
       const subIds = category?.subcategories?.map((s: any) => s.id) || [];
       if (!subIds.includes(product.subcategoryId)) match = false;
     }
-
     return match;
   });
 
+  const selectedCategoryTitle = selectedCategory
+    ? categories.find(c => c.id === selectedCategory)?.title
+    : null;
+  const selectedSubcategoryTitle = selectedSubcategory
+    ? categories
+        .find(c => c.id === selectedCategory)
+        ?.subcategories?.find((s: any) => s.id === selectedSubcategory)?.title
+    : null;
+
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" dir="rtl">
+    <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
       
-      {/* هدر اختصاصی صفحه محصولات */}
-      <div className="bg-ks-dark text-white py-16 px-6 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="max-w-7xl mx-auto relative z-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">محصولات خوش‌صنعت</h1>
-          <p className="text-gray-300 text-lg max-w-2xl mx-auto">
-            طراحی، ساخت و تولید انواع تجهیزات صنعتی با بالاترین استانداردهای مهندسی
-          </p>
+      {/* Breadcrumb - بدون هیچ فاصله‌ای از بالا */}
+      <div className="bg-white border-b border-gray-200 py-4 px-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
+          <a href="/" className="hover:text-blue-600 transition">خانه</a>
+          <ChevronRight size={16} />
+          <a href="/products" className="hover:text-blue-600 transition">محصولات</a>
+          {selectedCategoryTitle && (
+            <>
+              <ChevronRight size={16} />
+              <span className="text-gray-800 font-bold">{selectedCategoryTitle}</span>
+            </>
+          )}
+          {selectedSubcategoryTitle && (
+            <>
+              <ChevronRight size={16} />
+              <span className="text-gray-800 font-bold">{selectedSubcategoryTitle}</span>
+            </>
+          )}
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      {/* محتوای اصلی */}
+      <div className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex flex-col lg:flex-row gap-8">
           
-          {/* سایدبار (بخش فیلترها) */}
+          {/* سایدبار (فیلترها) */}
           <div className="w-full lg:w-1/4 space-y-6">
-            
-            {/* باکس جستجو */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Search size={18} className="text-blue-600" />
@@ -89,20 +117,18 @@ export default function ProductsStorePage() {
                 <input 
                   type="text" 
                   placeholder="نام محصول را وارد کنید..." 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition text-sm"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition text-sm text-gray-900 placeholder-gray-500"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
 
-            {/* باکس دسته‌بندی‌ها */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Filter size={18} className="text-blue-600" />
                 دسته‌بندی‌ها
               </h3>
-              
               <div className="space-y-2">
                 <button 
                   onClick={() => { setSelectedCategory(null); setSelectedSubcategory(null); }}
@@ -110,7 +136,6 @@ export default function ProductsStorePage() {
                 >
                   همه محصولات
                 </button>
-
                 {categories.map(category => (
                   <div key={category.id} className="space-y-1">
                     <button 
@@ -119,8 +144,6 @@ export default function ProductsStorePage() {
                     >
                       {category.title}
                     </button>
-                    
-                    {/* زیرمجموعه‌ها (فقط در صورت انتخاب دسته اصلی نمایش داده می‌شوند) */}
                     {selectedCategory === category.id && category.subcategories && (
                       <div className="pr-4 border-r-2 border-blue-100 mr-4 space-y-1 mt-1">
                         {category.subcategories.map((sub: any) => (
@@ -141,9 +164,8 @@ export default function ProductsStorePage() {
             </div>
           </div>
 
-          {/* محتوای اصلی (لیست محصولات) */}
+          {/* گالری محصولات */}
           <div className="w-full lg:w-3/4">
-            
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-2 text-gray-600">
                 <LayoutGrid size={20} />
@@ -160,34 +182,29 @@ export default function ProductsStorePage() {
                 <p className="font-bold text-gray-600">در حال دریافت محصولات...</p>
               </div>
             ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {filteredProducts.map(product => (
-                  <a href={`/products/${product.slug}`} key={product.id} className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col">
-                    {/* تصویر محصول */}
-                    <div className="aspect-square relative overflow-hidden bg-gray-50">
-                      <img 
-                        src={product.imageUrl} 
-                        alt={product.title} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div
+                    key={product.id}
+                    className="relative group w-full h-[360px] rounded-2xl bg-gray-100 border-2 border-gray-300 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-blue-500 overflow-hidden"
+                  >
+                    <img
+                      src={product.imageUrl}
+                      alt={product.title}
+                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+                    <div className="absolute bottom-20 left-0 right-0 p-3 text-center text-white z-10">
+                      <h3 className="text-lg font-bold line-clamp-1">{product.title}</h3>
+                      <p className="text-sm text-gray-100 line-clamp-2 mt-1">{product.shortDesc || product.description}</p>
                     </div>
-                    
-                    {/* اطلاعات محصول */}
-                    <div className="p-5 flex-1 flex flex-col">
-                      <h2 className="font-bold text-gray-800 text-lg mb-2 line-clamp-2">{product.title}</h2>
-                      <p className="text-gray-500 text-sm mb-4 line-clamp-2 flex-1">
-                        {product.shortDesc || product.description}
-                      </p>
-                      
-                      <div className="pt-4 border-t border-gray-100 flex items-center justify-between mt-auto">
-                        <span className="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">مشاهده جزئیات</span>
-                        <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                          <ChevronLeft size={18} />
-                        </div>
-                      </div>
-                    </div>
-                  </a>
+                    <a
+                      href={`/products/${product.slug}`}
+                      className="absolute left-1/2 -translate-x-1/2 bottom-2 opacity-0 group-hover:opacity-100 group-hover:bottom-8 transition-all duration-300 w-4/5 bg-blue-600 text-white text-center py-2 rounded-full text-sm font-bold shadow-md z-20"
+                    >
+                      اطلاعات بیشتر
+                    </a>
+                  </div>
                 ))}
               </div>
             ) : (
@@ -204,10 +221,27 @@ export default function ProductsStorePage() {
                 </button>
               </div>
             )}
-
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// 🔴 مرحله ۲: کامپوننت اصلی (که Export می‌شود) را با Suspense می‌پوشانیم
+export default function ProductsStorePage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9]">
+          <div className="flex flex-col items-center text-blue-500">
+            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <p className="font-bold text-gray-600">در حال بارگذاری فروشگاه...</p>
+          </div>
+        </div>
+      }
+    >
+      <ProductsStoreContent />
+    </Suspense>
   );
 }

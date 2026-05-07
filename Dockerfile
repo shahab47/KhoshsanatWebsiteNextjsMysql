@@ -1,38 +1,33 @@
-# استفاده از نسخه سبک لینوکس و سازگار با پریزما
-FROM node:20-bullseye-slim
+FROM node:24-slim
 
-# نصب OpenSSL و گواهی‌های لازم برای اتصال دیتابیس و پریزما (بسیار مهم برای لینوکس)
-RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+# نصب پیش‌نیازهای سیستمی (پکیج‌های libc6 و ساختار برای ماژول‌های باینری ضروری هستند)
+RUN apt-get update -y && \
+    apt-get install -y openssl ca-certificates libc6 build-essential && \
+    rm -rf /var/lib/apt/lists/*
 
-# تعیین پوشه کاری داخل کانتینر
 WORKDIR /app
 
-# کپی کردن "فقط" فایل‌های تنظیمات در ابتدا (برای استفاده از خاصیت کش داکر)
+# کپی فایل‌های مدیریت پکیج
 COPY package.json package-lock.json* ./
 COPY prisma ./prisma/
 
-# 🟢 دور زدن تحریم‌ها و فیلترینگ برای دانلود سریع 🟢
-# تغییر مسیر دانلود پکیج‌های نود جی‌اس و موتورهای پریزما به سرور میرور چین
-RUN npm config set registry https://registry.npmmirror.com/
-ENV PRISMA_ENGINES_MIRROR="https://npmmirror.com/mirrors/prisma"
+# نصب اصولی وابستگی‌ها به همراه ماژول‌های اختیاری
+# (بدون force و بدون پاک کردن فایل lock تا بیلد سریع و پایدار باشد)
+RUN npm install --include=optional
 
-# نصب تمیز پکیج‌ها کاملاً از صفر (clean install) تا با محیط لینوکس سازگار شوند
-RUN npm ci || npm install
+# نصب دستی باینری‌های مخصوص لینوکس برای جلوگیری از خطای Turbopack و رفع مشکل Sharp
+RUN npm install --os=linux --cpu=x64 lightningcss-linux-x64-gnu @next/swc-linux-x64-gnu sharp
 
-# ساخت کلاینت پریزما (مخصوص سیستم‌عامل لینوکس داکر)
+# تولید کلاینت دیتابیس
 RUN npx prisma generate
 
-# حالا کپی کردن بقیه فایل‌های پروژه (بدون node_modules و .next که در ویندوز ساخته شده‌اند)
+# کپی بقیه فایل‌های پروژه
 COPY . .
 
-# غیرفعال کردن تلمتری Next.js برای بیلد سریع‌تر
+# تنظیمات محیطی و اجرای بیلد
 ENV NEXT_TELEMETRY_DISABLED=1
-
-# بیلد نهایی پروژه (تولید کدهای سازگار با لینوکس)
 RUN npm run build
 
-# تنظیم پورت
 EXPOSE 3000
 
-# اجرای پروژه در حالت پروداکشن
-CMD ["npm", "start"]
+CMD ["sh", "-c", "npx prisma db push && npm start"]

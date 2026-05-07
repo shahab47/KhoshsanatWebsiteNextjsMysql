@@ -7,25 +7,40 @@ import Header from '@/components/layout/Header'; // مسیر درست Header
 const vazirLocal = localFont({
   src: [
     { path: './fonts/Vazir-Medium.woff2', weight: '400', style: 'normal' },
-    { path: './fonts/Vazir-Bold.woff2', weight: '700', style: 'normal' }
+    { path: './fonts/Vazir-Bold.woff2', weight: '700', style: 'normal' },
+    {
+      path: './fonts/Vazir-Thin-FD-WOL.woff2',
+      weight: '100',
+      style: 'normal',
+    },
+    {
+      path: './fonts/Vazir-Light-FD-WOL.woff2',
+      weight: '300',
+      style: 'normal',
+    },
+    {
+      path: './fonts/Vazir-FD-WOL.woff2',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: './fonts/Vazir-Medium-FD-WOL.woff2',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: './fonts/Vazir-Bold-FD-WOL.woff2',
+      weight: '700',
+      style: 'normal',
+    },
   ],
 });
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  // خواندن لوگو از دیتابیس
-  let logoUrl = '/logo.png';
-  try {
-    const logoSetting = await db.setting.findUnique({ where: { key: 'SITE_LOGO' } });
-    if (logoSetting?.value) logoUrl = logoSetting.value;
-    console.log('✅ layout: logoUrl =', logoUrl); // لاگ در سرور
-  } catch (err) {
-    console.error('خطا در خواندن لوگو:', err);
-  }
-
   return (
-    <html lang="fa" dir="rtl">
+    <html lang="fa" dir="rtl" className="scroll-smooth" data-scroll-behavior="smooth">
       <body className={`${vazirLocal.className} bg-ks-dark text-white`}>
-        <Header logoUrl={logoUrl} />
+        <Header />
         <main className="">   {/* این خط مشکل پنهان شدن محتوا را حل می‌کند */}
           {children}
         </main>

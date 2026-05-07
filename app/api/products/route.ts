@@ -1,3 +1,5 @@
+// مسیر فایل: src/app/api/products/route.ts
+
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -7,7 +9,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const subcategoryId = searchParams.get('subcategoryId');
     const where: any = { isActive: true };
-    if (subcategoryId) where.subcategoryId = parseInt(subcategoryId);
+    
+    if (subcategoryId) {
+      where.subcategoryId = parseInt(subcategoryId);
+    }
 
     const products = await db.product.findMany({
       where,
@@ -15,18 +20,21 @@ export async function GET(request: NextRequest) {
     });
     return NextResponse.json(products);
   } catch (error) {
+    console.error("خطا در دریافت محصولات:", error);
     return NextResponse.json({ error: 'خطا در دریافت محصولات' }, { status: 500 });
   }
 }
 
-// POST – ایجاد محصول جدید
+// POST – ایجاد محصول جدید (ذخیره لینک‌های دریافتی از MinIO در دیتابیس)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { title, slug, description, shortDesc, imageUrl, gallery, subcategoryId, order, isActive } = body;
+    
     if (!title || !slug || !description || !imageUrl || !subcategoryId) {
       return NextResponse.json({ error: 'فیلدهای ضروری کامل نیستند' }, { status: 400 });
     }
+    
     const product = await db.product.create({
       data: {
         title,
@@ -40,8 +48,10 @@ export async function POST(request: NextRequest) {
         isActive: isActive ?? true,
       },
     });
+    
     return NextResponse.json(product, { status: 201 });
   } catch (error) {
+    console.error("خطا در ایجاد محصول:", error);
     return NextResponse.json({ error: 'خطا در ایجاد محصول' }, { status: 500 });
   }
 }

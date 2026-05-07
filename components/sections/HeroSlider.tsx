@@ -1,81 +1,144 @@
-'use client'; // این یک کامپوننت سمت کلاینت است
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
-// ۱. تعریف دقیق ساختار دیتایی که از دیتابیس (فایل page.tsx) به اینجا فرستاده می‌شود
-interface Slide {
+export interface Slide {
   id: number;
   imageUrl: string;
   title: string | null;
+  subtitle: string | null;
+  titleColor?: string | null;
+  titleFontSize?: string | null;
+  subtitleColor?: string | null;
+  subtitleFontSize?: string | null;
 }
 
-// ۲. کامپوننت حالا اسلایدها (slides) را به عنوان ورودی دریافت می‌کند
-export default function HeroSlider({ slides }: { slides: Slide[] }) {
+export interface SliderSettings {
+  heightDesktop: string;
+  heightMobile: string;
+  overlayColor: string;
+  overlayOpacity: number;
+}
+
+interface HeroSliderProps {
+  slides: Slide[];
+  settings: SliderSettings;
+}
+
+export default function HeroSlider({ slides, settings }: HeroSliderProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // منطق تعویض خودکار اسلاید
+  // تشخیص موبایل
   useEffect(() => {
-    // اگر هیچ اسلایدی از دیتابیس نیامد یا فقط یک اسلاید بود، نیازی به حرکت نیست
+    const checkMobile = () => setIsMobile(window.innerWidth <= 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // چرخش خودکار
+  useEffect(() => {
     if (!slides || slides.length <= 1) return;
-
-    // تنظیم یک اینتروال ۵ ثانیه‌ای
-    const slideInterval = setInterval(() => {
-      setCurrentSlideIndex((prevIndex) => 
-        prevIndex === slides.length - 1 ? 0 : prevIndex + 1
-      );
+    const interval = setInterval(() => {
+      setCurrentSlideIndex(prev => (prev === slides.length - 1 ? 0 : prev + 1));
     }, 5000);
+    return () => clearInterval(interval);
+  }, [slides]);
 
-    // پاک کردن اینتروال هنگام خارج شدن از صفحه
-    return () => clearInterval(slideInterval);
-  }, [slides]); // به روز رسانی وابستگی به لیست اسلایدها
-
-  // اگر هیچ عکسی وجود نداشت، بخش هیرو را خالی نگذاریم
   if (!slides || slides.length === 0) return null;
 
+  const currentSlide = slides[currentSlideIndex];
+  const overlayStyle = {
+    backgroundColor: settings.overlayColor,
+    opacity: settings.overlayOpacity,
+  };
+  const sectionHeight = isMobile ? settings.heightMobile : settings.heightDesktop;
+
   return (
-    <section className="relative h-[85vh] flex items-center justify-center overflow-hidden">
-      
-      {/* اسلایدر تصاویر پس‌زمینه */}
-      <div className="absolute inset-0 z-0">
-        <div className="absolute inset-0 bg-ks-dark/70 z-10"></div>
-        
-        {/* ۳. حالا به جای آرایه ثابت، روی اطلاعات دیتابیس حلقه می‌زنیم */}
-        {slides.map((slide, index) => (
-          <img 
-            key={slide.id} // استفاده از ID دیتابیس به عنوان کلید یکتا
-            src={slide.imageUrl} // خواندن آدرس عکس از دیتابیس
-            alt={slide.title || `نمای کارگاه ${index + 1}`} 
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-              index === currentSlideIndex ? 'opacity-100' : 'opacity-0'
-            }`}
-          />
-        ))}
-      </div>
-      
-      {/* محتوای متنی روی اسلایدر */}
-      <div className="relative z-20 text-center px-4 max-w-5xl mx-auto flex flex-col items-center">
-        <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight">
-          قدرت مهندسی‌شده <br />
-          برای <span className="text-ks-blue">ساخت دنیایی بهتر</span>
-        </h1>
-        
-        <p className="text-gray-300 text-lg md:text-xl mb-10 max-w-3xl font-light">
-          تولید قطعات پیش‌ساخته فلزی، از طراحی و ایده‌پردازی تا تحویل و نصب دقیق در محل پروژه. 
-          تضمین کیفیت و استحکام در هر قطعه.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Link 
-            href="#catalog" 
-            className="bg-ks-blue hover:bg-blue-600 text-white px-8 py-4 rounded-md font-bold text-lg flex items-center justify-center gap-2 transition-all group"
+    <>
+      <style jsx>{`
+        @keyframes softScale {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.02); }
+          100% { transform: scale(1); }
+        }
+        @keyframes fadeSlideUp {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .animate-soft-scale {
+          animation: softScale 1s ease-out;
+          will-change: transform;
+        }
+        .animate-text {
+          animation: fadeSlideUp 0.6s ease-out forwards;
+          will-change: transform, opacity;
+        }
+      `}</style>
+
+      <section
+        className="relative flex items-center justify-center overflow-hidden"
+        style={{ height: sectionHeight }}
+      >
+        <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-10" style={overlayStyle}></div>
+          {slides.map((slide, idx) => (
+            <img
+              key={slide.id}
+              src={slide.imageUrl}
+              alt={slide.title || 'اسلاید'}
+              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                idx === currentSlideIndex ? 'opacity-100 animate-soft-scale' : 'opacity-0'
+              }`}
+            />
+          ))}
+        </div>
+
+        {(currentSlide.title || currentSlide.subtitle) && (
+          <div
+            key={currentSlideIndex}
+            className="absolute bottom-4 right-4 md:bottom-8 md:right-8 z-20 text-right max-w-lg animate-text"
+          >
+            {currentSlide.title && (
+              <h1
+                className="font-thin mb-2 leading-tight"
+                style={{
+                  color: currentSlide.titleColor || '#ffffff',
+                  fontSize: currentSlide.titleFontSize || '3rem',
+                  textShadow: '0 0 6px rgba(255,255,255,0.4)',
+                }}
+              >
+                {currentSlide.title}
+              </h1>
+            )}
+            {currentSlide.subtitle && (
+              <p
+                className="font-extralight"
+                style={{
+                  color: currentSlide.subtitleColor || '#ffffff',
+                  fontSize: currentSlide.subtitleFontSize || '1.25rem',
+                  textShadow: '0 0 4px rgba(255,255,255,0.3)',
+                }}
+              >
+                {currentSlide.subtitle}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-20">
+          <Link
+            href="#catalog"
+            className="flex items-center justify-center gap-1 bg-transparent border border-white text-white rounded-full px-3 py-1.5 md:px-4 md:py-2 font-medium text-sm md:text-base transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 group"
           >
             مشاهده کاتالوگ محصولات
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
           </Link>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

@@ -2,42 +2,42 @@
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
 
-// خواندن متن‌ها از دیتابیس
+// تبدیل تگ <font color="#..."> به <span style="color: ...">
+function convertFontToSpan(html: string): string {
+  // الگوی regex برای یافتن تگ‌های font با attribute color
+  return html.replace(/<font\s+color=(["']?)(#[0-9a-fA-F]{6}|[a-z]+)\1\s*>/gi, (match, quote, color) => {
+    return `<span style="color: ${color};">`;
+  }).replace(/<\/font>/gi, '</span>');
+}
+
 export async function GET() {
-  const settings = await db.setting.findMany({
-    where: {
-      // فقط کلیدهایی که مربوط به متن هستند را بگیر
-      key: { in: ['HERO_TITLE', 'HERO_SUBTITLE'] }
-    }
-  });
-  
-  // تبدیل اطلاعات به یک آبجکت ساده برای استفاده راحت‌تر در فرانت‌اند
+  const settings = await db.setting.findMany();
   const texts = settings.reduce((acc, curr) => {
     acc[curr.key] = curr.value;
     return acc;
   }, {} as Record<string, string>);
-
   return NextResponse.json(texts);
 }
 
-// ذخیره یا آپدیت متن‌های جدید
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    
-    // حلقه برای ذخیره کردن تک‌تک متن‌های ارسال شده
+
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
+        // تبدیل تگ font به span
+        const cleanValue = convertFontToSpan(value);
         await db.setting.upsert({
           where: { key },
-          update: { value },
-          create: { key, value: value }
+          update: { value: cleanValue },
+          create: { key, value: cleanValue }
         });
       }
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Error saving texts:', error);
     return NextResponse.json({ success: false, error: 'خطا در ذخیره اطلاعات' }, { status: 500 });
   }
 }

@@ -1,79 +1,67 @@
 'use client';
+// مسیر فایل: src/app/education/page.tsx
 
-import React, { useState } from 'react';
-import { BookOpen, Clock, Calendar, ChevronLeft, Search, GraduationCap } from 'lucide-react';
-
-// داده‌های تستی (Mock) مقالات آموزشی
-const mockArticles = [
-  {
-    id: 1,
-    slug: 'industrial-welding-principles',
-    title: 'اصول و استانداردهای جوشکاری صنعتی در سازه‌های فولادی',
-    excerpt: 'در این مقاله به بررسی جامع روش‌های نوین جوشکاری، استانداردهای بین‌المللی و نکات ایمنی در ساخت سوله‌ها و سازه‌های سنگین می‌پردازیم.',
-    category: 'تکنولوژی ساخت',
-    date: '۲۴ اردیبهشت ۱۴۰۳',
-    readTime: '۸ دقیقه',
-    imageUrl: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?q=80&w=1000&auto=format&fit=crop',
-  },
-  {
-    id: 2,
-    slug: 'steel-alloys-guide',
-    title: 'راهنمای جامع شناخت آلیاژهای فولادی و کاربرد آن‌ها',
-    excerpt: 'آلیاژهای مختلف فولاد چه تفاوت‌هایی با هم دارند؟ چگونه بهترین متریال را برای پروژه صنعتی خود انتخاب کنیم؟',
-    category: 'مواد و متالورژی',
-    date: '۱۲ خرداد ۱۴۰۳',
-    readTime: '۱۲ دقیقه',
-    imageUrl: 'https://images.unsplash.com/photo-1535813547-99c456a41d4a?q=80&w=1000&auto=format&fit=crop',
-  },
-  {
-    id: 3,
-    slug: 'preventive-maintenance',
-    title: 'اهمیت نگهداری و تعمیرات پیشگیرانه (PM) در کارخانجات',
-    excerpt: 'با پیاده‌سازی سیستم‌های نگهداری پیشگیرانه، هزینه‌های استهلاک تجهیزات صنعتی خود را تا ۴۰ درصد کاهش دهید.',
-    category: 'مدیریت صنعتی',
-    date: '۵ تیر ۱۴۰۳',
-    readTime: '۶ دقیقه',
-    imageUrl: 'https://images.unsplash.com/photo-1581092160562-40aa08e78837?q=80&w=1000&auto=format&fit=crop',
-  },
-  {
-    id: 4,
-    slug: 'cnc-machining-future',
-    title: 'آینده ماشین‌کاری CNC و هوش مصنوعی در تولید قطعات',
-    excerpt: 'تلفیق دستگاه‌های CNC با هوش مصنوعی چگونه دقت تولید قطعات حساس را افزایش و زمان تولید را کاهش می‌دهد؟',
-    category: 'ماشین‌کاری پیشرفته',
-    date: '۱۸ مرداد ۱۴۰۳',
-    readTime: '۱۰ دقیقه',
-    imageUrl: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?q=80&w=1000&auto=format&fit=crop',
-  },
-];
+import React, { useState, useEffect } from 'react';
+import { BookOpen, Clock, Calendar, ChevronRight, Search, GraduationCap, Loader2, ChevronLeft } from 'lucide-react';
 
 export default function EducationPage() {
+  const [articles, setArticles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredArticles = mockArticles.filter(article => 
-    article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    article.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    const fetchArticles = async () => {
+      try {
+        const res = await fetch('/api/education');
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            const activeArticles = data.filter((a: any) => a.isActive);
+            setArticles(activeArticles);
+          }
+        }
+      } catch (err) {
+        console.error("خطا در دریافت مقالات:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArticles();
+  }, []);
+
+  const filteredArticles = articles.filter(article => {
+    const isTitleMatch = article.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    const isCategoryMatch = article.category?.toLowerCase().includes(searchQuery.toLowerCase());
+    return isTitleMatch || isCategoryMatch;
+  });
 
   return (
-    <div className="min-h-screen bg-transparent pb-20 text-white" dir="rtl">
+    <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
       
-      {/* هدر صفحه */}
-      <div className="bg-brand-dark/40 backdrop-blur-md border-b border-white/10 py-20 px-6 relative overflow-hidden mt-16 md:mt-0">
-        <div className="absolute inset-0 opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-        <div className="max-w-7xl mx-auto relative z-10 text-center">
-          <div className="inline-flex items-center justify-center gap-3 text-brand-blue mb-4 font-bold bg-brand-blue/10 px-4 py-2 rounded-full border border-brand-blue/20">
+      {/* Breadcrumb - مشابه صفحات محصولات و پروژه‌ها */}
+      <div className="bg-white border-b border-gray-200 py-4 px-6">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
+          <a href="/" className="hover:text-blue-600 transition">خانه</a>
+          <ChevronRight size={16} />
+          <span className="text-gray-800 font-bold">آکادمی و مقالات</span>
+        </div>
+      </div>
+
+      {/* هدر صفحه (با استیل روشن) */}
+      <div className="bg-white border-b border-gray-200 py-12 px-6">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="inline-flex items-center justify-center gap-3 text-blue-600 mb-4 font-bold bg-blue-50 px-4 py-2 rounded-full border border-blue-100">
             <GraduationCap size={24} />
             <span>آکادمی خوش‌صنعت</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-black mb-6 text-white tracking-tight">
+          <h1 className="text-4xl md:text-5xl font-black mb-5 text-gray-900 tracking-tight">
             دانش‌نامه و مقالات آموزشی
           </h1>
-          <p className="text-gray-300 text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
             به‌روزترین مقالات تخصصی، آموزش‌های فنی و استانداردهای مهندسی در حوزه صنعت، فولاد و ماشین‌سازی را در این بخش مطالعه کنید.
           </p>
 
-          {/* باکس جستجو */}
+          {/* باکس جستجو - مشابه جستجوی محصولات */}
           <div className="max-w-xl mx-auto mt-10 relative">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input 
@@ -81,57 +69,64 @@ export default function EducationPage() {
               placeholder="جستجو در مقالات (مثلاً: فولاد، جوشکاری...)" 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl py-4 pr-12 pl-4 outline-none focus:ring-2 focus:ring-brand-blue focus:border-brand-blue transition-all text-white placeholder-gray-500 shadow-xl"
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl py-3 pr-12 pl-4 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500 shadow-sm"
             />
           </div>
         </div>
       </div>
 
       {/* لیست مقالات */}
-      <div className="max-w-7xl mx-auto px-6 mt-16">
-        {filteredArticles.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-6 py-12">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 text-blue-600">
+            <Loader2 className="animate-spin mb-4" size={48} />
+            <p className="font-bold text-gray-600">در حال دریافت مقالات...</p>
+          </div>
+        ) : filteredArticles.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredArticles.map((article) => (
               <a 
                 key={article.id} 
                 href={`/education/${article.slug}`}
-                className="group flex flex-col bg-white/5 backdrop-blur-md rounded-3xl overflow-hidden border border-white/10 shadow-sm hover:shadow-2xl hover:shadow-brand-blue/10 hover:border-brand-blue/40 transition-all duration-500"
+                className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-lg hover:border-blue-300 transition-all duration-300"
               >
                 {/* تصویر مقاله */}
-                <div className="relative aspect-video overflow-hidden bg-black/20">
+                <div className="relative aspect-video overflow-hidden bg-gray-100">
                   <img 
                     src={article.imageUrl} 
                     alt={article.title} 
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-4 right-4 bg-brand-blue/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                    {article.category}
+                  <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                    {article.category || 'عمومی'}
                   </div>
                 </div>
 
                 {/* محتوای کارت */}
-                <div className="p-6 flex flex-col flex-1">
-                  <h2 className="text-xl font-bold text-white mb-3 leading-tight group-hover:text-brand-blue transition-colors duration-300">
+                <div className="p-5 flex flex-col flex-1">
+                  <h2 className="text-xl font-bold text-gray-800 mb-2 leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
                     {article.title}
                   </h2>
-                  <p className="text-gray-400 text-sm leading-relaxed mb-6 flex-1 line-clamp-3">
-                    {article.excerpt}
+                  <p className="text-gray-500 text-sm leading-relaxed mb-4 flex-1 line-clamp-3">
+                    {article.excerpt || 'بدون چکیده...'}
                   </p>
 
-                  <div className="pt-5 border-t border-white/10 flex items-center justify-between text-xs text-gray-400 mt-auto">
+                  <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500 mt-auto">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1.5">
-                        <Calendar size={14} className="text-brand-blue" />
-                        <span>{article.date}</span>
+                        <Calendar size={14} className="text-blue-600" />
+                        <span>{new Date(article.createdAt).toLocaleDateString('fa-IR')}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Clock size={14} className="text-brand-blue" />
-                        <span>{article.readTime} مطالعه</span>
-                      </div>
+                      {article.readTime && (
+                        <div className="flex items-center gap-1.5">
+                          <Clock size={14} className="text-blue-600" />
+                          <span>{article.readTime} دقیقه</span>
+                        </div>
+                      )}
                     </div>
                     
-                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors">
-                      <ChevronLeft size={16} />
+                    <div className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                      <ChevronLeft size={14} />
                     </div>
                   </div>
                 </div>
@@ -139,14 +134,13 @@ export default function EducationPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
-            <BookOpen size={64} className="mx-auto text-gray-500 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">مقاله‌ای یافت نشد!</h3>
-            <p className="text-gray-400">با کلمه جستجو شده، آموزشی در پایگاه داده وجود ندارد.</p>
+          <div className="text-center py-20 bg-white rounded-2xl border border-gray-200 shadow-sm">
+            <BookOpen size={64} className="mx-auto text-gray-300 mb-4" />
+            <h3 className="text-xl font-bold text-gray-700 mb-2">مقاله‌ای یافت نشد!</h3>
+            <p className="text-gray-500">با کلمه جستجو شده، آموزشی در پایگاه داده وجود ندارد.</p>
           </div>
         )}
       </div>
-
     </div>
   );
 }
