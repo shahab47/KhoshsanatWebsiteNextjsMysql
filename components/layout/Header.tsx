@@ -1,23 +1,42 @@
+// نسخه نهایی Header با fallback قوی
 'use client';
-import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
-import { AnimatePresence } from 'framer-motion';
+// مسیر فایل: src/components/layout/Header.tsx
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
-export default function Header() {
-  const router = useRouter();
+interface HeaderProps {
+  logoUrl?: string;
+}
+
+export default function Header({ logoUrl }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('/');
-  const [logos, setLogos] = useState<{ [key: string]: string }>({});
+  
+  // مدیریت fallback لوگو
+  const [logoSrc, setLogoSrc] = useState<string>('/Logo.svg');
+  const [logoError, setLogoError] = useState(false);
 
+  // تعیین مقدار اولیه و بروزرسانی بر اساس prop
   useEffect(() => {
-    fetch('/api/logo', { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => setLogos(data))
-      .catch(err => console.error('خطا در دریافت لوگو:', err));
-  }, []);
+    if (logoUrl && logoUrl.trim() !== '' && !logoError) {
+      setLogoSrc(logoUrl.trim());
+    } else {
+      setLogoSrc('/Logo.svg');
+    }
+  }, [logoUrl, logoError]);
 
+  // هندلر خطا
+  const handleImageError = useCallback(() => {
+    if (!logoError && logoSrc !== '/Logo.svg') {
+      setLogoError(true);
+      setLogoSrc('/Logo.svg');
+    }
+  }, [logoError, logoSrc]);
+
+  // مدیریت تغییرات آدرس
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const updatePath = () => {
@@ -33,50 +52,43 @@ export default function Header() {
     }
   }, []);
 
+  // مدیریت اسکرول
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // قفل کردن اسکرول هنگام باز بودن منوی موبایل
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
-    return () => {
-      document.body.style.overflow = '';
-    };
+    return () => { document.body.style.overflow = ''; };
   }, [isMobileMenuOpen]);
 
   const currentPathname = currentPath.split('#')[0] || '/';
-  const isAdminRoute = currentPathname.startsWith('/admin');
+  const isAdminRoute = currentPathname.startsWith('/khoshmin');
   const isHomePage = currentPathname === '/';
 
   if (isAdminRoute) return null;
 
-  const logoSvgUrl = logos['main-svg'] || logos['main'] ;
-
+  // منطق فیلتر رنگ لوگو (می‌توانید تغییر دهید)
   let logoFilter = 'none';
   if (!isHomePage) {
     logoFilter = 'brightness(0) invert(1)';
   } else {
-    if (!scrolled) {
-      logoFilter = 'brightness(0) invert(1)';
-    } else {
-      logoFilter = 'none';
-    }
+    logoFilter = !scrolled ? 'brightness(0) invert(1)' : 'none';
   }
-
-  const mobileLogoFilter = 'none';
 
   const navLinks = [
     { name: 'صفحه اصلی', href: '/' },
     { name: 'محصولات و خدمات', href: '/products' },
     { name: 'پروژه‌ها', href: '/projects' },
     { name: 'آموزش', href: '/education' },
-    { name: 'درباره ما', href: '/#about' },
+    { name: 'درباره ما', href: '/about' },
   ];
 
   let headerClasses = 'w-full z-40 transition-all duration-300 ';
@@ -96,103 +108,67 @@ export default function Header() {
     hoverTextColor = 'hover:text-gray-600';
     activeTextColor = 'text-gray-900';
     buttonClasses = 'bg-blue-600 hover:bg-blue-700 text-white';
-  } else if (!isHomePage) {
-    defaultTextColor = 'text-white';
-    hoverTextColor = 'hover:text-gray-300';
-    activeTextColor = 'text-white';
-    buttonClasses = 'bg-blue-600 hover:bg-blue-500 text-white';
   }
-
-  const linkClasses = `${defaultTextColor} ${hoverTextColor} transition-colors`;
 
   return (
     <>
       <header className={headerClasses} dir="rtl">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-          {/* سمت چپ: دکمه همبرگر (فقط موبایل) */}
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`p-2 -mr-2 ${defaultTextColor} ${hoverTextColor} transition-colors focus:outline-none`}
-              aria-label="Toggle menu"
+              className={`p-2 -mr-2 ${defaultTextColor} transition-colors focus:outline-none`}
             >
               <Menu size={28} />
             </button>
           </div>
 
-          {/* لوگو (در دسکتاپ سمت چپ، در موبایل وسط) */}
           <div className="flex items-center">
             <a
               href="/"
+              className="flex-shrink-0"
               onClick={(e) => {
                 if (currentPath === '/') {
                   e.preventDefault();
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
               }}
-              className="flex-shrink-0"
             >
               <img 
-                src={logoSvgUrl} 
+                src={logoSrc}
                 alt="KS Engineering" 
                 className="h-10 md:h-12 w-auto object-contain transition-all duration-300"
                 style={{ filter: logoFilter }}
+                onError={handleImageError}
               />
             </a>
           </div>
 
-          {/* منوی دسکتاپ */}
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
             {navLinks.map((link) => {
-              let isActive = false;
-              if (link.href === '/') {
-                isActive = currentPath === '/';
-              } else {
-                isActive = currentPath === link.href || currentPath.startsWith(link.href + '/');
-              }
+              const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
               return (
                 <a
                   key={link.name}
                   href={link.href}
-                  onClick={(e) => {
-                    const [targetPath, targetHash] = link.href.split('#');
-                    const cleanTargetPath = targetPath || '/';
-                    if (window.location.pathname === cleanTargetPath) {
-                      e.preventDefault();
-                      if (targetHash) {
-                        const elem = document.getElementById(targetHash);
-                        if (elem) elem.scrollIntoView({ behavior: 'smooth' });
-                        window.history.pushState(null, '', link.href);
-                        setCurrentPath(link.href);
-                      } else {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                        window.history.pushState(null, '', cleanTargetPath);
-                        setCurrentPath(cleanTargetPath);
-                      }
-                    }
-                  }}
-                  className={`relative group py-2 ${linkClasses} ${isActive ? activeTextColor : ''}`}
+                  className={`relative group py-2 ${defaultTextColor} ${hoverTextColor} transition-colors ${isActive ? activeTextColor : ''}`}
                 >
                   {link.name}
-                  <span
-                    className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-blue-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}
-                  ></span>
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-blue-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </a>
               );
             })}
           </nav>
 
-          {/* سمت راست: دکمه دسکتاپ و فضای خالی برای موبایل */}
           <div className="flex items-center gap-4">
             <div className="hidden md:block">
-              <button
-                onClick={() => router.push('/contact')}
-                className={`${buttonClasses} px-6 py-2.5 rounded-xl text-sm font-bold transition-colors border border-blue-500/50 shadow-lg`}
+              <a
+                href="/contact"
+                className={`${buttonClasses} px-6 py-2.5 rounded-xl text-sm font-bold transition-colors border border-blue-500/50 inline-block`}
               >
                 درخواست استعلام
-              </button>
+              </a>
             </div>
-            {/* فضای خالی در موبایل برای متعادل کردن چپ و راست (با عرض همبرگر) */}
             <div className="md:hidden w-10"></div>
           </div>
         </div>
@@ -201,20 +177,27 @@ export default function Header() {
       <AnimatePresence>
         {isMobileMenuOpen && (
           <>
-            <div
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
             />
-            <div
-              className="fixed top-0 right-0 w-3/4 max-w-sm h-[100dvh] bg-[#EFF6FF] shadow-2xl z-50 md:hidden flex flex-col overflow-y-auto"
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 w-3/4 max-w-sm h-[100dvh] bg-[#EFF6FF] shadow-2xl z-50 md:hidden flex flex-col"
               dir="rtl"
             >
-              <div className="flex items-center justify-between p-6 border-b border-[#2563EB]/20">
+              <div className="flex items-center justify-between p-6 border-b border-blue-200/50">
                 <img 
-                  src={logoSvgUrl} 
+                  src={logoSrc} 
                   alt="Logo" 
-                  className="h-10 w-auto"
-                  style={{ filter: mobileLogoFilter }}
+                  className="h-10 w-auto" 
+                  onError={handleImageError}
                 />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -225,57 +208,29 @@ export default function Header() {
               </div>
               <div className="flex flex-col gap-2 p-6 flex-1">
                 {navLinks.map((link) => {
-                  let isActive = false;
-                  if (link.href === '/') {
-                    isActive = currentPath === '/';
-                  } else {
-                    isActive = currentPath === link.href || currentPath.startsWith(link.href + '/');
-                  }
+                  const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
                   return (
                     <a
                       key={link.name}
                       href={link.href}
-                      onClick={(e) => {
-                        const [targetPath, targetHash] = link.href.split('#');
-                        const cleanTargetPath = targetPath || '/';
-                        if (window.location.pathname === cleanTargetPath) {
-                          e.preventDefault();
-                          if (targetHash) {
-                            const elem = document.getElementById(targetHash);
-                            if (elem) elem.scrollIntoView({ behavior: 'smooth' });
-                            window.history.pushState(null, '', link.href);
-                            setCurrentPath(link.href);
-                          } else {
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                            window.history.pushState(null, '', cleanTargetPath);
-                            setCurrentPath(cleanTargetPath);
-                          }
-                        }
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`px-4 py-3 rounded-xl font-bold transition-all text-lg ${
-                        isActive 
-                          ? 'text-white bg-[#2563EB] shadow-md' 
-                          : 'text-[#2D3644] hover:text-[#2563EB] hover:bg-[#2563EB]/10'
-                      }`}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`px-4 py-3 rounded-xl font-bold transition-all text-lg ${isActive ? 'text-white bg-blue-600 shadow-md' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50'}`}
                     >
                       {link.name}
                     </a>
                   );
                 })}
               </div>
-              <div className="p-6 border-t border-[#2563EB]/20 mt-auto">
-                <button
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    router.push('/contact');
-                  }}
-                  className="w-full bg-[#2563EB] hover:bg-[#1D4ED8] text-white py-4 rounded-xl font-bold transition-colors shadow-lg shadow-[#2563EB]/30 text-lg flex items-center justify-center"
+              <div className="p-6 border-t border-blue-200/50 mt-auto">
+                <a
+                  href="/#contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-colors shadow-lg text-center inline-block"
                 >
                   تماس با واحد فروش
-                </button>
+                </a>
               </div>
-            </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>

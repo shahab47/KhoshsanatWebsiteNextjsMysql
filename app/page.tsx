@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import db from '@/lib/db';
 import HeroSlider from '@/components/sections/HeroSlider';
 import Categories from '@/components/sections/Categories';
+import EducationSlider from '@/components/sections/EducationSlider';
+import ProjectSlider from '@/components/sections/ProjectSlider';
 import WhyUs from '@/components/sections/WhyUs';
-import ProductSlider from '@/components/sections/ProductSlider';
+//import ProductSlider from '@/components/sections/ProductSlider';<ProductSlider />
 import Footer from '@/components/layout/Footer';
+import MYRailProduct from '@/components/sections/MYRailProduct';
 
 export const revalidate = 60; // ISR هر ۶۰ ثانیه
 
@@ -75,8 +78,11 @@ export default async function Home() {
     <main className="min-h-screen bg-ks-dark text-white flex flex-col">
       {/* حالا تایپ‌ها کاملاً هماهنگ هستند و نیازی به as any نیست */}
       <HeroSlider slides={activeSlides} settings={safeSliderSettings} />
+      <MYRailProduct/>
+      <EducationSlider/>
+      <ProjectSlider/>
+      
       <Categories />
-      <ProductSlider />
       <WhyUs />
       <Footer />
     </main>

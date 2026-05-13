@@ -92,7 +92,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen pb-10 pt-20" style={{ backgroundColor: '#eff6ff' }} dir="rtl">
+    <div className="min-h-screen pb-10 pt-20" style={{ backgroundColor: 'rgb(247, 249, 250)' }} dir="rtl">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row-reverse gap-8">
           

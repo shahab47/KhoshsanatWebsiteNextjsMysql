@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, Settings, Truck } from 'lucide-react';
 import db from '@/lib/db';
+import ImageWithFallback from '@/components/ui/ImageWithFallback'; // اضافه شد
 
 export default async function WhyUs() {
   const settings = await db.setting.findMany({
@@ -15,8 +16,16 @@ export default async function WhyUs() {
     return acc;
   }, {} as Record<string, string>);
 
-  const mainLogo = await db.logo.findUnique({ where: { type: 'main' } });
-  const logoUrl = mainLogo?.url || '/logo.png';
+  // دریافت لوگو از جدول logo با اولویت main-svg
+  let logoUrl = '/Logo.svg';
+  try {
+    const vectorLogo = await db.logo.findUnique({ where: { type: 'main-svg' } });
+    if (vectorLogo?.url) {
+      logoUrl = vectorLogo.url;
+    }
+  } catch (err) {
+    console.error('خطا در دریافت لوگو:', err);
+  }
 
   const title = dbTexts.ABOUT_TITLE || "درباره خوش صنعت پایدار";
   const desc = dbTexts.ABOUT_DESC || `
@@ -47,18 +56,15 @@ export default async function WhyUs() {
   return (
     <section className="py-8 px-4 bg-[rgb(247,249,250)]">
       <div className="max-w-7xl mx-auto">
-        
-        {/* بخش لوگو و معرفی: لوگو در سمت چپ (چپ ظاهری) و متن در سمت راست */}
         <div className="flex flex-col md:flex-row gap-6 items-start mb-10">
-          {/* لوگو بدون حاشیه */}
           <div className="md:w-1/4 flex justify-start">
-            <img 
-              src={logoUrl} 
-              alt="Logo" 
+            <ImageWithFallback
+              src={logoUrl}
+              fallbackSrc="/Logo.svg"
+              alt="Logo"
               className="w-32 h-32 object-contain md:w-40 md:h-40"
             />
           </div>
-          {/* متن معرفی - راست‌چین */}
           <div className="md:w-3/4 text-right">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">
               {title}
@@ -69,8 +75,6 @@ export default async function WhyUs() {
             />
           </div>
         </div>
-
-        {/* ویژگی‌ها - وسط‌چین */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 text-center">
           {features.map((feature) => (
             <div key={feature.id} className="flex flex-col items-center">
@@ -86,7 +90,6 @@ export default async function WhyUs() {
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );

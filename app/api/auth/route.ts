@@ -1,4 +1,4 @@
-// مسیر فایل: src/app/api/auth/route.ts
+// src/app/api/auth/route.ts
 
 import db from '@/lib/db';
 import { NextResponse } from 'next/server';
@@ -11,8 +11,16 @@ export async function GET() {
     const cookieStore = await cookies();
     const token = cookieStore.get('admin_token')?.value;
     if (!token) return NextResponse.json({ user: null });
-    const user = await verifyToken(token);
-    return NextResponse.json({ user });
+    
+    try {
+        const user = await verifyToken(token);
+        return NextResponse.json({ user });
+    } catch (error) {
+        // اگر توکن منقضی یا نامعتبر است، کوکی را پاک کن
+        const response = NextResponse.json({ user: null });
+        response.cookies.delete('admin_token');
+        return response;
+    }
 }
 
 export async function POST(req: Request) {
@@ -38,7 +46,18 @@ export async function POST(req: Request) {
 
         const token = await signToken({ id: user.id, role: user.role, name: user.name, email: user.email });
         const res = NextResponse.json({ success: true });
-        res.cookies.set('admin_token', token, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 60 * 60 * 24 * 7 });
+        
+        // تشخیص پروتکل امن (HTTPS) از هدر Nginx
+        const forwardedProto = req.headers.get('x-forwarded-proto');
+        const isSecure = forwardedProto === 'https';
+        
+        res.cookies.set('admin_token', token, {
+            httpOnly: true,
+            secure: isSecure,        // در HTTPS true، در HTTP false
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7 // 7 روز
+        });
+        
         return res;
     }
 
@@ -59,8 +78,10 @@ export async function POST(req: Request) {
             data: { resetToken, resetTokenExp: new Date(Date.now() + 3600000) }
         });
         
-        // شبیه‌سازی ارسال ایمیل در کنسول
-        console.log(`\n\nReset Link: http://localhost:3000/admin/login?reset=${resetToken}\n\n`);
+        // شبیه‌سازی ارسال ایمیل در کنسول (در تولید، ایمیل واقعی بفرست)
+        const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login?reset=${resetToken}`;
+        console.log(`\n\nReset Link: ${resetLink}\n\n`);
+        
         return NextResponse.json({ success: true, message: 'لینک بازیابی در کنسول چاپ شد.' });
     }
 

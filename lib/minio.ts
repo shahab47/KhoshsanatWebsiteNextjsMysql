@@ -1,8 +1,11 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
-// ۱. تنظیمات اولیه اتصال
-// پورت ۹۰۰۰ برای عملیات API و پورت ۹۰۰۱ برای پنل مدیریت استفاده می‌شود.
-const endpoint = "http://45.149.78.107:9000";
+// ۱. خواندن داینامیک اطلاعات از محیط
+const protocol = process.env.MINIO_USE_SSL === "true" ? "https" : "http";
+const host = process.env.MINIO_ENDPOINT || "127.0.0.1";
+const port = process.env.MINIO_PORT || "9000";
+
+const endpoint = `${protocol}://${host}:${port}`;
 const bucketName = process.env.MINIO_BUCKET_NAME || "khoshsanat-media";
 
 export const s3Client = new S3Client({
@@ -17,13 +20,8 @@ export const s3Client = new S3Client({
 
 /**
  * آپلود فایل به MinIO
- * @param fileBuffer محتوای فایل به صورت بافر
- * @param fileName نام فایل (مثلاً image.jpg)
- * @param folderName نام پوشه (مثلاً products)
- * @param mimeType نوع فایل (مثلاً image/jpeg)
  */
 export async function uploadToMinio(fileBuffer: Buffer, fileName: string, folderName: string, mimeType: string) {
-  // ساخت مسیر: folder/filename
   const fullPath = `${folderName}/${fileName}`;
 
   const command = new PutObjectCommand({
@@ -35,9 +33,6 @@ export async function uploadToMinio(fileBuffer: Buffer, fileName: string, folder
 
   try {
     await s3Client.send(command);
-    
-    // بازگرداندن آدرس کامل برای ذخیره در دیتابیس
-    // خروجی: http://45.149.78.107:9000/khoshsanat-media/products/image.jpg
     return `${endpoint}/${bucketName}/${fullPath}`;
   } catch (error) {
     console.error("خطا در آپلود فایل به MinIO:", error);
@@ -47,14 +42,11 @@ export async function uploadToMinio(fileBuffer: Buffer, fileName: string, folder
 
 /**
  * حذف فایل از MinIO بر اساس آدرس URL ذخیره شده
- * @param fileUrl آدرس کامل فایل که در دیتابیس ذخیره شده بود
  */
 export async function deleteFromMinio(fileUrl: string) {
   if (!fileUrl) return;
 
   try {
-    // استخراج Key (مسیر فایل) از کل URL
-    // منطق: حذف بخش ابتدایی آدرس تا بعد از نام باکت
     const urlPattern = `${endpoint}/${bucketName}/`;
     const fileKey = fileUrl.replace(urlPattern, "");
 
@@ -71,5 +63,50 @@ export async function deleteFromMinio(fileUrl: string) {
     await s3Client.send(command);
   } catch (error) {
     console.error("خطا در حذف فایل از MinIO:", error);
+  }
+}
+
+/**
+ * دریافت لیست فایل‌ها و پوشه‌ها از MinIO (برای فایل منیجر)
+ * @param prefix مسیر پوشه (مثلاً 'products/')
+ * @param recursive در صورت true بودن تمام زیرپوشه‌ها را هم می‌خواند
+ */
+export async function listMinioObjects(prefix: string = '', recursive: boolean = false): Promise<any[]> {
+  const objects: any[] = [];
+  
+  try {
+    const command = new ListObjectsV2Command({
+      Bucket: bucketName,
+      Prefix: prefix,
+      Delimiter: recursive ? undefined : '/',
+    });
+
+    const response = await s3Client.send(command);
+
+    // افزودن پوشه‌ها (CommonPrefixes) در صورت عدم جستجوی بازگشتی
+    if (!recursive && response.CommonPrefixes) {
+      response.CommonPrefixes.forEach(p => {
+        if (p.Prefix) objects.push({ prefix: p.Prefix });
+      });
+    }
+
+    // افزودن فایل‌ها (Contents)
+    if (response.Contents) {
+      response.Contents.forEach(c => {
+        // خود پوشه را در خروجی فایل‌ها نادیده می‌گیریم
+        if (c.Key && c.Key !== prefix) {
+          objects.push({
+            name: c.Key,
+            size: c.Size,
+            lastModified: c.LastModified
+          });
+        }
+      });
+    }
+
+    return objects;
+  } catch (error) {
+    console.error("خطا در دریافت لیست فایل‌ها از MinIO:", error);
+    throw error;
   }
 }

@@ -11,8 +11,7 @@ body {
   color: var(--foreground) !important;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
-
-/* اسکرول‌بار شیک (اسلایدر عمودی) */
+/* اسکرول‌بار سفارشی با رنگ آبی */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
@@ -22,11 +21,17 @@ body {
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #2563EB; /* ← رنگ آبی دلخواه */
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #1d4ed8; /* آبی تیره‌تر در حالت هاور */
+}
+
+/* برای مرورگر فایرفاکس (اختیاری) */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2563EB #f1f1f1;
 }
 
 /* اسکرول نرم و هایلایت متن معمولی */

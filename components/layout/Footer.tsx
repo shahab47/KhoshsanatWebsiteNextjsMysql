@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import db from '@/lib/db';
 import { SocialIcon } from '@/components/icons/SocialIcons';
+import ImageWithFallback from '@/components/ui/ImageWithFallback'; // اضافه شد
 
 // لیست پلتفرم‌های پشتیبانی شده
 const SOCIAL_PLATFORMS = [
@@ -33,7 +34,7 @@ const parseLinks = (rawJson?: string, fallback: any[] = []) => {
 };
 
 export default async function Footer() {
-  // دریافت همزمان هر دو دسته تنظیمات
+  // دریافت همزمان تنظیمات فوتر و شبکه‌های اجتماعی
   const [footerSettings, socialSettings] = await Promise.all([
     db.setting.findMany({ where: { key: { startsWith: 'FOOTER_' } } }),
     db.setting.findMany({ where: { key: { startsWith: 'SOCIAL_' } } }),
@@ -42,9 +43,19 @@ export default async function Footer() {
   const dbTexts = settingsToObject(footerSettings);
   const socialLinks = settingsToObject(socialSettings);
 
+  // دریافت لوگو از جدول logo با اولویت main-svg
+  let logoUrl = '/Logo.svg'; // پیش‌فرض
+  try {
+    const svgLogo = await db.logo.findUnique({ where: { type: 'main-svg' } });
+    if (svgLogo?.url) {
+      logoUrl = svgLogo.url;
+    }
+  } catch (err) {
+    console.error('خطا در دریافت لوگو:', err);
+  }
+
   // مقادیر پیش‌فرض
   const defaults = {
-    logoUrl: dbTexts.FOOTER_LOGO || '/logo.png',
     aboutText: dbTexts.FOOTER_ABOUT || 'شرکت مهندسی و معماری خوش صنعت پایدار...',
     address: dbTexts.FOOTER_ADDRESS || 'تهران، شهرک صنعتی، خیابان مهندسان، پلاک ۱۲',
     phone: dbTexts.FOOTER_PHONE || '+98 935 18 77 305',
@@ -78,12 +89,17 @@ export default async function Footer() {
         
         {/* ستون اول: لوگو + درباره + شبکه‌های اجتماعی */}
         <div className="lg:col-span-1">
-          <img src={defaults.logoUrl} alt="KS Logo" className="h-12 mb-6 grayscale hover:grayscale-0 transition-all object-contain" />
+          <ImageWithFallback
+            src={logoUrl}
+            fallbackSrc="/Logo.svg"
+            alt="KS Logo"
+            className="h-12 mb-6 transition-all object-contain"
+            style={{ filter: 'brightness(0) invert(1)' }}
+          />
           <div 
             className="text-sm leading-relaxed mb-6 whitespace-pre-line"
             dangerouslySetInnerHTML={{ __html: defaults.aboutText }}
           />
-          {/* شبکه‌های اجتماعی - دایره کوچک در هاور با رنگ rgb(58,58,58) */}
           {activeSocials.length > 0 && (
             <div className="flex gap-2 flex-wrap">
               {activeSocials.map(({ key, label }) => {
@@ -153,7 +169,7 @@ export default async function Footer() {
         </div>
       </div>
 
-      {/* فوتر پایین - خط جداکننده نیز به رنگ جدید */}
+      {/* فوتر پایین */}
       <div className="max-w-7xl mx-auto pt-8 border-t border-[rgb(233,233,233)] text-sm flex flex-col md:flex-row justify-between items-center gap-4">
         <p>تمامی حقوق مادی و معنوی این سایت متعلق به شرکت خوش صنعت پایدار می‌باشد.</p>
         <div className="flex gap-4">

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, use, useRef } from 'react';
-import { ChevronRight, CheckCircle, ShieldCheck, PhoneCall, Info, LayoutGrid } from 'lucide-react';
+import { ChevronRight, CheckCircle, ShieldCheck, PhoneCall, Info, LayoutGrid, Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
 
@@ -42,48 +42,65 @@ export default function SingleProductPage({ params }: { params: Promise<{ slug: 
     fetchProduct();
   }, [slug]);
 
-const downloadPDF = async () => {
-  if (!cardRef.current || !product) return;
+  // تابع برای دانلود فایل کاتالوگ (اگر وجود داشته باشد)
+  const downloadCatalogFile = () => {
+    if (!product?.catalogUrl) return;
+    // باز کردن آدرس فایل در تب جدید (که معمولاً دانلود فایل PDF را شروع می‌کند)
+    window.open(product.catalogUrl, '_blank');
+  };
 
-  const buttonsRow = cardRef.current.querySelector('.products-pdf-remove-buttons') as HTMLElement;
-  let originalDisplay = '';
-  if (buttonsRow) {
-    originalDisplay = buttonsRow.style.display;
-    buttonsRow.style.display = 'none';
-  }
+  // تابع تولید PDF از صفحه (در صورت نبود کاتالوگ اختصاصی)
+  const generateAndDownloadPDF = async () => {
+    if (!cardRef.current || !product) return;
 
-  try {
-    const dataUrl = await toPng(cardRef.current, {
-      cacheBust: true,
-      backgroundColor: '#ffffff',
-      pixelRatio: 2,
-    });
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const imgWidth = 210;
-    const pageHeight = 297;
-    const imgHeight = (cardRef.current.clientHeight * imgWidth) / cardRef.current.clientWidth;
-    let heightLeft = imgHeight;
-    let position = 0;
+    const buttonsRow = cardRef.current.querySelector('.products-pdf-remove-buttons') as HTMLElement;
+    let originalDisplay = '';
+    if (buttonsRow) {
+      originalDisplay = buttonsRow.style.display;
+      buttonsRow.style.display = 'none';
+    }
 
-    pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-    while (heightLeft >= 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
+    try {
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        backgroundColor: '#ffffff',
+        pixelRatio: 2,
+      });
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const imgWidth = 210;
+      const pageHeight = 297;
+      const imgHeight = (cardRef.current.clientHeight * imgWidth) / cardRef.current.clientWidth;
+      let heightLeft = imgHeight;
+      let position = 0;
+
       pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      const safeTitle = product.title.replace(/[^a-z0-9\u0600-\u06FF]/gi, '_');
+      pdf.save(`KH-${safeTitle}.pdf`);
+    } catch (error) {
+      console.error('خطا در تولید PDF:', error);
+      alert('مشکلی در تولید فایل PDF پیش آمد. لطفاً دوباره تلاش کنید.');
+    } finally {
+      if (buttonsRow) {
+        buttonsRow.style.display = originalDisplay;
+      }
     }
-    const safeTitle = product.title.replace(/[^a-z0-9\u0600-\u06FF]/gi, '_');
-    pdf.save(`KH-${safeTitle}.pdf`);
-  } catch (error) {
-    console.error('خطا در تولید PDF:', error);
-    alert('مشکلی در تولید فایل PDF پیش آمد. لطفاً دوباره تلاش کنید.');
-  } finally {
-    if (buttonsRow) {
-      buttonsRow.style.display = originalDisplay;
+  };
+
+  // تابع اصلی که تصمیم می‌گیرد کدام عملیات را انجام دهد
+  const handleDownloadCatalog = () => {
+    if (product?.catalogUrl) {
+      downloadCatalogFile();
+    } else {
+      generateAndDownloadPDF();
     }
-  }
-};
+  };
 
   if (loading) {
     return (
@@ -179,8 +196,9 @@ const downloadPDF = async () => {
                   <PhoneCall size={20} />
                   درخواست استعلام و سفارش
                 </a>
-                <button onClick={downloadPDF} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-4 rounded-2xl font-bold transition">
-                  دانلود کاتالوگ (PDF)
+                <button onClick={handleDownloadCatalog} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2">
+                  <Download size={18} />
+                  {product.catalogUrl ? 'دانلود کاتالوگ محصول' : 'دانلود برگه مشخصات (PDF)'}
                 </button>
               </div>
             </div>

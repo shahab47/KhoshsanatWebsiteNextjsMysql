@@ -173,11 +173,6 @@ export default function CategoryGrid() {
   return (
     <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800 dark:text-white mb-4">
-          دسته‌بندی محصولات
-        </h2>
-        <div className="w-24 h-1 bg-blue-600 mx-auto rounded-full mb-12"></div>
-
         <div className="relative rounded-2xl shadow-2xl overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div

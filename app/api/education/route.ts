@@ -4,7 +4,12 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function GET() {
   try {
     const articles = await db.article.findMany({ orderBy: { id: 'desc' } });
-    return NextResponse.json(articles);
+    // اطمینان از اینکه media همیشه آرایه است
+    const articlesWithMedia = articles.map(article => ({
+      ...article,
+      media: article.media || []
+    }));
+    return NextResponse.json(articlesWithMedia);
   } catch (error: any) {
     return NextResponse.json({ error: `خطا در دریافت: ${error.message}` }, { status: 500 });
   }
@@ -13,7 +18,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, slug, excerpt, content, category, author, readTime, imageUrl, isActive } = body;
+    const { title, slug, excerpt, content, category, author, readTime, imageUrl, media, isActive } = body;
     
     if (!title || !slug || !content || !imageUrl) {
       return NextResponse.json({ error: 'فیلدهای ضروری کامل نیستند' }, { status: 400 });
@@ -21,7 +26,7 @@ export async function POST(request: NextRequest) {
     
     const parsedReadTime = readTime ? parseInt(readTime.toString()) : null;
 
-    // 🟢 منطق جدید: اگر دسته‌بندی وارد شده بود، آن را در جدول مستقل دسته‌ها هم بررسی و ثبت کن
+    // ایجاد یا به‌روزرسانی دسته‌بندی در جدول ArticleCategory
     if (category) {
       await db.articleCategory.upsert({
         where: { title: category },
@@ -40,11 +45,13 @@ export async function POST(request: NextRequest) {
         author: author || null, 
         readTime: parsedReadTime, 
         imageUrl, 
+        media: media || [],   // ذخیره گالری (آرایه‌ای از اشیاء)
         isActive: isActive ?? true 
       }
     });
     
-    return NextResponse.json(article, { status: 201 });
+    // برگرداندن مقاله با media به صورت آرایه
+    return NextResponse.json({ ...article, media: article.media || [] }, { status: 201 });
   } catch (error: any) {
     return NextResponse.json({ error: `خطا در ثبت پایگاه داده: ${error.message}` }, { status: 500 });
   }

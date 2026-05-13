@@ -16,6 +16,7 @@ model User {
   email         String    @unique
   password      String
   role          String    @default("CONTENT_ADMIN")
+  allowedPaths  String?   // مثل "/khoshmin/products,/khoshmin/customers"
   resetToken    String?
   resetTokenExp DateTime?
   createdAt     DateTime  @default(now())
@@ -24,28 +25,28 @@ model User {
 }
 
 model Slide {
-  id               Int      @id @default(autoincrement())
+  id               Int       @id @default(autoincrement())
   imageUrl         String
-  size             Int?     // حجم فایل به بایت
+  size             Int?      // حجم فایل به بایت
   title            String?
   subtitle         String?
-  titleColor       String?  @default("#ffffff")
-  titleFontSize    String?  @default("3rem")
-  subtitleColor    String?  @default("#d1d5db")
-  subtitleFontSize String?  @default("1.25rem")
-  order            Int      @default(0)
-  isActive         Boolean  @default(true)
+  titleColor       String?   @default("#ffffff")
+  titleFontSize    String?   @default("3rem")
+  subtitleColor    String?   @default("#d1d5db")
+  subtitleFontSize String?   @default("1.25rem")
+  order            Int       @default(0)
+  isActive         Boolean   @default(true)
   type             SlideType @default(MAIN)
-  createdAt        DateTime @default(now())
+  createdAt        DateTime  @default(now())
 }
 
 model SliderSettings {
-  id            Int     @id @default(1)
-  heightDesktop String? @default("85vh")
-  heightMobile  String? @default("60vh")
-  overlayColor  String? @default("#000000")
-  overlayOpacity Float?  @default(0.7)
-  updatedAt     DateTime @updatedAt
+  id             Int      @id @default(1)
+  heightDesktop  String?  @default("85vh")
+  heightMobile   String?  @default("60vh")
+  overlayColor   String?  @default("#000000")
+  overlayOpacity Float?   @default(0.7)
+  updatedAt      DateTime @updatedAt
 }
 
 model Setting {
@@ -61,6 +62,10 @@ model Category {
   icon          String?
   imageUrl      String?       // آدرس تصویر دسته‌بندی (اختیاری)
   imageSize     Int?          // حجم تصویر به بایت
+  
+  gallery       Json?         // 🟢 اضافه شد: برای گالری تصاویر دسته‌بندی
+  catalogUrl    String?       // 🟢 اضافه شد: برای کاتالوگ PDF دسته‌بندی
+
   order         Int           @default(0)
   isActive      Boolean       @default(true)
   createdAt     DateTime      @default(now())
@@ -88,7 +93,10 @@ model Product {
   description   String      @db.Text
   shortDesc     String?
   imageUrl      String
-  gallery       Json?      
+  gallery       Json?       
+  
+  catalogUrl    String?     // 🟢 اضافه شد: برای کاتالوگ PDF محصول
+
   subcategoryId Int
   subcategory   Subcategory @relation(fields: [subcategoryId], references: [id], onDelete: Cascade)
   order         Int         @default(0)
@@ -97,7 +105,6 @@ model Product {
   updatedAt     DateTime    @updatedAt
 }
 
-// 🟢 جدول جدید برای مدیریت دسته‌بندی مقالات به صورت مستقل در دیتابیس
 model ArticleCategory {
   id        Int      @id @default(autoincrement())
   title     String   @unique
@@ -110,10 +117,11 @@ model Article {
   slug      String   @unique
   excerpt   String?  @db.Text
   content   String   @db.LongText
-  category  String?  // همچنان نام دسته را ذخیره می‌کنیم تا مقالات قبلی خراب نشوند
+  category  String?  
   author    String?
   readTime  Int?
   imageUrl  String
+  media     Json?    // فیلد جدید برای ذخیره گالری
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -157,84 +165,71 @@ model Contact {
   updatedAt DateTime @updatedAt
 }
 
-// مدل مشتری (توسعه یافته)
 model Customer {
-  id          Int       @id @default(autoincrement())
-  name        String
-  email       String    @unique
-  phone       String?
-  address     String?   @db.Text
-  company     String?
-  nationalId  String?   @unique
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
-  // روابط
-  messages    CustomerMessage[]
-  invoices    Invoice[]
-  payments    Payment[]
-  deliveries  Delivery[]
-  notes       CustomerNote[]
-  
-  // اطلاعات مالی
-  totalDebt   Float     @default(0)
-  totalPaid   Float     @default(0)
-  
-  // وضعیت
-  status      CustomerStatus @default(ACTIVE)
-  isViewedByAdmin Boolean @default(false)
-  unreadMessagesCount Int @default(0)
+  id                  Int               @id @default(autoincrement())
+  name                String
+  email               String            @unique
+  phone               String?
+  address             String?           @db.Text
+  company             String?
+  nationalId          String?           @unique
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  messages            CustomerMessage[]
+  invoices            Invoice[]
+  payments            Payment[]
+  deliveries          Delivery[]
+  notes               CustomerNote[]
+  totalDebt           Float             @default(0)
+  totalPaid           Float             @default(0)
+  status              CustomerStatus    @default(ACTIVE)
+  isViewedByAdmin     Boolean           @default(false)
+  unreadMessagesCount Int               @default(0)
 }
 
-// مدل پیام‌های مشتری
 model CustomerMessage {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   customerId Int
-  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   subject    String
-  message    String    @db.LongText
-  isRead     Boolean   @default(false)
-  adminReply String?   @db.LongText
-  createdAt  DateTime  @default(now())
+  message    String   @db.LongText
+  isRead     Boolean  @default(false)
+  adminReply String?  @db.LongText
+  createdAt  DateTime @default(now())
 }
 
-// مدل یادداشت‌های داخلی
 model CustomerNote {
-  id         Int       @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   customerId Int
-  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   adminId    Int?
-  admin      User?     @relation(fields: [adminId], references: [id])
-  note       String    @db.LongText
-  createdAt  DateTime  @default(now())
-  isNew      Boolean   @default(true)
+  admin      User?    @relation(fields: [adminId], references: [id])
+  note       String   @db.LongText
+  createdAt  DateTime @default(now())
+  isNew      Boolean  @default(true)
 }
 
-// مدل فاکتور
 model Invoice {
-  id          Int          @id @default(autoincrement())
-  invoiceNo   String       @unique
-  customerId  Int
-  customer    Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  amount      Float
-  discount    Float        @default(0)
-  tax         Float        @default(0)
-  finalAmount Float
-  description String?      @db.Text
-  status      InvoiceStatus @default(PENDING)
-  issueDate   DateTime     @default(now())
-  dueDate     DateTime?
-  paidAmount  Float        @default(0)
-  
-  // روابط
-  payments    Payment[]
-  items       InvoiceItem[]
-  
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id            Int           @id @default(autoincrement())
+  invoiceNo     String        @unique
+  customerId    Int
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amount        Float
+  discount      Float         @default(0)
+  tax           Float         @default(0)
+  finalAmount   Float
+  description   String?       @db.Text
+  status        InvoiceStatus @default(PENDING)
+  issueDate     DateTime      @default(now())
+  dueDate       DateTime?
+  paidAmount    Float         @default(0)
+  attachmentUrl String?       // اضافه شد برای آپلود فایل فاکتور
+  payments      Payment[]
+  items         InvoiceItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
-// مدل آیتم‌های فاکتور
 model InvoiceItem {
   id        Int     @id @default(autoincrement())
   invoiceId Int
@@ -245,40 +240,38 @@ model InvoiceItem {
   total     Float
 }
 
-// مدل پرداختی
 model Payment {
-  id            Int          @id @default(autoincrement())
+  id            Int           @id @default(autoincrement())
   customerId    Int
-  customer      Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
   invoiceId     Int?
-  invoice       Invoice?     @relation(fields: [invoiceId], references: [id])
+  invoice       Invoice?      @relation(fields: [invoiceId], references: [id])
   amount        Float
-  paymentDate   DateTime     @default(now())
+  paymentDate   DateTime      @default(now())
   paymentMethod PaymentMethod @default(CASH)
   receiptNo     String?
-  description   String?      @db.Text
+  description   String?       @db.Text
+  attachmentUrl String?       // اضافه شد برای آپلود رسید/فیش
 }
 
-// مدل تحویل بار
 model Delivery {
-  id           Int       @id @default(autoincrement())
-  deliveryNo   String    @unique
+  id           Int            @id @default(autoincrement())
+  deliveryNo   String         @unique
   customerId   Int
-  customer     Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
   productName  String
   quantity     Float
   unit         String?
-  deliveryDate DateTime  @default(now())
+  deliveryDate DateTime       @default(now())
   status       DeliveryStatus @default(PENDING)
-  description  String?   @db.Text
+  description  String?        @db.Text
   signatureUrl String?
   attachments  Json?
 }
 
-// ==================== Enum ها ====================
 enum SlideType {
-  MAIN      // اسلایدر اصلی سایت
-  PRODUCT   // اسلایدر گالری محصولات
+  MAIN
+  PRODUCT
 }
 
 enum CustomerStatus {

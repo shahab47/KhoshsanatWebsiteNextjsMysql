@@ -1,0 +1,111 @@
+# ============================================================================
+# راهنمای فعال‌سازی پورت Adminer در سرور (VPS):
+# دستور زیر را در ترمینال سرور اجرا کنید تا پورت 8081 باز شود:
+# sudo ufw allow 8081/tcp
+# ============================================================================
+
+version: '3.8'
+
+services:
+  # ============================================
+  # ۱. Nginx به عنوان Reverse Proxy و Load Balancer
+  # ============================================
+  nginx:
+    image: nginx:alpine
+    container_name: ks_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs/nginx:/var/log/nginx
+    depends_on:
+      - nextjs_app
+      - imgproxy
+    networks:
+      - ks_network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # ۲. Imgproxy برای پردازش تصاویر
+  # ============================================
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    container_name: ks_imgproxy
+    expose:
+      - "8080"
+    environment:
+      - IMGPROXY_KEY=57ecc9c430cf3ae3370002bea013c5fbbe46962eb83e4402715c0009e1c6bd95
+      - IMGPROXY_SALT=24b7b48e7027ec8d0c7494e45206c0c6137142c69ff1a4cc7ee72098590183d7
+      - IMGPROXY_MALLOC=jemalloc
+      - IMGPROXY_WORKERS=2
+      - IMGPROXY_READ_TIMEOUT=30
+      - IMGPROXY_WRITE_TIMEOUT=30
+      - IMGPROXY_CACHE_MAX_SIZE=1000
+      - IMGPROXY_USE_S3=true
+      - IMGPROXY_S3_ENDPOINT=http://45.149.78.107:9000
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=StrongPassword47474774
+      - IMGPROXY_S3_REGION=us-east-1
+    networks:
+      - ks_network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ============================================
+  # ۳. برنامه اصلی Next.js
+  # ============================================
+  nextjs_app:
+    image: khoshsanatv5-app:latest
+    container_name: ks_nextjs
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=mysql://khoshsanat_user:47474774Aakh@45.149.78.107:3306/khoshsanat_server_db
+      - IMGPROXY_URL=http://imgproxy:8080
+      - IMGPROXY_KEY=57ecc9c430cf3ae3370002bea013c5fbbe46962eb83e4402715c0009e1c6bd95
+      - IMGPROXY_SALT=24b7b48e7027ec8d0c7494e45206c0c6137142c69ff1a4cc7ee72098590183d7
+      - MINIO_USE_SSL=false
+      - MINIO_ENDPOINT=45.149.78.107
+      - MINIO_PORT=9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=StrongPassword47474774
+      - MINIO_BUCKET_NAME=khoshsanat-media
+      - NEXT_TELEMETRY_DISABLED=1
+    depends_on:
+      - imgproxy
+    networks:
+      - ks_network
+    restart: always
+
+  # ============================================
+  # ۴. Adminer برای مدیریت دیتابیس (MySQL Manager)
+  # ============================================
+  adminer:
+    image: adminer:latest
+    container_name: ks_adminer
+    restart: always
+    ports:
+      - "8081:8080" # دسترسی از طریق http://ip-server:8081
+    environment:
+      - ADMINER_DEFAULT_SERVER=45.149.78.107 # آی‌پی سرور دیتابیس
+    networks:
+      - ks_network
+
+# ============================================
+# شبکه داخلی
+# ============================================
+networks:
+  ks_network:
+    driver: bridge
+    name: ks_network

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { Search, Package, LayoutGrid, Filter, ArrowRight, ChevronRight } from 'lucide-react';
+import { Search, Package, LayoutGrid, Filter, ArrowRight, ChevronRight, Download, FileText, Building2, FolderTree } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
-// 🔴 مرحله ۱: تمام کدهای شما را به یک کامپوننت داخلی (بدون export default) منتقل کردیم
+// کامپوننت داخلی با تمام منطق
 function ProductsStoreContent() {
   const searchParams = useSearchParams();
   const categorySlug = searchParams.get('category');
@@ -16,6 +16,23 @@ function ProductsStoreContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
+  const [companyCatalogUrl, setCompanyCatalogUrl] = useState<string | null>(null);
+
+  // دریافت کاتالوگ عمومی شرکت
+  useEffect(() => {
+    const fetchCompanyCatalog = async () => {
+      try {
+        const res = await fetch('/api/company-catalog');
+        if (res.ok) {
+          const data = await res.json();
+          setCompanyCatalogUrl(data.url);
+        }
+      } catch (error) {
+        console.error('Error fetching company catalog:', error);
+      }
+    };
+    fetchCompanyCatalog();
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -56,6 +73,11 @@ function ProductsStoreContent() {
     }
   }, [categories, categorySlug, subcategoryIdParam]);
 
+  // پیدا کردن دسته‌بندی انتخاب شده (برای کاتالوگ)
+  const selectedCategoryData = selectedCategory
+    ? categories.find(c => c.id === selectedCategory)
+    : null;
+
   const filteredProducts = products.filter(product => {
     let match = true;
     if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) match = false;
@@ -81,7 +103,7 @@ function ProductsStoreContent() {
   return (
     <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
       
-      {/* Breadcrumb - بدون هیچ فاصله‌ای از بالا */}
+      {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
           <a href="/" className="hover:text-blue-600 transition">خانه</a>
@@ -106,8 +128,9 @@ function ProductsStoreContent() {
       <div className="max-w-7xl mx-auto px-6 py-10">
         <div className="flex flex-col lg:flex-row gap-8">
           
-          {/* سایدبار (فیلترها) */}
+          {/* سایدبار */}
           <div className="w-full lg:w-1/4 space-y-6">
+            {/* جستجو */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Search size={18} className="text-blue-600" />
@@ -124,6 +147,54 @@ function ProductsStoreContent() {
               </div>
             </div>
 
+            {/* کاتالوگ‌ها (شرکت + دسته‌بندی) */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+              <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                <Download size={18} className="text-blue-600" />
+                دانلود کاتالوگ‌ها
+              </h3>
+              
+              {/* کاتالوگ شرکت (همیشه نمایش داده می‌شود در صورت وجود) */}
+              {companyCatalogUrl && (
+                <a
+                  href={companyCatalogUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition group"
+                >
+                  <div className="flex items-center gap-2">
+                    <Building2 size={18} className="text-blue-600" />
+                    <span className="text-sm font-bold text-gray-700 group-hover:text-blue-700">کاتالوگ جامع شرکت</span>
+                  </div>
+                  <Download size={16} className="text-blue-500" />
+                </a>
+              )}
+
+              {/* کاتالوگ دسته‌بندی انتخاب شده */}
+              {selectedCategoryData?.catalogUrl && (
+                <a
+                  href={selectedCategoryData.catalogUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition group"
+                >
+                  <div className="flex items-center gap-2">
+                    <FolderTree size={18} className="text-indigo-600" />
+                    <span className="text-sm font-bold text-gray-700 group-hover:text-indigo-700">
+                      کاتالوگ دسته {selectedCategoryData.title}
+                    </span>
+                  </div>
+                  <Download size={16} className="text-indigo-500" />
+                </a>
+              )}
+
+              {/* اگر هیچ کاتالوگی وجود نداشت */}
+              {!companyCatalogUrl && !selectedCategoryData?.catalogUrl && (
+                <p className="text-xs text-gray-400 text-center py-2">هیچ کاتالوگی برای دانلود موجود نیست.</p>
+              )}
+            </div>
+
+            {/* دسته‌بندی‌ها */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
               <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Filter size={18} className="text-blue-600" />
@@ -164,7 +235,7 @@ function ProductsStoreContent() {
             </div>
           </div>
 
-          {/* گالری محصولات */}
+          {/* گالری محصولات (بدون دکمه دانلود برای محصولات تکی) */}
           <div className="w-full lg:w-3/4">
             <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
               <div className="flex items-center gap-2 text-gray-600">
@@ -228,7 +299,7 @@ function ProductsStoreContent() {
   );
 }
 
-// 🔴 مرحله ۲: کامپوننت اصلی (که Export می‌شود) را با Suspense می‌پوشانیم
+// کامپوننت اصلی که با Suspense صادر می‌شود
 export default function ProductsStorePage() {
   return (
     <Suspense 

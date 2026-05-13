@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { SlideType } from '@prisma/client'; // ایمپورت enum از Prisma
+import { SlideType } from '@prisma/client';
 
-// GET: دریافت اسلایدها با قابلیت فیلتر بر اساس type (query parameter)
+// تابع کمکی برای دریافت حجم تصویر از URL
+async function getImageSizeFromUrl(url: string): Promise<number | null> {
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    const contentLength = response.headers.get('content-length');
+    if (contentLength) {
+      return parseInt(contentLength);
+    }
+    
+    // اگر HEAD جواب نداد، GET می‌کنیم (فقط برای تصاویر کوچک)
+    const fullResponse = await fetch(url, { method: 'GET' });
+    const buffer = await fullResponse.arrayBuffer();
+    return buffer.byteLength;
+  } catch (error) {
+    console.error('Error getting image size:', error);
+    return null;
+  }
+}
+
+// GET: دریافت اسلایدها
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -14,7 +33,18 @@ export async function GET(request: NextRequest) {
       where: whereClause,
       orderBy: { order: 'asc' },
     });
-    return NextResponse.json(slides);
+    
+    // اضافه کردن حجم به صورت مجازی (اختیاری)
+    const slidesWithSize = await Promise.all(slides.map(async (slide) => {
+      if (slide.size) {
+        return slide;
+      }
+      // اگر size در دیتابیس نیست، از URL محاسبه کن
+      const size = await getImageSizeFromUrl(slide.imageUrl);
+      return { ...slide, calculatedSize: size };
+    }));
+    
+    return NextResponse.json(slidesWithSize);
   } catch (error) {
     console.error('خطا در GET اسلایدها:', error);
     return NextResponse.json(
@@ -24,7 +54,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: ایجاد اسلاید جدید (دریافت imageUrl، size، type و سایر فیلدهای اختیاری)
+// POST: ایجاد اسلاید جدید با محاسبه خودکار حجم
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -34,7 +64,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'آدرس تصویر الزامی است' }, { status: 400 });
     }
 
-    // اعتبارسنجی type (اگر ارسال شده باشد باید یکی از مقادیر enum باشد)
+    // محاسبه خودکار حجم اگر ارسال نشده باشد
+    let finalSize = size;
+    if (!finalSize) {
+      finalSize = await getImageSizeFromUrl(imageUrl);
+      console.log(`Auto-calculated size for ${imageUrl}: ${finalSize ? (finalSize / 1024).toFixed(1) + 'KB' : 'unknown'}`);
+    }
+
     let validType: SlideType = SlideType.MAIN;
     if (type && Object.values(SlideType).includes(type as SlideType)) {
       validType = type as SlideType;
@@ -43,7 +79,7 @@ export async function POST(request: NextRequest) {
     const newSlide = await db.slide.create({
       data: {
         imageUrl,
-        size: size || null,
+        size: finalSize,
         title: null,
         subtitle: null,
         titleColor: '#ffffff',
@@ -56,14 +92,22 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ success: true, slide: newSlide });
+    return NextResponse.json({ 
+      success: true, 
+      slide: newSlide,
+      sizeInfo: finalSize ? {
+        bytes: finalSize,
+        kb: (finalSize / 1024).toFixed(1),
+        mb: (finalSize / 1024 / 1024).toFixed(2)
+      } : null
+    });
   } catch (error) {
     console.error('خطا در POST اسلاید:', error);
     return NextResponse.json({ error: 'خطا در ذخیره اسلاید' }, { status: 500 });
   }
 }
 
-// PUT: ویرایش کامل یا جزئی یک اسلاید (امکان تغییر type نیز وجود دارد)
+// PUT: ویرایش اسلاید
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
@@ -78,6 +122,7 @@ export async function PUT(request: NextRequest) {
       order,
       isActive,
       type,
+      imageUrl, // اضافه شد
     } = body;
 
     if (!id) {
@@ -98,6 +143,16 @@ export async function PUT(request: NextRequest) {
     if (isActive !== undefined) updateData.isActive = isActive;
     if (type !== undefined && Object.values(SlideType).includes(type as SlideType)) {
       updateData.type = type as SlideType;
+    }
+    
+    // اگر imageUrl تغییر کرد، حجم رو دوباره محاسبه کن
+    if (imageUrl !== undefined) {
+      updateData.imageUrl = imageUrl;
+      const newSize = await getImageSizeFromUrl(imageUrl);
+      if (newSize) {
+        updateData.size = newSize;
+        console.log(`Updated size for slide ${id}: ${(newSize / 1024).toFixed(1)}KB`);
+      }
     }
 
     const updatedSlide = await db.slide.update({

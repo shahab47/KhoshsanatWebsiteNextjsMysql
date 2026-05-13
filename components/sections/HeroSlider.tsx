@@ -131,7 +131,7 @@ export default function HeroSlider({ slides, settings }: HeroSliderProps) {
 
         <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-20">
           <Link
-            href="#catalog"
+            href="/product"
             className="flex items-center justify-center gap-1 bg-transparent border border-white text-white rounded-full px-3 py-1.5 md:px-4 md:py-2 font-medium text-sm md:text-base transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 group"
           >
             مشاهده کاتالوگ محصولات
