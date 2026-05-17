@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+
+
 const nextConfig = {
   // تنظیمات افزایش محدودیت حجم آپلود فایل (اضافه شده برای کاتالوگ‌ها)
   experimental: {
@@ -8,7 +10,7 @@ const nextConfig = {
     },
   },
 
-  // تنظیمات تصاویر
+  // تنظیمات تصاویر و دسترسی به هاست‌های خارجی
   images: {
     remotePatterns: [
       {
@@ -37,6 +39,9 @@ const nextConfig = {
   // خروجی مستقل برای داکر
   output: 'standalone',
   
+  // هدایت هوشمند ترافیک رسانه‌ای مینیو در محیط توسعه ویندوز
+
+
   // هدرهای امنیتی
   async headers() {
     return [

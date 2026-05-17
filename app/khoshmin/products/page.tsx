@@ -8,8 +8,12 @@ import {
   LayoutList, XCircle, Crop, X, Check, Settings, Type, Palette, Book, Copy, CheckCheck
 } from 'lucide-react';
 import HitmanTextEditor from '../../../components/hitmantexteditor';
+//import * as novel from 'novel';
 import GalleryManager, { GalleryItem } from '../../../components/GalleryManager';
 import { useModal } from '@/app/contexts/ModalContext';
+
+import dynamic from 'next/dynamic';
+//console.log(Object.keys(novel));
 
 // ==================== توابع کمکی ====================
 const apiFetch = async (url: string, options?: RequestInit) => {
@@ -953,7 +957,11 @@ export default function ProfessionalProductsManager() {
 
               <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-700 border-b pb-3 mb-6">توضیحات کامل محصول *</h3>
-                <HitmanTextEditor value={formData.description} onChange={(html: string) => setFormData({ ...formData, description: html })} slug={formData.slug} />
+
+                <HitmanTextEditor 
+                  initialValue={formData.description}
+                  onChange={(content) => setFormData({ ...formData, description: content })}
+                />
               </div>
             </div>
           )}

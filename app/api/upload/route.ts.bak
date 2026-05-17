@@ -1,0 +1,590 @@
+// مسیر فایل: src/app/api/upload/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { uploadToMinio, deleteFromMinio } from '@/lib/minio';
+import crypto from 'crypto';
+import { Jimp, JimpMime } from 'jimp';
+import { cookies } from 'next/headers';
+import { verifyToken } from '@/lib/auth';
+
+// ============================================================================
+// بخش اول: متغیرهای امنیتی و اعتبارسنجی
+// ============================================================================
+
+const ALLOWED_MIME_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'application/pdf',
+  'text/plain'
+];
+
+const MAX_FILE_SIZE = 250 * 1024 * 1024; 
+
+const ALLOWED_TYPES = [
+  'sliders', 'education', 'editor-media', 'general',
+  'product-slider', 'categories', 'products', 'projects',
+  'company_catalog', 'KSCataloge'
+];
+
+const CUSTOM_NAME_REGEX = /^[\w\-\s\.\u0600-\u06FF]+$/;
+
+interface CompressionResult {
+  buffer: Buffer;
+  mimeType: string;
+  wasCompressed: boolean;
+  used: 'sharp' | 'jimp' | 'none';
+}
+
+// ============================================================================
+// بخش دوم: توابع احراز هویت
+// ============================================================================
+
+async function getAuthenticatedUser() {
+  console.log("🔐 [AUTH]: شروع فرآیند احراز هویت کاربر مدیریتی...");
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get('admin_token')?.value;
+    if (!token) {
+      console.warn("⚠️ [AUTH_WARN]: توکن ادمین (admin_token) در کوکی‌ها یافت نشد.");
+      return null;
+    }
+    console.log("🎫 [AUTH_DEBUG]: توکن دریافت شد، در حال تایید اعتبار سنجی توکن...");
+    const user = await verifyToken(token);
+    if (user) {
+      console.log(`✅ [AUTH_SUCCESS]: هویت مدیر تایید شد. نام کاربری/شناسه: ${user.id || 'مدیر'}`);
+    } else {
+      console.warn("❌ [AUTH_WARN]: توکن نامعتبر است یا منقضی شده است.");
+    }
+    return user;
+  } catch (error: any) {
+    console.error('❌ [AUTH_CRITICAL_ERROR]: خطا در بخش زیرسیستم احراز هویت:', error.message);
+    return null;
+  }
+}
+
+// ============================================================================
+// بخش سوم: توابع پردازش و فشرده‌سازی (Sharp -> Jimp -> Fallback)
+// ============================================================================
+
+async function compressWithSharp(buffer: Buffer, mimeType: string): Promise<CompressionResult | null> {
+  console.log(`🖼️ [COMPRESSION_SHARP]: تلاش برای فشرده‌سازی با Sharp. فرمت ورودی: ${mimeType}`);
+  try {
+    const sharpModule = await import('sharp');
+    const sharp = sharpModule.default || sharpModule;
+
+    const maxDim = 1920;
+    const pipeline = sharp(buffer).resize(maxDim, maxDim, { fit: 'inside', withoutEnlargement: true });
+    
+    let outputBuffer: Buffer;
+    let outputMime = mimeType;
+
+    switch (mimeType) {
+      case 'image/jpeg':
+      case 'image/jpg':
+        outputBuffer = await pipeline.jpeg({ quality: 75 }).toBuffer();
+        break;
+      case 'image/png':
+        console.log("🎨 [COMPRESSION_SHARP_DEBUG]: تبدیل تصویر PNG به فرمت بهینه JPEG برای کاهش حجم حداکثری...");
+        outputBuffer = await pipeline.jpeg({ quality: 75 }).toBuffer();
+        outputMime = 'image/jpeg';
+        break;
+      case 'image/webp':
+        outputBuffer = await pipeline.webp({ quality: 75 }).toBuffer();
+        break;
+      case 'image/gif':
+        outputBuffer = await pipeline.toBuffer();
+        break;
+      default:
+        console.log(`⚠️ [COMPRESSION_SHARP_DEBUG]: فرمت ${mimeType} توسط ماژول Sharp پشتیبانی فشرده‌سازی ندارد.`);
+        return null;
+    }
+
+    console.log(`📊 [COMPRESSION_SHARP_STATS]: حجم اولیه: ${buffer.length} بایت | حجم خروجی Sharp: ${outputBuffer.length} بایت`);
+    if (outputBuffer.length < buffer.length) {
+      console.log("✅ [COMPRESSION_SHARP_SUCCESS]: ماژول Sharp با موفقیت حجم تصویر را کاهش داد.");
+      return { buffer: outputBuffer, mimeType: outputMime, wasCompressed: true, used: 'sharp' };
+    }
+    console.log("ℹ️ [COMPRESSION_SHARP_INFO]: حجم فشرده شده بیشتر از فایل اصلی بود، استفاده از نسخه اصلی.");
+    return null;
+  } catch (err: any) {
+    console.warn('⚠️ [COMPRESSION_SHARP_FAILED]: فشرده‌سازی خط اول با Sharp شکست خورد. انتقال به لایه بعد (Jimp)...', err.message);
+    return null;
+  }
+}
+
+async function compressWithJimp(buffer: Buffer, mimeType: string): Promise<CompressionResult | null> {
+  console.log(`🖼️ [COMPRESSION_JIMP]: تلاش برای فشرده‌سازی لایه دوم با استفاده از Jimp...`);
+  try {
+    const image = await Jimp.read(buffer);
+    const maxDim = 1920;
+
+    const width = image.bitmap.width;
+    const height = image.bitmap.height;
+    console.log(`📐 [COMPRESSION_JIMP_DEBUG]: ابعاد اولیه تصویر: ${width}x${height}`);
+
+    if (width > maxDim || height > maxDim) {
+      if (width > height) {
+        console.log(`✂️ [COMPRESSION_JIMP_DEBUG]: تغییر عرض تصویر به ${maxDim} پیکسل براساس نسبت تناسب...`);
+        image.resize({ w: maxDim });
+      } else {
+        console.log(`✂️ [COMPRESSION_JIMP_DEBUG]: تغییر ارتفاع تصویر به ${maxDim} پیکسل براساس نسبت تناسب...`);
+        image.resize({ h: maxDim });
+      }
+    }
+
+    console.log("💾 [COMPRESSION_JIMP_DEBUG]: خروجی گرفتن نهایی با بافر JPEG (کیفیت ۷۵)...");
+    const outputBuffer = await image.getBuffer(JimpMime.jpeg, { quality: 75 });
+    const wasCompressed = outputBuffer.length < buffer.length;
+    
+    console.log(`📊 [COMPRESSION_JIMP_STATS]: حجم اولیه: ${buffer.length} بایت | حجم خروجی جیمپ: ${outputBuffer.length} بایت`);
+    return {
+      buffer: outputBuffer,
+      mimeType: JimpMime.jpeg,
+      wasCompressed,
+      used: 'jimp'
+    };
+  } catch (err: any) {
+    console.warn('❌ [COMPRESSION_JIMP_CRITICAL_ERROR]: لایه فشرده‌سازی جیمپ هم با شکست مواجه شد:', err.message);
+    return null;
+  }
+}
+
+async function compressImageBuffer(buffer: Buffer, mimeType: string): Promise<CompressionResult> {
+  console.log(`🛠️ [COMPRESS_MANAGER]: بررسی شرایط فشرده‌سازی فایل...`);
+  try {
+    if (!mimeType.startsWith('image/')) {
+      console.log(`ℹ️ [COMPRESS_MANAGER_INFO]: فایل یک تصویر نیست (${mimeType}). عملیات فشرده‌سازی لغو شد.`);
+      return { buffer, mimeType, wasCompressed: false, used: 'none' };
+    }
+
+    if (buffer.length < 500 * 1024) {
+      console.log(`ℹ️ [COMPRESS_MANAGER_INFO]: حجم فایل کمتر از 500 کیلوبایت است (${Math.round(buffer.length / 1024)} KB). فشرده‌سازی نیاز نیست.`);
+      return { buffer, mimeType, wasCompressed: false, used: 'none' };
+    }
+
+    // ۱. اجرای خط اول فشرده سازی با Sharp
+    const sharpResult = await compressWithSharp(buffer, mimeType);
+    if (sharpResult) return sharpResult;
+
+    // ۲. فالبک به خط دوم فشرده سازی با Jimp
+    const jimpResult = await compressWithJimp(buffer, mimeType);
+    if (jimpResult) return jimpResult;
+
+    console.log("⚠️ [COMPRESS_MANAGER_WARN]: هیچ‌کدام از فشرده‌سازها راندمان نداشتند. استفاده از فایل خام.");
+    return { buffer, mimeType, wasCompressed: false, used: 'none' };
+  } catch (managerErr: any) {
+    console.error("❌ [COMPRESS_MANAGER_ERROR]: خطای غیرمنتظره در لایه ارکستریتور فشرده‌سازی:", managerErr.message);
+    return { buffer, mimeType, wasCompressed: false, used: 'none' };
+  }
+}
+
+function validateFile(file: File | null, type: string, customName?: string | null): string | null {
+  console.log(`🩺 [VALIDATOR]: آغاز بررسی پارامترها و فرمت فایل ارسالی...`);
+  try {
+    if (!file) {
+      console.warn("❌ [VALIDATOR_ERROR]: آبجکت فایل کاملاً تهی (null) است.");
+      return 'فایلی ارسال نشده است.';
+    }
+    console.log(`📄 [VALIDATOR_DEBUG]: نام: "${file.name}" | نوع: "${file.type}" | حجم: ${file.size} بایت`);
+    
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      console.warn(`❌ [VALIDATOR_ERROR]: فرمت فایل [${file.type}] در لیست مجاز سیستم نیست.`);
+      return 'نوع فایل نامعتبر است.';
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      console.warn(`❌ [VALIDATOR_ERROR]: حجم فایل (${Math.round(file.size / 1024 / 1024)} MB) بیشتر از سقف مجاز (${Math.round(MAX_FILE_SIZE / 1024 / 1024)} MB) است.`);
+      return `حجم فایل بیشتر از ${Math.round(MAX_FILE_SIZE / (1024 * 1024))} مگابایت است. سرور نمی‌تواند این فایل را بپذیرد.`;
+    }
+    if (!ALLOWED_TYPES.includes(type)) {
+      console.warn(`❌ [VALIDATOR_ERROR]: مسیر پوشه یا نوع ذخیره‌سازی "${type}" غیرمجاز است.`);
+      return 'دسته‌بندی یا مسیر ذخیره‌سازی نامعتبر است.';
+    }
+    if (customName) {
+      console.log(`🔤 [VALIDATOR_DEBUG]: بررسی ساختار نام سفارشی فایل: "${customName}"`);
+      if (!CUSTOM_NAME_REGEX.test(customName)) {
+        console.warn("❌ [VALIDATOR_ERROR]: نام سفارشی شامل کاراکترهای غیرمجاز، هک یا علائم مخرب سیستم است.");
+        return 'نام سفارشی شامل کاراکترهای غیرمجاز است.';
+      }
+    }
+    console.log("✅ [VALIDATOR_SUCCESS]: تمامی فیلدها و ساختار فایل تایید صلاحیت شدند.");
+    return null;
+  } catch (valErr: any) {
+    console.error("❌ [VALIDATOR_CRITICAL_ERROR]: خطا در هنگام اجرای کدهای اعتبارسنجی:", valErr.message);
+    return "خطای داخلی سیستم در بخش اعتبارسنجی فایل.";
+  }
+}
+
+// ============================================================================
+// متد GET (بهینه‌سازی تصاویر با Imgproxy)
+// ============================================================================
+
+const hexToBuffer = (hex: string): Buffer => Buffer.from(hex, 'hex');
+const urlSafeBase64 = (buffer: Buffer): string => buffer.toString('base64').replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
+  console.log("🌐 [GET_ROUTE]: یک درخواست دریافت رسانه و بهینه‌سازی تصاویر ثبت شد.");
+  try {
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get('url');
+    const w = searchParams.get('w') || '0';
+    const q = searchParams.get('q') || '75';
+
+    console.log(`🔗 [GET_DEBUG]: پارامترها -> TargetURL: "${url}" | Width: ${w} | Quality: ${q}`);
+
+    if (!url) {
+      console.warn("❌ [GET_ERROR]: پارامتر آدرس فایل (url) ارسال نشده است.");
+      return new NextResponse('URL missing', { status: 400 });
+    }
+    
+    const isImage = /\.(jpg|jpeg|png|webp|gif)$/i.test(url);
+    if (!isImage) {
+      console.log("ℹ️ [GET_INFO]: فایل درخواستی تصویر استاتیک وب نیست. ریدایرکت مستقیم به لینک اصلی فایل...");
+      return NextResponse.redirect(url);
+    }
+    
+    const key = process.env.IMGPROXY_KEY;
+    const salt = process.env.IMGPROXY_SALT;
+    const imgproxyHost = process.env.IMGPROXY_URL;
+    
+    console.log(`📡 [GET_DEBUG]: بررسی پیکربندی ایمیج پروکسی سرور -> Host: ${imgproxyHost} | HasKey: ${!!key} | HasSalt: ${!!salt}`);
+
+    if (!key || !salt || !imgproxyHost) {
+      console.warn("⚠️ [GET_WARN]: تنظیمات ماژول Imgproxy در فایل محیطی سرور یافت نشد. ریدایرکت اضطراری به آدرس خام فایل...");
+      return NextResponse.redirect(url);
+    }
+    
+    console.log("🔒 [GET_DEBUG]: در حال توزیع ساختار توکن امنیتی HMAC و آدرس Base64 برای Imgproxy...");
+    const encodedUrl = urlSafeBase64(Buffer.from(url));
+    const path = `/rs:fill:${w}:0:0/q:${q}/${encodedUrl}`;
+    const hmac = crypto.createHmac('sha256', hexToBuffer(key));
+    hmac.update(hexToBuffer(salt));
+    hmac.update(path);
+    const signature = urlSafeBase64(hmac.digest());
+    const resultUrl = `${imgproxyHost}/${signature}${path}`;
+    
+    console.log(`🚀 [GET_DEBUG]: ارسال درخواست دریافت تصویر فشرده از ریزورور Imgproxy به آدرس: ${resultUrl}`);
+    try {
+      const response = await fetch(resultUrl);
+      if (!response.ok) throw new Error(`سرور پردازش تصویر پاسخ ناموفق داد. کد وضعیت: ${response.status}`);
+      
+      const blob = await response.arrayBuffer();
+      console.log(`✅ [GET_SUCCESS]: تصویر بهینه‌شده از Imgproxy دریافت و ارسال شد. حجم بافر: ${blob.byteLength} بایت`);
+      return new NextResponse(blob, { 
+        headers: { 
+          'Content-Type': response.headers.get('Content-Type') || 'image/webp', 
+          'Cache-Control': 'public, max-age=31536000, immutable' 
+        } 
+      });
+    } catch (e: any) {
+      console.error('❌ [GET_INNER_ERROR]: خطا در برقراری ارتباط نهایی یا دریافت پاسخ از لایه کانکسر Imgproxy:', e.message);
+      console.log("🔄 [GET_INFO]: فالبک ریدایرکت به لینک فایل اصلی رسانه...");
+      return NextResponse.redirect(url);
+    }
+  } catch (globalGetErr: any) {
+    console.error("❌❌❌ [GET_ROUTE_CRITICAL_ERROR]: متد GET کلاً با خطای مهلک مواجه شد:", globalGetErr.message);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+// ============================================================================
+// متد POST (آپلود با احراز هویت و فشرده‌سازی)
+// ============================================================================
+
+export async function POST(request: Request): Promise<NextResponse> {
+  console.log("========================================================================");
+  console.log("📥 [POST_ROUTE] [START]: درخواست جدید آپلود فایل خام (POST) وارد شد.");
+  console.log("========================================================================");
+  try {
+    // ۱. احراز هویت ادمین
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      console.warn("❌ [POST_ROUTE_AUTH_FAILED]: دسترسی غیرمجاز. هیچ کاربری لاگین نکرده است.");
+      return NextResponse.json(
+        { success: false, error: 'لطفاً وارد حساب کاربری خود شوید.', message: 'لطفاً وارد حساب کاربری خود شوید.' },
+        { status: 401 }
+      );
+    }
+
+    // ۲. پارس کردن فرم دیتا همراه تری کچ لایه اول
+    console.log("📂 [POST_ROUTE] [مرحله ۱/۴]: تلاش برای استخراج بدنه فرم دیتا (FormData)...");
+    let formData: FormData;
+    try {
+      formData = await request.formData();
+      console.log("✅ [POST_ROUTE_SUCCESS]: اطلاعات فیلدهای فرم با موفقیت بازخوانی شدند.");
+    } catch (err: any) {
+      console.error("❌ [POST_ROUTE_ERROR] [FORMDATA_PARSE_FAILED]: خطا در ساختار بافر یا استخراج فرم دیتا:", err.message);
+      if (err.message?.includes('boundary') || err.message?.includes('exceeded')) {
+        return NextResponse.json(
+          { success: false, error: 'حجم فایل بیش از حد مجاز سرور است یا ارتباط اینترنت شما در حین آپلود قطع شد.', message: 'حجم فایل بیش از حد مجاز است.' },
+          { status: 413 }
+        );
+      }
+      return NextResponse.json(
+        { success: false, error: 'خطا در دریافت اطلاعات فایل. لطفاً صفحه را رفرش کرده و دوباره تلاش کنید.', message: 'خطا در دریافت اطلاعات فایل.' },
+        { status: 400 }
+      );
+    }
+
+    // ۳. خواندن فیلدهای ارسالی
+    const file = formData.get('file') as File | null;
+    const type = (formData.get('type') as string) || 'general';
+    const folder = (formData.get('folder') as string) || type; 
+    const customName = formData.get('customName') as string | null;
+    const skipCompression = formData.get('skipCompression') === 'true';
+
+    console.log(`📦 [POST_ROUTE_DEBUG]: تنظیمات ورودی آپلودر -> FolderTarget: "${folder}" | Type: "${type}" | SkipCompression: ${skipCompression} | CustomName: "${customName || 'ندارد'}"`);
+
+    // ۴. اعتبارسنجی فایل
+    console.log("📂 [POST_ROUTE] [مرحله ۲/۴]: ارجاع فایل به سیستم لایه اعتبارسنجی...");
+    const typeToValidate = ALLOWED_TYPES.includes(folder) ? folder : type;
+    const validationError = validateFile(file, typeToValidate, customName);
+    
+    if (validationError) {
+      console.warn(`❌ [POST_ROUTE_VALIDATION_REJECT]: فایل ارسالی رد صلاحیت شد. علت: ${validationError}`);
+      return NextResponse.json({ success: false, error: validationError, message: validationError }, { status: 400 });
+    }
+
+    // ۵. تبدیل به بافر و ثبت حجم اولیه
+    const validFile = file!;
+    console.log("🔄 [POST_ROUTE_DEBUG]: تبدیل آرایه فیزیکی فایل کلاینت به شیء ArrayBuffer لینوکس...");
+    const fileArrayBuffer = await validFile.arrayBuffer();
+    let currentBuffer = Buffer.from(fileArrayBuffer);
+    
+    let finalMimeType = validFile.type;
+    let finalExtension = validFile.name.split('.').pop() || 'bin';
+    let wasCompressed = false;
+    let compressionRatio = 0;
+    let toolUsed: 'sharp' | 'jimp' | 'none' = 'none';
+    const originalSize = currentBuffer.length;
+
+    console.log(`📊 [POST_ROUTE_STATS]: حجم فیزیکی بایت فایل ورودی: ${originalSize} بایت.`);
+
+    // ۶. لایه ارکستریتور فشرده‌سازی در صورت لزوم
+    console.log("📂 [POST_ROUTE] [مرحله ۳/۴]: ارزیابی و ورود به چرخه فشرده‌سازی تصویر...");
+    try {
+      if (!skipCompression && finalMimeType.startsWith('image/')) {
+        const compressed = await compressImageBuffer(currentBuffer, finalMimeType);
+        currentBuffer = Buffer.from(compressed.buffer);
+        finalMimeType = compressed.mimeType;
+        wasCompressed = compressed.wasCompressed;
+        toolUsed = compressed.used;
+        
+        if (wasCompressed && originalSize > 0) {
+          compressionRatio = ((originalSize - currentBuffer.length) / originalSize) * 100;
+          console.log(`📉 [POST_ROUTE_COMPRESS_SUCCESS]: فشرده‌سازی موفق با موفقیت انجام شد! نسبت کاهش: ${Math.round(compressionRatio)}% توسط ابزار ${toolUsed}`);
+        }
+        
+        if (finalMimeType === 'image/jpeg') finalExtension = 'jpg';
+        else if (finalMimeType === 'image/webp') finalExtension = 'webp';
+        else if (finalMimeType === 'image/png') finalExtension = 'png';
+        else if (finalMimeType === 'image/gif') finalExtension = 'gif';
+      }
+    } catch (compressLoopError: any) {
+      console.error("❌ [POST_ROUTE_ERROR] [COMPRESSION_CRASH]: بخش کدهای لایه داخلی فشرده‌سازی کرش کرد. فایل خام ارسال می‌شود:", compressLoopError.message);
+    }
+
+    // ۷. ساخت نام نهایی یکتا
+    let uniqueName: string;
+    if (customName) {
+      uniqueName = `${customName}.${finalExtension}`;
+      console.log(`📝 [POST_ROUTE_DEBUG]: ساخت نام فایل با منطق ثابت ادمین: "${uniqueName}"`);
+    } else {
+      const baseName = validFile.name.replace(/\s+/g, '-').split('.').shift() || 'file';
+      uniqueName = `${Date.now()}-${baseName}.${finalExtension}`;
+      console.log(`📝 [POST_ROUTE_DEBUG]: ساخت نام فایل با زمان‌بندی منحصر به فرد: "${uniqueName}"`);
+    }
+
+    // ۸. ارسال فیزیکی بافر نهایی به مینیو S3
+    console.log("📂 [POST_ROUTE] [مرحله ۴/۴]: فراخوانی متد S3 ابزار uploadToMinio و ارسال نهایی بافر...");
+    let fileUrl: string;
+    try {
+      fileUrl = await uploadToMinio(currentBuffer, uniqueName, folder, finalMimeType);
+      console.log(`🚀 [POST_ROUTE_SUCCESS_UPLOAD]: فایل با موفقیت در باکت مینیو ثبت شد. URL خروجی: ${fileUrl}`);
+    } catch (s3UploadErr: any) {
+      console.error("❌❌❌ [POST_ROUTE_ERROR] [MINIO_UPLOAD_FAILED]: تابع فیزیکی آپلود مینیو سرور خطا داد!");
+      console.error("🔹 جزئیات خطای S3 مینیو سرور:", s3UploadErr.message);
+      throw s3UploadErr; // پرتاب به تری کچ سراسری جهت بازگشت وضعیت ۵۰۰ کلاینت
+    }
+    
+    let successMessage = 'فایل با موفقیت آپلود شد.';
+    if (wasCompressed) {
+      const toolName = toolUsed === 'sharp' ? 'Sharp' : 'Jimp';
+      successMessage = `فایل با موفقیت آپلود و فشرده شد (کاهش حجم: ${Math.round(compressionRatio)}٪ با ${toolName}).`;
+    }
+
+    console.log("========================================================================");
+    console.log("✅ [POST_ROUTE] [END]: فرآیند ثبت و پاسخ نهایی کلاینت با موفقیت خاتمه یافت.");
+    console.log("========================================================================");
+
+    return NextResponse.json({
+      success: true,
+      url: fileUrl,
+      originalSize: originalSize,
+      finalSize: currentBuffer.length,
+      compressionRatio: Math.round(compressionRatio),
+      wasCompressed,
+      usedTool: toolUsed,
+      message: successMessage
+    });
+
+  } catch (error: any) {
+    console.error('❌❌❌ [POST_ROUTE_CRITICAL_CATASTROPHE]: فرآیند متد POST کلاً به خطای پیش‌بینی نشده برخورد کرد:', error.message);
+    if (error.stack) console.error("🔹 پشته خطا (Stack Trace):\n", error.stack);
+    const message = error instanceof Error ? error.message : 'خطای ناشناخته';
+    return NextResponse.json(
+      { success: false, error: `خطا در سیستم آپلود: ${message}`, message: `خطا در سیستم آپلود: ${message}` }, 
+      { status: 500 }
+    );
+  }
+}
+
+// ============================================================================
+// متد PUT (تغییر نام فایل و تنظیم به عنوان کاتالوگ استاندارد)
+// ============================================================================
+
+export async function PUT(request: Request): Promise<NextResponse> {
+  console.log("🔄 [PUT_ROUTE]: درخواست ویرایش/تغییر نام یا جابجایی کاتالوگ مینیو دریافت شد.");
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      console.warn("❌ [PUT_ROUTE_AUTH_FAILED]: احراز هویت ناموفق بود.");
+      return NextResponse.json(
+        { success: false, error: 'لطفاً وارد حساب کاربری خود شوید.', message: 'لطفاً وارد حساب کاربری خود شوید.' },
+        { status: 401 }
+      );
+    }
+
+    let body: any;
+    try {
+      body = await request.json();
+    } catch (jsonErr: any) {
+      console.error("❌ [PUT_ROUTE_ERROR]: بدنه درخواست فرمت معتبر JSON ندارد:", jsonErr.message);
+      return NextResponse.json({ success: false, message: 'بدنه درخواست نامعتبر است.' }, { status: 400 });
+    }
+
+    const { oldUrl, targetName, folder } = body;
+    console.log(`📋 [PUT_DEBUG]: پارامترها -> OldUrl: "${oldUrl}" | TargetName: "${targetName}" | Folder: "${folder}"`);
+    
+    if (!oldUrl || !targetName) {
+      console.warn("⚠️ [PUT_ROUTE_VALIDATION_WARN]: لینک قبلی یا نام هدف خالی فرستاده شده است.");
+      return NextResponse.json({ success: false, message: 'اطلاعات ارسالی (لینک قبلی یا نام هدف) ناقص است.' }, { status: 400 });
+    }
+
+    // 1. دریافت محتوای فایل فعلی از سرور MinIO
+    console.log(`📡 [PUT_DEBUG]: در حال تلاش برای واکشی فایل قدیمی جهت خواندن بافر از آدرس: ${oldUrl}`);
+    let oldBuffer: Buffer;
+    let mimeType = 'application/pdf';
+    try {
+      const oldRes = await fetch(oldUrl);
+      if (!oldRes.ok) {
+        throw new Error(`پاسخ وب‌سرور مبدا منفی بود. کد وضعیت: ${oldRes.status}`);
+      }
+      oldBuffer = Buffer.from(await oldRes.arrayBuffer());
+      mimeType = oldRes.headers.get('content-type') || 'application/pdf';
+      console.log(`✅ [PUT_DEBUG]: فایل مبدأ با موفقیت در لایه لینوکس دانلود شد. حجم بافر: ${oldBuffer.length} بایت | نوع: ${mimeType}`);
+    } catch (fetchOldErr: any) {
+      console.error("❌ [PUT_ROUTE_ERROR] [FETCH_OLD_FILE_FAILED]: نتوانستیم فایل قبلی را از روی سرور دانلود کنیم:", fetchOldErr.message);
+      return NextResponse.json({ success: false, error: 'فایل مبدأ در سرور یافت نشد یا ارتباط با شبکه مینیو برقرار نیست.', details: fetchOldErr.message }, { status: 404 });
+    }
+    
+    const urlParts = oldUrl.split('/');
+    urlParts.pop(); 
+    const baseUrl = urlParts.join('/');
+    const targetUrl = `${baseUrl}/${targetName}`;
+
+    // 2. بررسی اینکه آیا کاتالوگی با این نام استاندارد از قبل وجود دارد؟
+    if (oldUrl !== targetUrl) {
+      console.log(`🔍 [PUT_DEBUG]: در حال بررسی وضعیت فیزیکی نام کاتالوگ هدف تکراری در آدرس: ${targetUrl}`);
+      try {
+        const checkRes = await fetch(targetUrl, { method: 'HEAD' });
+        if (checkRes.ok) {
+          console.log("ℹ️ [PUT_INFO]: فایلی با نام یکسان از قبل روی سرور موجود است. آغاز فرآیند بک‌آپ‌گیری خودکار فایل پیشین...");
+          const backupRes = await fetch(targetUrl);
+          const backupBuffer = Buffer.from(await backupRes.arrayBuffer());
+          
+          const nameWithoutExt = targetName.substring(0, targetName.lastIndexOf('.'));
+          const ext = targetName.substring(targetName.lastIndexOf('.'));
+          const backupName = `${nameWithoutExt}-backup-${Date.now()}${ext}`;
+          
+          console.log(`🛰️ [PUT_DEBUG]: آپلود نسخه پشتیبان با نام یکتا: "${backupName}" در پوشه: ${folder || 'KSCataloge'}`);
+          await uploadToMinio(backupBuffer, backupName, folder || 'KSCataloge', mimeType);
+          console.log("✅ [PUT_SUCCESS] [BACKUP_CREATED]: نسخه پشتیبان فایل تکراری قبلی ذخیره شد.");
+        }
+      } catch (checkErr: any) {
+        console.log("ℹ [PUT_INFO]: تداخل یا فایلی با نام مشابه پیدا نشد یا خطای سیستم نادیده گرفته شد:", checkErr.message);
+      }
+    }
+
+    // 3. آپلود فایل در مسیر هدف با نام استاندارد
+    console.log(`🛰️ [PUT_DEBUG]: در حال آپلود فایل با نام جدیدِ استاندارد شده: "${targetName}"...`);
+    const newUrl = await uploadToMinio(oldBuffer, targetName, folder || 'KSCataloge', mimeType);
+    console.log(`✅ [PUT_SUCCESS] [FILE_RENAMED]: فایل جدید با موفقیت ایجاد شد: ${newUrl}`);
+
+    // 4. پاک کردن فایل با نام اولیه و رندوم
+    if (oldUrl !== newUrl) {
+      console.log(`🗑️ [PUT_DEBUG]: حذف فیزیکی فایل موقت قدیمی از مینیو سرور جهت پاکسازی دیسک...`);
+      try {
+        await deleteFromMinio(oldUrl);
+        console.log("✅ [PUT_SUCCESS] [CLEANUP]: فایل موقت قبلی با موفقیت حذف شد.");
+      } catch (cleanupErr: any) {
+        console.error("❌ [PUT_ROUTE_ERROR] [CLEANUP_FAILED]: خطا در هنگام حذف فایل موقت قبلی:", cleanupErr.message);
+      }
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      url: newUrl, 
+      message: 'فایل با موفقیت تغییر نام یافت و به عنوان کاتالوگ تنظیم شد.' 
+    });
+
+  } catch (error: any) {
+    console.error('❌❌❌ [PUT_ROUTE_CRITICAL_ERROR]: خطا در متد ویرایش کاتالوگ PUT:', error.message);
+    const message = error instanceof Error ? error.message : 'خطای ناشناخته';
+    return NextResponse.json(
+      { success: false, error: `خطا در تغییر نام فایل: ${message}`, message: `خطا در تغییر نام فایل: ${message}` }, 
+      { status: 500 }
+    );
+  }
+}
+
+// ============================================================================
+// متد DELETE (حذف فایل)
+// ============================================================================
+
+export async function DELETE(request: Request): Promise<NextResponse> {
+  console.log("🗑️ [DELETE_ROUTE]: یک درخواست حذف فیزیکی رسانه فراخوانی شد.");
+  try {
+    const user = await getAuthenticatedUser();
+    if (!user) {
+      console.warn("❌ [DELETE_ROUTE_AUTH_FAILED]: دسترسی غیرمجاز جهت حذف سند.");
+      return NextResponse.json(
+        { success: false, error: 'لطفاً وارد حساب کاربری خود شوید.', message: 'لطفاً وارد حساب کاربری خود شوید.' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const url = searchParams.get('url');
+    console.log(`📋 [DELETE_DEBUG]: آدرس هدف جهت حذف: "${url}"`);
+
+    if (!url) {
+      console.warn("⚠️ [DELETE_ROUTE_VALIDATION_WARN]: آدرس فایل (url) جهت حذف ارسال نشده است.");
+      return NextResponse.json({ success: false, error: 'آدرس فایل الزامی است', message: 'آدرس فایل الزامی است' }, { status: 400 });
+    }
+
+    console.log("🛰️ [DELETE_DEBUG]: ارسال دستور به تابع deleteFromMinio جهت حذف نهایی از S3 باکت...");
+    try {
+      await deleteFromMinio(url);
+      console.log(`✅ [DELETE_ROUTE_SUCCESS]: فایل "${url}" با موفقیت از بستر سرور مینیو پاک شد.`);
+    } catch (s3DelErr: any) {
+      console.error("❌ [DELETE_ROUTE_ERROR] [MINIO_DELETE_FAILED]: نرم‌افزار مینیو نتوانست فایل را فیزیکی پاک کند:", s3DelErr.message);
+      throw s3DelErr;
+    }
+
+    return NextResponse.json({ success: true, message: 'فایل با موفقیت حذف شد' });
+  } catch (error: any) {
+    console.error('❌❌❌ [DELETE_ROUTE_CRITICAL_ERROR]: کرش یا ارور سیستمی در متد حذف رسانه:', error.message);
+    return NextResponse.json({ success: false, error: 'خطا در حذف فایل', message: 'خطا در حذف فایل' }, { status: 500 });
+  }
+}

@@ -3,11 +3,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, Edit, Trash2, Save, X, Printer, Plus, CheckCircle2, AlertCircle, Clock, Banknote, XCircle, Paperclip, UploadCloud, Loader2, Download, Share2, Eye, Image as ImageIcon } from 'lucide-react';
 import { useModal } from '@/app/contexts/ModalContext';
-import { JalaaliDateTimePicker } from 'jalaali-date-time-picker';
+import DatePicker from 'react-multi-date-picker';
+import persian from 'react-date-object/calendars/persian';
+import persian_fa from 'react-date-object/locales/persian_fa';
 
-// ==========================================
-// کامپوننت آپلود چندگانه با قابلیت چاپ، دانلود، اشتراک و حذف تأییددار
-// ==========================================
 function MultiFileUpload({ urls, onChange, title = "مستندات و فایل‌های ضمیمه" }: { urls: string[], onChange: (urls: string[]) => void, title?: string }) {
   const { showAlert, showConfirm } = useModal();
   const [isUploading, setIsUploading] = useState(false);
@@ -160,7 +159,6 @@ function MultiFileUpload({ urls, onChange, title = "مستندات و فایل�
   );
 }
 
-// تابع کمکی برای تبدیل دیتای قدیمی (تک رشته‌ای) و جدید (آرایه JSON)
 const parseUrls = (val?: string | null): string[] => {
   if (!val) return [];
   try {
@@ -170,16 +168,12 @@ const parseUrls = (val?: string | null): string[] => {
   return [val];
 };
 
-// تبدیل تاریخ میلادی به شیء Date برای تقویم شمسی
 const toDateObject = (dateStr: string | null): Date | undefined => {
   if (!dateStr) return undefined;
   const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
   return new Date(year, month - 1, day);
 };
 
-// ==========================================
-// مودال ایجاد فاکتور با تقویم شمسی و مدیریت پاکسازی فایل‌ها
-// ==========================================
 function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen: boolean; onClose: () => void; onSubmit: (data: any) => Promise<void>; submitting: boolean }) {
   const { showAlert } = useModal();
   const [form, setForm] = useState<{description: string, amount: number, discount: number, tax: number, dueDate: string, attachmentUrls: string[]}>({ 
@@ -187,7 +181,6 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
   });
   const hasSubmitted = useRef(false);
 
-  // پاکسازی فایل‌های آپلود شده در صورت بسته شدن مودال بدون ذخیره
   useEffect(() => {
     if (!isOpen) {
       if (form.attachmentUrls.length > 0 && !hasSubmitted.current) {
@@ -223,8 +216,9 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
     if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
   };
 
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
+  const handleDateChange = (dateObj: any) => {
+    if (dateObj) {
+      const date = dateObj.toDate();
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -258,11 +252,15 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
 
           <div dir="rtl">
             <label className="block text-sm font-bold text-gray-700 mb-1">تاریخ سررسید (شمسی)</label>
-            <JalaaliDateTimePicker
+            <DatePicker
               value={toDateObject(form.dueDate)}
               onChange={handleDateChange}
+              calendar={persian}
+              locale={persian_fa}
+              calendarPosition="bottom-right"
+              inputClass="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              containerClassName="w-full"
               placeholder="انتخاب تاریخ"
-              className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -289,9 +287,6 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
   );
 }
 
-// ==========================================
-// کامپوننت اصلی نمایش فاکتورها
-// ==========================================
 interface Invoice {
   id: number;
   invoiceNo: string;
@@ -324,7 +319,7 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
   
   const [submitting, setSubmitting] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const initialAttachmentsRef = useRef<string[]>([]); // برای پاکسازی فایل‌های اضافه شده در ویرایش
+  const initialAttachmentsRef = useRef<string[]>([]);
 
   const fetchInvoices = async () => {
     try {
@@ -424,7 +419,6 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
   };
 
   const handleEditCancel = async () => {
-    // حذف فایل‌های جدیدی که در این جلسه ویرایش آپلود شده‌اند
     const newUrls = editForm.attachmentUrls.filter(url => !initialAttachmentsRef.current.includes(url));
     for (const url of newUrls) {
       try {
@@ -566,10 +560,11 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
                       <div><label className="block text-xs font-bold text-gray-500 mb-1">مالیات (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.tax} onChange={(e) => setEditForm({ ...editForm, tax: parseFloat(e.target.value) })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
                       <div dir="rtl">
                         <label className="block text-xs font-bold text-gray-500 mb-1">سررسید (شمسی)</label>
-                        <JalaaliDateTimePicker
+                        <DatePicker
                           value={toDateObject(editForm.dueDate)}
-                          onChange={(date) => {
-                            if (date) {
+                          onChange={(dateObj: any) => {
+                            if (dateObj) {
+                              const date = dateObj.toDate();
                               const year = date.getFullYear();
                               const month = String(date.getMonth() + 1).padStart(2, '0');
                               const day = String(date.getDate()).padStart(2, '0');
@@ -578,8 +573,12 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
                               setEditForm({ ...editForm, dueDate: '' });
                             }
                           }}
+                          calendar={persian}
+                          locale={persian_fa}
+                          calendarPosition="bottom-right"
+                          inputClass="w-full p-2 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                          containerClassName="w-full"
                           placeholder="انتخاب تاریخ"
-                          className="w-full p-2 border border-gray-300 rounded-lg bg-white"
                         />
                       </div>
                       <div>

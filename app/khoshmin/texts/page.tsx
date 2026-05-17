@@ -187,8 +187,9 @@ export default function TextsManager() {
     markUnsaved();
   };
 
+  // تغییر: اجازه دادن به خط تیره در شماره تلفن
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/\D/g, '');
+    const val = e.target.value.replace(/[^0-9-]/g, ''); // فقط اعداد و خط تیره
     setTexts(prev => ({ ...prev, FOOTER_PHONE: val }));
     setPhoneError('');
     markUnsaved();
@@ -201,11 +202,13 @@ export default function TextsManager() {
     markUnsaved();
   };
 
+  // تغییر: در اعتبارسنجی خط تیره‌ها را حذف کرده و تعداد ارقام را بررسی کن
   const validatePhoneEmail = () => {
     let isValid = true;
     if (texts.FOOTER_PHONE && texts.FOOTER_PHONE.trim() !== '') {
-      if (!/^[0-9]{10,15}$/.test(texts.FOOTER_PHONE)) {
-        setPhoneError('شماره تماس باید شامل اعداد و حداقل 10 رقم باشد');
+      const digits = texts.FOOTER_PHONE.replace(/-/g, '');
+      if (!/^\d{10,15}$/.test(digits)) {
+        setPhoneError('شماره تماس باید شامل اعداد و حداقل ۱۰ رقم باشد (خط تیره مجاز است)');
         isValid = false;
       }
     }
@@ -292,7 +295,6 @@ export default function TextsManager() {
       }
     }
     setCroppedLogoBlob(croppedBlob);
-    // آپدیت preview با بلاپ برش خورده
     const previewUrl = URL.createObjectURL(croppedBlob);
     setLogoPreviewUrl(previewUrl);
     setUploadingLogo(false);
@@ -309,7 +311,6 @@ export default function TextsManager() {
   };
 
   const handleDeleteLogo = () => {
-    // اگر لوگوی جدید برش خورده و ذخیره نشده وجود دارد
     if (croppedLogoBlob) {
       showConfirm({
         title: 'حذف لوگوی جدید',
@@ -323,7 +324,6 @@ export default function TextsManager() {
       });
       return;
     }
-    // اگر لوگوی قبلی از دیتابیس وجود دارد
     if (texts.FOOTER_LOGO) {
       showConfirm({
         title: 'حذف لوگو',
@@ -376,7 +376,6 @@ export default function TextsManager() {
     setSaving(true);
     try {
       let finalLogoUrl = texts.FOOTER_LOGO;
-      // اگر لوگوی جدید برش خورده وجود دارد، آن را آپلود کن
       if (croppedLogoBlob) {
         const fd = new FormData();
         fd.append('file', croppedLogoBlob, `footer-logo-${Date.now()}.png`);
@@ -387,14 +386,17 @@ export default function TextsManager() {
         }
         const uploadData = await uploadRes.json();
         finalLogoUrl = uploadData.url?.startsWith('http') ? uploadData.url : `/${uploadData.url}`;
-        // اگر لوگوی قبلی وجود داشت و با لوگوی جدید متفاوت است، لوگوی قبلی را حذف کن
         if (texts.FOOTER_LOGO && texts.FOOTER_LOGO !== finalLogoUrl) {
           await fetch(`/api/upload?url=${encodeURIComponent(texts.FOOTER_LOGO)}`, { method: 'DELETE' }).catch(console.error);
         }
       }
       
+      // حذف خط تیره از شماره تماس قبل از ذخیره در دیتابیس
+      const cleanPhone = texts.FOOTER_PHONE ? texts.FOOTER_PHONE.replace(/-/g, '') : '';
+      
       const payload = {
         ...texts,
+        FOOTER_PHONE: cleanPhone,  // فقط ارقام ذخیره می‌شوند
         FOOTER_LOGO: finalLogoUrl,
         HOME_META_TITLE: metaTitle,
         HOME_META_DESCRIPTION: metaDescription,
@@ -418,10 +420,10 @@ export default function TextsManager() {
         body: JSON.stringify(payload)
       });
       if (res.ok) {
-        setTexts(prev => ({ ...prev, FOOTER_LOGO: finalLogoUrl }));
+        // پس از ذخیره موفق، مقدار استیت شماره را نیز به شکل پاک‌شده (بدون خط تیره) به‌روز کن
+        setTexts(prev => ({ ...prev, FOOTER_PHONE: cleanPhone, FOOTER_LOGO: finalLogoUrl }));
         setSaved(true);
         setHasUnsavedChanges(false);
-        // پاک کردن state‌های لوگوی موقت
         if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
         setSelectedLogoFile(null);
         setCroppedLogoBlob(null);

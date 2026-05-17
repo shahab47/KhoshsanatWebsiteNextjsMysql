@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Edit, Save, X, Truck, Package, Clock, PackageSearch, CheckCircle2, XCircle, FileSignature, Loader2, Paperclip, Image as ImageIcon, Eye, Printer, Download, Share2, UploadCloud } from 'lucide-react';
+import { Plus, Trash2, Edit, Save, X, Truck, Package, Clock, PackageSearch, CheckCircle2, XCircle, FileSignature, Loader2, Paperclip, Image as ImageIcon, Eye, Printer, Download, Share2, UploadCloud, FileText } from 'lucide-react';
 import { useModal } from '@/app/contexts/ModalContext';
-import { JalaaliDateTimePicker } from 'jalaali-date-time-picker';
+import DatePicker from 'react-multi-date-picker';
+import persian from 'react-date-object/calendars/persian';
+import persian_fa from 'react-date-object/locales/persian_fa';
 
 interface Delivery {
   id: number;
@@ -18,7 +20,6 @@ interface Delivery {
   attachments: any;
 }
 
-// استخراج URLها از فیلد Json دیتابیس
 const getUrlsFromAttachments = (attachments: any): string[] => {
   if (Array.isArray(attachments)) {
     return attachments.map((a: any) => typeof a === 'string' ? a : a.url).filter(Boolean);
@@ -26,14 +27,12 @@ const getUrlsFromAttachments = (attachments: any): string[] => {
   return [];
 };
 
-// تبدیل تاریخ میلادی به شیء Date برای تقویم شمسی
 const toDateObject = (dateStr: string): Date | undefined => {
   if (!dateStr) return undefined;
   const [year, month, day] = dateStr.split('T')[0].split('-').map(Number);
   return new Date(year, month - 1, day);
 };
 
-// کامپوننت داخلی برای مدیریت پیوست‌ها با قابلیت چاپ، دانلود، اشتراک و حذف تأییددار
 function AttachmentManager({ urls, onChange, title }: { urls: string[]; onChange: (urls: string[]) => void; title?: string }) {
   const { showAlert, showConfirm } = useModal();
   const [isUploading, setIsUploading] = useState(false);
@@ -179,7 +178,7 @@ export function CustomerDeliveriesTab({ customerId }: { customerId: string }) {
     productName: string, quantity: number, unit: string, deliveryDate: string, status: string, description: string, signatureUrl: string, attachmentUrls: string[]
   }>({ productName: '', quantity: 0, unit: '', deliveryDate: '', status: '', description: '', signatureUrl: '', attachmentUrls: [] });
   const [submitting, setSubmitting] = useState(false);
-  const initialAttachmentUrlsRef = useRef<string[]>([]); // برای پاکسازی فایل‌های اضافه شده در صورت انصراف
+  const initialAttachmentUrlsRef = useRef<string[]>([]);
 
   const fetchDeliveries = async () => {
     try {
@@ -252,7 +251,6 @@ export function CustomerDeliveriesTab({ customerId }: { customerId: string }) {
   };
 
   const handleEditCancel = async () => {
-    // حذف فایل‌های جدیدی که در این جلسه ویرایش آپلود شده‌اند اما ذخیره نشده‌اند
     const newUrls = editForm.attachmentUrls.filter(url => !initialAttachmentUrlsRef.current.includes(url));
     for (const url of newUrls) {
       try {
@@ -406,10 +404,11 @@ export function CustomerDeliveriesTab({ customerId }: { customerId: string }) {
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">تاریخ تحویل (شمسی)</label>
-                        <JalaaliDateTimePicker
+                        <DatePicker
                           value={toDateObject(editForm.deliveryDate)}
-                          onChange={(date) => {
-                            if (date) {
+                          onChange={(dateObj: any) => {
+                            if (dateObj) {
+                              const date = dateObj.toDate();
                               const year = date.getFullYear();
                               const month = String(date.getMonth() + 1).padStart(2, '0');
                               const day = String(date.getDate()).padStart(2, '0');
@@ -418,8 +417,12 @@ export function CustomerDeliveriesTab({ customerId }: { customerId: string }) {
                               setEditForm({ ...editForm, deliveryDate: '' });
                             }
                           }}
+                          calendar={persian}
+                          locale={persian_fa}
+                          calendarPosition="bottom-right"
+                          inputClass="w-full p-2 border border-gray-300 rounded-lg bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                          containerClassName="w-full"
                           placeholder="انتخاب تاریخ"
-                          className="w-full p-2 border border-gray-300 rounded-lg bg-white"
                         />
                       </div>
                       <div>

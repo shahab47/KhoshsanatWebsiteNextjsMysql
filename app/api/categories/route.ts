@@ -91,7 +91,9 @@ export async function DELETE(request: NextRequest) {
     await deleteFile(category?.catalogUrl);
     if (category?.gallery && Array.isArray(category.gallery)) {
       for (const url of category.gallery) {
-        await deleteFile(url);
+        if (typeof url === 'string') {        // ← اضافه کردن این خط
+      await deleteFile(url);
+    }
       }
     }
     

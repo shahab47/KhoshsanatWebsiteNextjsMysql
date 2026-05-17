@@ -1,12 +1,5 @@
 // مسیر فایل: src/lib/minio.ts
-import { 
-  S3Client, 
-  PutObjectCommand, 
-  DeleteObjectCommand, 
-  ListObjectsV2Command,
-  CopyObjectCommand,
-  HeadObjectCommand
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
 console.log("----------------------------------------------------------------------");
 console.log("⚙️ [MINIO_INIT]: در حال مقداردهی اولیه پیکربندی کامپوننت متصل‌کننده S3...");
@@ -22,7 +15,7 @@ const minioEndpoint = `${protocol}://${host}:${port}`;
 const bucketName = process.env.MINIO_BUCKET_NAME || "khoshsanat-media";
 
 const publicBaseUrl = isDev
-  ? `http://${host}:${port}`
+  ? `http://localhost:${port}`
   : (process.env.NEXT_PUBLIC_SITE_URL || "https://khoshsanat.ir");
 
 export const s3Client = new S3Client({
@@ -35,74 +28,6 @@ export const s3Client = new S3Client({
   },
 });
 
-// ================================================================
-// ابزار کمکی: استخراج کلید (Key) فایل از یک URL کامل
-// ================================================================
-export function extractKeyFromUrl(fileUrl: string): string | null {
-  if (!fileUrl) return null;
-  try {
-    const parsedUrl = new URL(fileUrl);
-    const pathname = parsedUrl.pathname;
-    const targetSegment = `/${bucketName}/`;
-    
-    if (pathname.includes(targetSegment)) {
-      const fileKey = pathname.split(targetSegment)[1];
-      return decodeURIComponent(fileKey);
-    }
-    return null;
-  } catch (error) {
-    return null;
-  }
-}
-
-// ================================================================
-// بررسی سریع وجود یک فایل در مینیو (بدون دانلود بدنه فایل)
-// ================================================================
-export async function checkFileExistsInMinio(fileKey: string): Promise<boolean> {
-  try {
-    const command = new HeadObjectCommand({ Bucket: bucketName, Key: fileKey });
-    await s3Client.send(command);
-    return true; // فایل وجود دارد
-  } catch (error: any) {
-    // اگر خطای 404 (یا NotFound) داد یعنی فایل نیست
-    if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
-      return false;
-    }
-    throw error; // سایر خطاهای شبکه
-  }
-}
-
-// ================================================================
-// کپی/تغییر نام فوق‌سریع فایل داخل خود سرور S3 (بدون مصرف RAM)
-// ================================================================
-export async function copyInMinio(sourceKey: string, destinationKey: string) {
-  console.log(`🔄 [S3_COPY_FUNC]: در حال کپی فیزیکی از "${sourceKey}" به "${destinationKey}" در داخل S3...`);
-  
-  // طبق استاندارد AWS SDK v3، مسیر منبع باید شامل نام باکت باشد و حتماً URL Encode شود
-  const copySource = encodeURI(`${bucketName}/${sourceKey}`);
-
-  const command = new CopyObjectCommand({
-    Bucket: bucketName,
-    CopySource: copySource,
-    Key: destinationKey,
-  });
-
-  try {
-    await s3Client.send(command);
-    console.log(`✅ [S3_COPY_SUCCESS]: عملیات کپی در کسری از ثانیه روی دیسک سرور انجام شد.`);
-    
-    // تولید آدرس جدید
-    let generatedUrl = isDev 
-      ? `${publicBaseUrl}/${bucketName}/${destinationKey}`
-      : `${publicBaseUrl.replace(/\/$/, '')}/minio/${bucketName}/${destinationKey}`;
-
-    return generatedUrl;
-  } catch (error: any) {
-    console.error("❌ [S3_COPY_ERROR]: خطا در کپی سریع S3:", error.message);
-    throw error;
-  }
-}
-
 export async function uploadToMinio(fileBuffer: Buffer, fileName: string, folderName: string, mimeType: string) {
   const fullPath = `${folderName}/${fileName}`;
   const command = new PutObjectCommand({
@@ -114,6 +39,8 @@ export async function uploadToMinio(fileBuffer: Buffer, fileName: string, folder
 
   try {
     await s3Client.send(command);
+    
+    // در محیط Production عکس از مسیر Nginx و در Dev از Localhost باز می‌شود
     let generatedUrl = isDev 
         ? `${publicBaseUrl}/${bucketName}/${fullPath}`
         : `${publicBaseUrl.replace(/\/$/, '')}/minio/${bucketName}/${fullPath}`;
@@ -129,8 +56,17 @@ export async function deleteFromMinio(fileUrl: string) {
   if (!fileUrl) return;
 
   try {
-    const fileKey = extractKeyFromUrl(fileUrl);
+    let fileKey: string | undefined;
+    const parsedUrl = new URL(fileUrl);
+    const pathname = parsedUrl.pathname; 
+    const targetSegment = `/${bucketName}/`;
+    
+    if (pathname.includes(targetSegment)) {
+      fileKey = pathname.split(targetSegment)[1];
+    }
+
     if (!fileKey) return;
+    fileKey = decodeURIComponent(fileKey);
 
     const command = new DeleteObjectCommand({
       Bucket: bucketName,
@@ -138,7 +74,6 @@ export async function deleteFromMinio(fileUrl: string) {
     });
 
     await s3Client.send(command);
-    console.log(`✅ [DELETE_FUNC_SUCCESS]: فایل "${fileKey}" حذف شد.`);
   } catch (error: any) {
     console.error("❌ [DELETE_FUNC_ERROR]: ", error.message);
   }

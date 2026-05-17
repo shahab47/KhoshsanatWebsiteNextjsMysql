@@ -3,26 +3,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import {
-  ArrowLeft,
-  Save,
-  X,
-  Upload,
-  FileText,
-  Trash2,
-  Package,
-  Calendar,
-  Clock,
-  CheckCircle,
-  AlertCircle,
-  Printer,
-  Download,
-  Share2,
-  Eye
+  ArrowLeft, Save, X, Upload, FileText, Trash2, Package, Calendar, Clock, CheckCircle, AlertCircle, Printer, Download, Share2
 } from 'lucide-react';
 import { useModal } from '@/app/contexts/ModalContext';
-import { JalaaliDateTimePicker } from 'jalaali-date-time-picker';
+import DatePicker from 'react-multi-date-picker';
+import persian from 'react-date-object/calendars/persian';
+import persian_fa from 'react-date-object/locales/persian_fa';
 
 export default function NewDeliveryPage() {
   const params = useParams();
@@ -36,7 +23,7 @@ export default function NewDeliveryPage() {
     productName: '',
     quantity: '',
     unit: '',
-    deliveryDate: new Date().toISOString().split('T')[0], // نگهداری به فرمت میلادی برای دیتابیس
+    deliveryDate: new Date().toISOString().split('T')[0],
     status: 'PENDING',
     description: ''
   });
@@ -45,13 +32,12 @@ export default function NewDeliveryPage() {
   const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [attachmentNames, setAttachmentNames] = useState<string[]>([]);
-  const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]); // برای پیش‌نمایش تصاویر
+  const [attachmentPreviews, setAttachmentPreviews] = useState<string[]>([]);
   
   const signatureInputRef = useRef<HTMLInputElement>(null);
   const attachmentInputRef = useRef<HTMLInputElement>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // حالت اولیه برای تشخیص تغییرات
   const initialFormData = useRef({
     productName: '',
     quantity: '',
@@ -70,7 +56,6 @@ export default function NewDeliveryPage() {
     return false;
   };
 
-  // برگشت به صفحه قبل با بررسی تغییرات
   const handleGoBack = () => {
     if (isDirty()) {
       showConfirm({
@@ -80,7 +65,6 @@ export default function NewDeliveryPage() {
         confirmText: 'بله، خارج شوم',
         cancelText: 'خیر، بمانم',
         onConfirm: () => {
-          // پاکسازی پیش‌نمایش‌ها
           if (signaturePreview) URL.revokeObjectURL(signaturePreview);
           attachmentPreviews.forEach(url => URL.revokeObjectURL(url));
           router.push(`/khoshmin/customers/${customerId}?tab=deliveries`);
@@ -91,7 +75,6 @@ export default function NewDeliveryPage() {
     }
   };
 
-  // هشدار هنگام بستن صفحه
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty()) {
@@ -109,9 +92,9 @@ export default function NewDeliveryPage() {
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
-  // تبدیل تاریخ شمسی به میلادی برای ذخیره در دیتابیس
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
+  const handleDateChange = (dateObj: any) => {
+    if (dateObj) {
+      const date = dateObj.toDate();
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -121,7 +104,6 @@ export default function NewDeliveryPage() {
     }
   };
 
-  // تبدیل تاریخ میلادی به شیء Date برای تقویم شمسی
   const getInitialDate = (): Date | undefined => {
     if (formData.deliveryDate) {
       const [year, month, day] = formData.deliveryDate.split('-').map(Number);
@@ -165,7 +147,6 @@ export default function NewDeliveryPage() {
       }
       setAttachments(prev => [...prev, file]);
       setAttachmentNames(prev => [...prev, file.name]);
-      // ایجاد پیش‌نمایش برای تصاویر
       if (file.type.startsWith('image/')) {
         setAttachmentPreviews(prev => [...prev, URL.createObjectURL(file)]);
       } else {
@@ -176,7 +157,6 @@ export default function NewDeliveryPage() {
   };
 
   const removeAttachment = (index: number) => {
-    // پاک کردن پیش‌نمایش
     if (attachmentPreviews[index]) {
       URL.revokeObjectURL(attachmentPreviews[index]);
     }
@@ -244,7 +224,6 @@ export default function NewDeliveryPage() {
     { value: 'لیتر', label: 'لیتر' }
   ];
 
-  // توابع کمکی برای چاپ/دانلود/اشتراک (در اینجا فایل‌ها محلی هستند، فقط دانلود قابل انجام است)
   const handleDownloadLocalFile = (file: File, name: string) => {
     const url = URL.createObjectURL(file);
     const a = document.createElement('a');
@@ -269,7 +248,6 @@ export default function NewDeliveryPage() {
         }
       }
     } else {
-      // fallback: دانلود فایل و آگاه‌سازی
       handleDownloadLocalFile(file, name);
       showAlert('مرورگر شما از اشتراک فایل پشتیبانی نمی‌کند. فایل دانلود شد.', 'اطلاعات', 'info');
     }
@@ -305,7 +283,6 @@ export default function NewDeliveryPage() {
 
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         <div className="space-y-6">
-          {/* اطلاعات محصول */}
           <div>
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-r-4 border-blue-500 pr-3">
               <Package size={20} className="text-blue-600" />
@@ -357,20 +334,23 @@ export default function NewDeliveryPage() {
             </div>
           </div>
 
-          {/* تاریخ و وضعیت */}
           <div>
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-r-4 border-blue-500 pr-3">
               <Calendar size={20} className="text-blue-600" />
               تاریخ و وضعیت
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div dir="rtl">
                 <label className="block text-sm font-medium text-gray-700 mb-1">تاریخ تحویل (شمسی) <span className="text-red-500">*</span></label>
-                <JalaaliDateTimePicker
+                <DatePicker
                   value={getInitialDate()}
                   onChange={handleDateChange}
+                  calendar={persian}
+                  locale={persian_fa}
+                  calendarPosition="bottom-right"
+                  inputClass={`w-full p-3 border rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.deliveryDate ? 'border-red-500' : 'border-gray-200'}`}
+                  containerClassName="w-full"
                   placeholder="انتخاب تاریخ"
-                  className={`w-full p-3 border rounded-xl bg-white focus:ring-2 focus:ring-blue-500 ${errors.deliveryDate ? 'border-red-500' : 'border-gray-200'}`}
                 />
                 {errors.deliveryDate && <p className="text-red-500 text-xs mt-1">{errors.deliveryDate}</p>}
               </div>
@@ -388,7 +368,6 @@ export default function NewDeliveryPage() {
             </div>
           </div>
 
-          {/* توضیحات */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">توضیحات اضافی</label>
             <textarea
@@ -401,7 +380,6 @@ export default function NewDeliveryPage() {
             />
           </div>
 
-          {/* مستندات */}
           <div>
             <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2 border-r-4 border-blue-500 pr-3">
               <FileText size={20} className="text-blue-600" />
@@ -476,7 +454,6 @@ export default function NewDeliveryPage() {
             </div>
           </div>
 
-          {/* دکمه‌های ارسال */}
           <div className="flex gap-3 pt-4 border-t border-gray-100">
             <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
               <Save size={20} /> {loading ? 'در حال ثبت...' : 'ثبت فرم تحویل بار'}

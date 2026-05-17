@@ -202,7 +202,9 @@ export default function AdminEducationPage() {
   });
   const [primaryImage, setPrimaryImage] = useState<string | null>(null);
   const [articleMedia, setArticleMedia] = useState<GalleryItem[]>([]);
-  const [tempUploadedUrls, setTempUploadedUrls] = useState<string[]>([]);
+
+  // ========== استفاده از ref برای لیست فایل‌های موقت (بدون مشکل ناهمزمانی) ==========
+  const tempUploadedUrlsRef = useRef<string[]>([]);
 
   // State for dirty checking
   const [initialFormData, setInitialFormData] = useState({ ...formData });
@@ -235,29 +237,32 @@ export default function AdminEducationPage() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty, view]);
 
-  // Delete temp files function
+  // حذف فایل‌های موقت (فقط آپلودهای ذخیره‌نشده)
   const deleteTempFiles = async () => {
-    for (const url of tempUploadedUrls) {
+    const urls = tempUploadedUrlsRef.current;
+    if (urls.length === 0) return;
+    for (const url of urls) {
       try {
         await fetch(`/api/upload?url=${encodeURIComponent(url)}`, { method: 'DELETE' });
       } catch (err) {
         console.error('Error deleting temp file:', url, err);
       }
     }
-    setTempUploadedUrls([]);
+    tempUploadedUrlsRef.current = [];
   };
 
-  // Reset form and clear temp files
+  // ریست کامل فرم (و حذف فایل‌های موقت در صورت لزوم)
   const resetForm = async (skipConfirm = false) => {
+    // اگر فرم تغییر داشته باشد و کاربر نخواسته باشد confirm را نادیده بگیرد
     if (isDirty && !skipConfirm && view === 'add') {
       showConfirm({
         title: 'خروج بدون ذخیره',
-        message: 'تغییرات شما ذخیره نشده است. آیا مطمئن هستید که می‌خواهید بدون ذخیره خارج شوید؟',
+        message: 'تغییرات شما ذخیره نشده است. آیا مطمئن هستید که می‌خواهید بدون ذخیره خارج شوید؟ توجه: فایل‌های آپلود شده‌ای که ذخیره نشده‌اند، حذف خواهند شد.',
         type: 'warning',
         confirmText: 'بله، خارج شوم',
         cancelText: 'خیر، بمانم',
         onConfirm: async () => {
-          await deleteTempFiles();
+          await deleteTempFiles();  // فقط فایل‌های موقتی که در دیتابیس ثبت نشده‌اند
           setEditingId(null);
           setFormData({ title: '', slug: '', excerpt: '', content: '', category: '', author: '', readTime: '', isActive: true });
           setPrimaryImage(null);
@@ -271,7 +276,13 @@ export default function AdminEducationPage() {
         },
       });
     } else {
-      await deleteTempFiles();
+      // بدون نیاز به confirm (مثلاً بعد از ذخیره موفق یا وقتی فرمی باز نیست)
+      if (tempUploadedUrlsRef.current.length > 0 && !skipConfirm) {
+        // اگر skipConfirm === false ولی isDirty false است (یعنی فایل موقتی وجود دارد ولی تغییرات ذخیره شده؟ اینجا نباید حذف کنیم)
+        // برای اطمینان، فقط در حالت خروج بدون ذخیره که confirm داده شده، حذف می‌کنیم.
+        // در این شاخه skipConfirm === true است (مثل بعد از ذخیره) پس حذف نمی‌کنیم.
+        await deleteTempFiles();
+      }
       setEditingId(null);
       setFormData({ title: '', slug: '', excerpt: '', content: '', category: '', author: '', readTime: '', isActive: true });
       setPrimaryImage(null);
@@ -380,39 +391,39 @@ export default function AdminEducationPage() {
 
   const isSlugDuplicate = articles.some(a => a.slug === formData.slug && a.id !== editingId);
 
-const handleMediaUpload = async (files: FileList | File[], optimize: boolean) => {
-  if (!formData.slug || isSlugDuplicate || slugError) {
-    showAlert('ابتدا نامک معتبر وارد کنید', 'خطا', 'error');
-    return;
-  }
-  setUploadingMedia(true);
-  const newMedia: GalleryItem[] = [];
-  let firstImg: string | null = null;
-  
-  // تبدیل یکسان ورودی به آرایه
-  const fileArray = files instanceof FileList ? Array.from(files) : files;
-  
-  for (const file of fileArray) {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('type', 'education');
-    fd.append('customName', `${formData.slug}-${Date.now()}`);
-    try {
-      const res = await fetch('/api/upload', { method: 'POST', body: fd });
-      if (res.ok) {
-        const data = await res.json();
-        const url = data.url?.startsWith('http') ? data.url : `/${data.url}`;
-        const finalSize = data.finalSize || data.size || file.size;
-        newMedia.push({ id: Date.now() + Math.random(), imageUrl: url, size: finalSize });
-        setTempUploadedUrls(prev => [...prev, url]);
-        if (!firstImg && isImageFile(url)) firstImg = url;
-      }
-    } catch (e) { console.error(e); }
-  }
-  setArticleMedia(prev => [...prev, ...newMedia]);
-  if (!primaryImage && firstImg) setPrimaryImage(firstImg);
-  setUploadingMedia(false);
-};
+  const handleMediaUpload = async (files: FileList | File[], optimize: boolean) => {
+    if (!formData.slug || isSlugDuplicate || slugError) {
+      showAlert('ابتدا نامک معتبر وارد کنید', 'خطا', 'error');
+      return;
+    }
+    setUploadingMedia(true);
+    const newMedia: GalleryItem[] = [];
+    let firstImg: string | null = null;
+    
+    const fileArray = files instanceof FileList ? Array.from(files) : files;
+    
+    for (const file of fileArray) {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('type', 'education');
+      fd.append('customName', `${formData.slug}-${Date.now()}`);
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: fd });
+        if (res.ok) {
+          const data = await res.json();
+          const url = data.url?.startsWith('http') ? data.url : `/${data.url}`;
+          const finalSize = data.finalSize || data.size || file.size;
+          newMedia.push({ id: Date.now() + Math.random(), imageUrl: url, size: finalSize });
+          // اضافه کردن به ref (نه state)
+          tempUploadedUrlsRef.current.push(url);
+          if (!firstImg && isImageFile(url)) firstImg = url;
+        }
+      } catch (e) { console.error(e); }
+    }
+    setArticleMedia(prev => [...prev, ...newMedia]);
+    if (!primaryImage && firstImg) setPrimaryImage(firstImg);
+    setUploadingMedia(false);
+  };
 
   const handleMediaDelete = async (item: GalleryItem) => {
     showConfirm({
@@ -425,7 +436,8 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
         try {
           await fetch(`/api/upload?url=${encodeURIComponent(item.imageUrl)}`, { method: 'DELETE' });
           setArticleMedia(prev => prev.filter(m => m.imageUrl !== item.imageUrl));
-          setTempUploadedUrls(prev => prev.filter(url => url !== item.imageUrl));
+          // حذف از ref در صورت وجود
+          tempUploadedUrlsRef.current = tempUploadedUrlsRef.current.filter(url => url !== item.imageUrl);
           if (primaryImage === item.imageUrl) setPrimaryImage(null);
         } catch(e){}
       }
@@ -442,9 +454,9 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
       const data = await res.json();
       const newUrl = data.url.startsWith('http') ? data.url : `/${data.url}`;
       const newSize = data.finalSize || data.size;
-      setTempUploadedUrls(prev => [...prev, newUrl]); // new crop is temp
+      tempUploadedUrlsRef.current.push(newUrl); // new crop is temp
       await fetch(`/api/upload?url=${encodeURIComponent(item.imageUrl)}`, { method: 'DELETE' });
-      setTempUploadedUrls(prev => prev.filter(url => url !== item.imageUrl));
+      tempUploadedUrlsRef.current = tempUploadedUrlsRef.current.filter(url => url !== item.imageUrl);
       setArticleMedia(prev => prev.map(m => m.id === item.id ? { ...m, imageUrl: newUrl, size: newSize } : m));
       if (primaryImage === item.imageUrl) setPrimaryImage(newUrl);
     }
@@ -474,12 +486,21 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
       });
       if (res.ok) {
         showAlert('مقاله ذخیره شد', 'موفقیت', 'success');
-        // After save, temp files become permanent – clear temp list
-        setTempUploadedUrls([]);
+        // پاک کردن لیست فایل‌های موقت (چون الان در دیتابیس ثبت شده‌اند و دیگر موقتی نیستند)
+        tempUploadedUrlsRef.current = [];
         await fetchArticles();
         await fetchCategories();
-        resetForm(true);
+        // ریست فرم بدون حذف فایل (چون قبلاً فایل‌های موقت را پاک کردیم و فایل‌های اصلی نباید حذف شوند)
+        setEditingId(null);
+        setFormData({ title: '', slug: '', excerpt: '', content: '', category: '', author: '', readTime: '', isActive: true });
+        setPrimaryImage(null);
+        setArticleMedia([]);
+        setSlugError('');
         setView('list');
+        setIsDirty(false);
+        setInitialFormData({ title: '', slug: '', excerpt: '', content: '', category: '', author: '', readTime: '', isActive: true });
+        setInitialPrimaryImage(null);
+        setInitialMedia([]);
       } else {
         showAlert('خطا در ذخیره مقاله', 'خطا', 'error');
       }
@@ -501,7 +522,7 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
     setArticleMedia(mediaFromDb);
     setInitialMedia([...mediaFromDb]);
     setView('add');
-    setTempUploadedUrls([]); // fresh edit, no temp files yet
+    tempUploadedUrlsRef.current = []; // هیچ فایل موقتی جدیدی در ویرایش وجود ندارد
   };
 
   const handleDeleteArticle = async (id: number) => {
@@ -523,6 +544,36 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
     });
   };
 
+  // تابع جداگانه برای رفتن به صفحه افزودن مقاله با بررسی تغییرات
+  const navigateToAdd = () => {
+    if (view === 'add' && isDirty) {
+      showConfirm({
+        title: 'خروج بدون ذخیره',
+        message: 'تغییرات فعلی ذخیره نشده است. آیا می‌خواهید بدون ذخیره ادامه دهید؟',
+        type: 'warning',
+        confirmText: 'بله',
+        cancelText: 'خیر',
+        onConfirm: () => {
+          // حذف فایل‌های موقت و ریست
+          deleteTempFiles().then(() => {
+            setEditingId(null);
+            setFormData({ title: '', slug: '', excerpt: '', content: '', category: '', author: '', readTime: '', isActive: true });
+            setPrimaryImage(null);
+            setArticleMedia([]);
+            setSlugError('');
+            setView('add');
+            setIsDirty(false);
+            setInitialFormData({ title: '', slug: '', excerpt: '', content: '', category: '', author: '', readTime: '', isActive: true });
+            setInitialPrimaryImage(null);
+            setInitialMedia([]);
+          });
+        }
+      });
+    } else {
+      setView('add');
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-10 text-gray-800" dir="rtl">
       <div className="mb-5">
@@ -533,7 +584,7 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
       {view === 'list' ? (
         <div>
           <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col md:flex-row gap-3">
-            <button onClick={() => { resetForm(true); setView('add'); }} className="bg-[#2563EB] hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold text-sm flex items-center gap-2 justify-center transition">
+            <button onClick={navigateToAdd} className="bg-[#2563EB] hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold text-sm flex items-center gap-2 justify-center transition">
               <Plus size={16} /> مقاله جدید
             </button>
             <div className="flex-1 relative">
@@ -669,7 +720,11 @@ const handleMediaUpload = async (files: FileList | File[], optimize: boolean) =>
             {contentTab === 'excerpt' ? (
               <textarea rows={4} className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-gray-50 focus:ring-2 focus:ring-[#2563EB]/30 focus:border-[#2563EB] outline-none transition" value={formData.excerpt} onChange={e => setFormData({...formData, excerpt: e.target.value})} placeholder="خلاصه مقاله را بنویسید..." />
             ) : (
-              <HitmanTextEditor value={formData.content} onChange={(val) => setFormData({...formData, content: val})} slug={formData.slug} />
+              <HitmanTextEditor 
+                value={formData.content} 
+                onChange={(val) => setFormData({...formData, content: typeof val === 'string' ? val : JSON.stringify(val)})} 
+                slug={formData.slug} 
+              />
             )}
           </div>
         </div>

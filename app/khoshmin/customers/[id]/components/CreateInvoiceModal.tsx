@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, FileText, CheckCircle2, Loader2, UploadCloud, Trash2, Image as ImageIcon, Eye, Printer, Download, Share2 } from 'lucide-react';
 import { useModal } from '@/app/contexts/ModalContext';
-import { JalaaliDateTimePicker } from 'jalaali-date-time-picker';
+import DatePicker from 'react-multi-date-picker';
+import persian from 'react-date-object/calendars/persian';
+import persian_fa from 'react-date-object/locales/persian_fa';
 
 interface Props {
   isOpen: boolean;
@@ -19,7 +21,6 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const hasSubmitted = useRef(false);
 
-  // حذف خودکار فایل در صورت بسته شدن مودال بدون ذخیره
   useEffect(() => {
     if (!isOpen) {
       if (form.attachmentUrl && !hasSubmitted.current) {
@@ -87,13 +88,11 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
     setForm(prev => ({ ...prev, attachmentUrl: '' }));
   };
 
-  // ---- توابع کمکی برای فایل ----
   const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
   const isPdf = (url: string) => /\.pdf$/i.test(url);
 
   const handlePrint = (url: string) => {
     if (isImage(url)) {
-      // چاپ تصویر در پنجره جدید
       const printWindow = window.open('', '_blank', 'width=800,height=600');
       if (!printWindow) {
         showAlert('پاپ‌آپ مسدود شده است. لطفاً اجازه دهید.', 'خطا', 'error');
@@ -110,7 +109,6 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
       printWindow.document.close();
       printWindow.print();
     } else if (isPdf(url)) {
-      // PDF را در تب جدید باز می‌کنیم (بیننده پیش‌فرض دارای دکمه چاپ است)
       window.open(url, '_blank');
     } else {
       showAlert('چاپ برای این نوع فایل پشتیبانی نمی‌شود.', 'اطلاعات', 'info');
@@ -150,7 +148,6 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
         }
       }
     } else {
-      // Fallback: کپی لینک در کلیپ‌بورد
       await navigator.clipboard.writeText(url);
       showAlert('لینک فایل در کلیپ‌بورد کپی شد.', 'موفق', 'success');
     }
@@ -160,8 +157,9 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
     if (['e', 'E', '+', '-'].includes(e.key)) e.preventDefault();
   };
 
-  const handleDateChange = (date: Date | null) => {
-    if (date) {
+  const handleDateChange = (dateObj: any) => {
+    if (dateObj) {
+      const date = dateObj.toDate();
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
@@ -216,18 +214,20 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
             </div>
           </div>
 
-          {/* تقویم شمسی */}
           <div dir="rtl">
             <label className="block text-sm font-bold text-gray-700 mb-1">تاریخ سررسید (شمسی)</label>
-            <JalaaliDateTimePicker
+            <DatePicker
               value={getInitialDate()}
               onChange={handleDateChange}
+              calendar={persian}
+              locale={persian_fa}
+              calendarPosition="bottom-right"
+              inputClass="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              containerClassName="w-full"
               placeholder="انتخاب تاریخ"
-              className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* بخش پیوست با دکمه‌های جدید */}
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">اسکن فاکتور فیزیکی (اختیاری)</label>
             {form.attachmentUrl ? (
@@ -283,7 +283,6 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
                   </button>
                 </div>
 
-                {/* دکمه‌های عملیات روی فایل */}
                 <div className="flex gap-2 justify-end border-t border-blue-200 pt-2 mt-1">
                   <button
                     type="button"
@@ -337,7 +336,6 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
         </form>
       </div>
 
-      {/* مودال بزرگنمایی تصویر */}
       {previewImage && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setPreviewImage(null)}>
           <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-xl overflow-hidden">

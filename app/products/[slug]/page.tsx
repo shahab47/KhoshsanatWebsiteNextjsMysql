@@ -1,207 +1,263 @@
 'use client';
+// مسیر فایل: src/app/projects/[slug]/page.tsx
 
-import React, { useState, useEffect, use, useRef } from 'react';
-import { ChevronRight, CheckCircle, ShieldCheck, PhoneCall, Info, LayoutGrid, Download } from 'lucide-react';
-import { toPng } from 'html-to-image';
-import jsPDF from 'jspdf';
+import React, { useState, useEffect, use } from 'react';
+import { ChevronRight, MapPin, LayoutGrid, ArrowLeft, FolderOpen, FileText, Download, Image as ImageIcon } from 'lucide-react';
 
-export default function SingleProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default function SingleProjectPage({ params }: { params: Promise<{ slug?: string, id?: string }> }) {
   const resolvedParams = use(params);
-  const slug = resolvedParams.slug;
+  const identifier = resolvedParams.slug || resolvedParams.id;
 
-  const [product, setProduct] = useState<any>(null);
+  const [project, setProject] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string>('');
-  const [gallery, setGallery] = useState<string[]>([]);
-  const cardRef = useRef<HTMLDivElement>(null); // ref برای کل کارت
+  
+  const [images, setImages] = useState<{url: string, name: string}[]>([]);
+  const [files, setFiles] = useState<{url: string, name: string}[]>([]);
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProject = async () => {
+      if (!identifier) return;
+      
       try {
-        const res = await fetch('/api/products');
-        const allProducts = await res.json();
-        const foundProduct = allProducts.find((p: any) => p.slug === slug && p.isActive);
-        if (foundProduct) {
-          setProduct(foundProduct);
-          setActiveImage(foundProduct.imageUrl);
-          let parsedGallery: string[] = [];
-          if (typeof foundProduct.gallery === 'string') {
-            try { parsedGallery = JSON.parse(foundProduct.gallery); } catch(e){}
-          } else if (Array.isArray(foundProduct.gallery)) {
-            parsedGallery = foundProduct.gallery;
+        const res = await fetch('/api/projects');
+        const allProjects = await res.json();
+        
+        const decodedIdentifier = decodeURIComponent(identifier);
+        const found = allProjects.find((p: any) => 
+          (p.slug === decodedIdentifier || p.id.toString() === decodedIdentifier) && p.isActive
+        );
+        
+        if (found) {
+          setProject(found);
+          setActiveImage(found.imageUrl || '');
+          
+          let allAttachments: any[] = [];
+          
+          // ۱. بررسی و پارس گالری تصاویر
+          if (found.gallery) {
+            if (typeof found.gallery === 'string') {
+              try { allAttachments = JSON.parse(found.gallery); } catch(e){ allAttachments = [found.gallery]; }
+            } else if (Array.isArray(found.gallery)) {
+              allAttachments = found.gallery;
+            }
           }
-          const finalGallery = [foundProduct.imageUrl, ...parsedGallery.filter((url: string) => url !== foundProduct.imageUrl)];
-          setGallery(finalGallery);
+
+          // ۲. بررسی و پارس فایل‌های ضمیمه
+          if (found.files) {
+            if (typeof found.files === 'string') {
+              try { allAttachments = [...allAttachments, ...JSON.parse(found.files)]; } catch(e){ allAttachments = [...allAttachments, found.files]; }
+            } else if (Array.isArray(found.files)) {
+              allAttachments = [...allAttachments, ...found.files];
+            }
+          }
+
+          const parsedImages: {url: string, name: string}[] = [];
+          const parsedFiles: {url: string, name: string}[] = [];
+
+          // تصویر اصلی پروژه
+          if (found.imageUrl) {
+            parsedImages.push({ url: found.imageUrl, name: 'تصویر اصلی' });
+          }
+
+          // تفکیک هوشمند فایل‌ها از تصاویر براساس پسوند
+          allAttachments.forEach(item => {
+            const url = typeof item === 'string' ? item : (item?.url || item?.path || '');
+            const name = typeof item === 'string' 
+              ? decodeURIComponent(url.split('/').pop() || 'فایل') 
+              : (item?.name || item?.title || decodeURIComponent(url.split('/').pop() || 'فایل'));
+
+            if (!url) return;
+
+            // تشخیص فرمت عکس
+            const isImg = /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(url);
+
+            if (isImg) {
+              if (!parsedImages.find(img => img.url === url)) parsedImages.push({url, name});
+            } else {
+              if (!parsedFiles.find(f => f.url === url)) parsedFiles.push({url, name});
+            }
+          });
+
+          setImages(parsedImages);
+          setFiles(parsedFiles);
         }
       } catch (err) {
-        console.error("خطا در دریافت محصول:", err);
+        console.error("خطا در دریافت پروژه:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchProduct();
-  }, [slug]);
-
-  // تابع برای دانلود فایل کاتالوگ (اگر وجود داشته باشد)
-  const downloadCatalogFile = () => {
-    if (!product?.catalogUrl) return;
-    // باز کردن آدرس فایل در تب جدید (که معمولاً دانلود فایل PDF را شروع می‌کند)
-    window.open(product.catalogUrl, '_blank');
-  };
-
-  // تابع تولید PDF از صفحه (در صورت نبود کاتالوگ اختصاصی)
-  const generateAndDownloadPDF = async () => {
-    if (!cardRef.current || !product) return;
-
-    const buttonsRow = cardRef.current.querySelector('.products-pdf-remove-buttons') as HTMLElement;
-    let originalDisplay = '';
-    if (buttonsRow) {
-      originalDisplay = buttonsRow.style.display;
-      buttonsRow.style.display = 'none';
-    }
-
-    try {
-      const dataUrl = await toPng(cardRef.current, {
-        cacheBust: true,
-        backgroundColor: '#ffffff',
-        pixelRatio: 2,
-      });
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const imgWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (cardRef.current.clientHeight * imgWidth) / cardRef.current.clientWidth;
-      let heightLeft = imgHeight;
-      let position = 0;
-
-      pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(dataUrl, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-      const safeTitle = product.title.replace(/[^a-z0-9\u0600-\u06FF]/gi, '_');
-      pdf.save(`KH-${safeTitle}.pdf`);
-    } catch (error) {
-      console.error('خطا در تولید PDF:', error);
-      alert('مشکلی در تولید فایل PDF پیش آمد. لطفاً دوباره تلاش کنید.');
-    } finally {
-      if (buttonsRow) {
-        buttonsRow.style.display = originalDisplay;
-      }
-    }
-  };
-
-  // تابع اصلی که تصمیم می‌گیرد کدام عملیات را انجام دهد
-  const handleDownloadCatalog = () => {
-    if (product?.catalogUrl) {
-      downloadCatalogFile();
-    } else {
-      generateAndDownloadPDF();
-    }
-  };
+    
+    fetchProject();
+  }, [identifier]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center">
         <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
       </div>
     );
   }
 
-  if (!product) {
+  if (!project) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-6 text-center">
+      <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center px-6 text-center">
         <LayoutGrid size={80} className="text-gray-300 mb-6" />
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">محصول مورد نظر یافت نشد!</h1>
-        <p className="text-gray-500 mb-8 max-w-md">شاید این محصول از سیستم حذف شده باشد یا آدرس آن را اشتباه وارد کرده باشید.</p>
-        <a href="/products" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
-          بازگشت به فروشگاه
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">پروژه مورد نظر یافت نشد!</h1>
+        <p className="text-gray-500 mb-8 max-w-md">احتمالاً این پروژه حذف شده یا آدرس را اشتباه وارد کرده‌اید.</p>
+        <a href="/projects" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">
+          بازگشت به لیست پروژه‌ها
         </a>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20" dir="rtl">
+    <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
+      
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
           <a href="/" className="hover:text-blue-600 transition">خانه</a>
           <ChevronRight size={16} />
-          <a href="/products" className="hover:text-blue-600 transition">محصولات</a>
+          <a href="/projects" className="hover:text-blue-600 transition">پروژه‌ها</a>
           <ChevronRight size={16} />
-          <span className="text-gray-800 font-bold">{product.title}</span>
+          <span className="text-gray-800 font-bold truncate max-w-[200px] sm:max-w-md">{project.title}</span>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-10">
-        {/* کل کارت محصول - برای PDF از این ref استفاده می‌کنیم */}
-        <div ref={cardRef} className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-2">
-            {/* گالری تصاویر (چپ) */}
-            <div className="p-6 md:p-10 border-b md:border-b-0 md:border-l border-gray-100 bg-gray-50/50">
-              <div className="aspect-square rounded-2xl bg-white border border-gray-200 overflow-hidden shadow-sm mb-4 relative flex items-center justify-center">
-                <img src={activeImage} alt={product.title} className="max-w-full max-h-full object-contain p-4 transition-all duration-300" />
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            
+            {/* ستون راست: گالری تصاویر */}
+            <div className="p-6 md:p-8 border-b lg:border-b-0 lg:border-l border-gray-100 bg-gray-50/30">
+              <div className="aspect-video lg:aspect-square rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shadow-sm mb-6 flex items-center justify-center relative">
+                {activeImage ? (
+                  <img 
+                    src={activeImage} 
+                    alt={project.title} 
+                    className="w-full h-full object-contain p-2"
+                    onError={(e) => {
+                      // اگر عکس در مینیو نبود، این کامپوننت جایگزین ارور XML می‌شود
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        const fallback = parent.querySelector('.fallback-ui');
+                        if (fallback) fallback.classList.remove('hidden');
+                      }
+                    }}
+                  />
+                ) : (
+                  <div className="text-gray-400 flex flex-col items-center gap-2">
+                    <ImageIcon size={48} />
+                    <span className="text-sm">تصویری موجود نیست</span>
+                  </div>
+                )}
+                
+                {/* باکس فالبک برای تصویر خراب */}
+                <div className="fallback-ui hidden text-center p-4 text-gray-400 flex flex-col items-center gap-2">
+                  <ImageIcon size={48} className="text-gray-300" />
+                  <span className="text-sm font-medium">فایل تصویر در سرور یافت نشد (404)</span>
+                </div>
               </div>
-              {gallery.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2 custom-scrollbar">
-                  {gallery.map((url, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setActiveImage(url)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${activeImage === url ? 'border-blue-600 shadow-md ring-2 ring-blue-100' : 'border-transparent bg-white hover:border-gray-300'}`}
+              
+              {/* ریزتصاویر زیر تصویر اصلی */}
+              {images.length > 1 && (
+                <div className="flex gap-3 overflow-x-auto pb-2">
+                  {images.map((img, index) => (
+                    <button 
+                      key={index} 
+                      onClick={() => setActiveImage(img.url)}
+                      title={img.name}
+                      className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden border-2 transition-all ${
+                        activeImage === img.url 
+                          ? 'border-blue-500 shadow-md scale-105' 
+                          : 'border-gray-200 opacity-70 hover:opacity-100 hover:border-gray-300'
+                      }`}
                     >
-                      <img src={url} className="w-full h-full object-cover" alt={`Gallery ${index}`} />
+                      <img src={img.url} className="w-full h-full object-cover" alt={img.name} />
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* اطلاعات محصول (راست) */}
-            <div className="p-6 md:p-10 flex flex-col">
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-4 leading-tight">
-                {product.title}
-              </h1>
+            {/* ستون چپ: اطلاعات و محتوای پروژه */}
+            <div className="p-6 md:p-8 flex flex-col">
               <div className="flex flex-wrap items-center gap-3 mb-6">
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-3 py-1.5 rounded-full">
-                  <CheckCircle size={14} />
-                  موجود و قابل سفارش
-                </span>
-                <span className="inline-flex items-center gap-1 text-xs font-bold text-blue-700 bg-blue-100 px-3 py-1.5 rounded-full">
-                  <ShieldCheck size={14} />
-                  تضمین کیفیت خوش‌صنعت
-                </span>
+                {project.category && (
+                  <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-bold border border-blue-100">
+                    <FolderOpen size={16} />
+                    {project.category}
+                  </span>
+                )}
+                {project.location && (
+                  <span className="flex items-center gap-1.5 text-gray-600 text-sm font-medium bg-gray-50 px-4 py-1.5 rounded-full border border-gray-200">
+                    <MapPin size={16} className="text-gray-400" />
+                    {project.location}
+                  </span>
+                )}
               </div>
-              {product.shortDesc && (
-                <div className="bg-gray-50 p-5 rounded-2xl border border-gray-100 mb-8">
-                  <h3 className="text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <Info size={16} className="text-gray-400" />
-                    معرفی اجمالی:
+              
+              <h1 className="text-3xl lg:text-4xl font-black text-gray-900 mb-6 leading-tight">
+                {project.title}
+              </h1>
+
+              {/* محتوای متنی */}
+              {project.content && (
+                <div 
+                  className="prose prose-gray max-w-none prose-headings:text-gray-800 prose-p:text-gray-600 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-img:rounded-xl prose-img:shadow-md mb-8"
+                  dangerouslySetInnerHTML={{ __html: project.content }}
+                />
+              )}
+
+              {/* بخش دانلود فایل‌های غیر تصویری مینیو */}
+              {files.length > 0 && (
+                <div className="mt-6 mb-8 border-t border-gray-100 pt-6">
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <FileText className="text-blue-600" size={20} />
+                    فایل‌های ضمیمه پروژه
                   </h3>
-                  <p className="text-gray-600 leading-relaxed text-sm">{product.shortDesc}</p>
+                  <div className="grid grid-cols-1 gap-3">
+                    {files.map((file, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="bg-white p-2 rounded-lg text-blue-600 shrink-0 shadow-sm">
+                            <FileText size={18} />
+                          </div>
+                          <span className="font-medium text-gray-700 text-sm truncate w-full" dir="ltr" title={file.name}>
+                            {file.name}
+                          </span>
+                        </div>
+                        <a
+                          href={file.url}
+                          download
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 hover:text-white transition shrink-0 mr-2"
+                        >
+                          <Download size={16} />
+                          دانلود
+                        </a>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
-              <div className="mb-8 flex-1">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">مشخصات فنی و کامل</h3>
-                <div className="text-gray-600 leading-loose text-sm whitespace-pre-line">
-                  {product.description}
-                </div>
-              </div>
-              {/* بخش دکمه‌ها - با کلاسی که در PDF حذف شود */}
-              <div className="products-pdf-remove-buttons pt-6 border-t border-gray-100 mt-auto flex flex-col sm:flex-row gap-4">
-                <a href="/contact" className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-4 rounded-2xl font-bold transition shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
-                  <PhoneCall size={20} />
-                  درخواست استعلام و سفارش
+
+              <div className="mt-auto pt-8 border-t border-gray-100">
+                <a 
+                  href="/#contact" 
+                  className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg"
+                >
+                  شروع پروژه‌ای مشابه با ما <ArrowLeft size={20} />
                 </a>
-                <button onClick={handleDownloadCatalog} className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-center py-4 rounded-2xl font-bold transition flex items-center justify-center gap-2">
-                  <Download size={18} />
-                  {product.catalogUrl ? 'دانلود کاتالوگ محصول' : 'دانلود برگه مشخصات (PDF)'}
-                </button>
               </div>
             </div>
+
           </div>
         </div>
       </div>

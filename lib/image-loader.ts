@@ -12,12 +12,12 @@ export default function customImageLoader({ src, width, quality }: LoaderParams)
     return src;
   }
 
-  // ارسال پارامترها به فایل یکپارچه upload (متد GET به صورت خودکار فراخوانی می‌شود)
-  const queryParams = new URLSearchParams({
-    url: src,
-    w: width.toString(),
-    q: (quality || 75).toString(),
-  });
+  const q = quality || 75;
 
-  return `/api/upload?${queryParams.toString()}`;
+  // هدایت اصولی تصاویر به ImgProxy
+  // فرض بر این است که Nginx مسیر /imgproxy/ را به درستی به کانتینر imgproxy هدایت می‌کند
+  // فرمت استاندارد Imgproxy: /imgproxy/insecure/rs:fill:{width}:0/q:{quality}/plain/{url}
+  
+  const encodedUrl = encodeURIComponent(src);
+  return `/imgproxy/insecure/rs:fill:${width}:0/q:${q}/plain/${encodedUrl}`;
 }
