@@ -283,7 +283,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
       {/* مسیر یاب */}
       <div className="bg-white border-b border-gray-200 py-3 px-4 sm:px-8 shadow-sm hidden md:block">
         <div className="max-w-[1440px] mx-auto">
-          <div className="flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
+          <div className="flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
             {getBreadcrumbs().map((crumb, idx, arr) => (
               <React.Fragment key={crumb.href}>
                 {idx > 0 && <ChevronLeft size={14} className="text-gray-300 flex-shrink-0" />}

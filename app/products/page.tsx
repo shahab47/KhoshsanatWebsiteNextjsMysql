@@ -1,318 +1,360 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { Search, Package, LayoutGrid, Filter, ArrowRight, ChevronRight, Download, FileText, Building2, FolderTree } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import React, { useState, useEffect, useRef } from 'react';
+import { Download, ChevronLeft, ChevronRight, Search, Package } from 'lucide-react';
 
-// کامپوننت داخلی با تمام منطق
-function ProductsStoreContent() {
-  const searchParams = useSearchParams();
-  const categorySlug = searchParams.get('category');
-  const subcategoryIdParam = searchParams.get('subcategory');
+// ==========================================
+// 1. تعریف اینترفیس‌های تایپ‌اسکریپت
+// ==========================================
+interface Subcategory {
+  id: number;
+  title: string;
+  categoryId: number;
+}
 
-  const [products, setProducts] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<number | null>(null);
-  const [companyCatalogUrl, setCompanyCatalogUrl] = useState<string | null>(null);
+interface Category {
+  id: number;
+  title: string;
+  slug: string;
+  catalogUrl: string | null;
+  subcategories: Subcategory[];
+}
 
-  // دریافت کاتالوگ عمومی شرکت
+interface Product {
+  id: number;
+  title: string;
+  slug: string;
+  shortDesc: string | null;
+  description: string;
+  imageUrl: string;
+  subcategoryId: number;
+}
+
+export default function ProductsPage() {
+  // ==========================================
+  // 2. State ها
+  // ==========================================
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [companyCatalog, setCompanyCatalog] = useState<string | null>(null);
+  
+  const [activeCategoryId, setActiveCategoryId] = useState<number | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [currentSlidePage, setCurrentSlidePage] = useState<number>(0);
+
+  // رفرنس برای اسلایدر دسکتاپ
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  // ==========================================
+  // 3. دریافت اطلاعات از API
+  // ==========================================
   useEffect(() => {
-    const fetchCompanyCatalog = async () => {
+    const fetchAllData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/company-catalog');
-        if (res.ok) {
-          const data = await res.json();
-          setCompanyCatalogUrl(data.url);
-        }
+        const catsRes = await fetch('/api/categories');
+        const catsData = await catsRes.json();
+        if (Array.isArray(catsData)) setCategories(catsData);
+
+        const prodsRes = await fetch('/api/products');
+        const prodsData = await prodsRes.json();
+        if (Array.isArray(prodsData)) setProducts(prodsData);
+
+        const catCatalogRes = await fetch('/api/products?action=company-catalog');
+        const catCatalogData = await catCatalogRes.json();
+        if (catCatalogData?.url) setCompanyCatalog(catCatalogData.url);
+
       } catch (error) {
-        console.error('Error fetching company catalog:', error);
-      }
-    };
-    fetchCompanyCatalog();
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [prodRes, catRes] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/categories')
-        ]);
-        const prodData = await prodRes.json();
-        const catData = await catRes.json();
-        setProducts(prodData.filter((p: any) => p.isActive));
-        setCategories(catData.filter((c: any) => c.isActive));
-      } catch (err) {
-        console.error("Error fetching data", err);
+        console.error("خطا در دریافت اطلاعات دیتابیس:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchData();
+
+    fetchAllData();
   }, []);
 
+  // با تغییر دسته‌بندی، اسکرول اسلایدر را به ابتدا برگردان
   useEffect(() => {
-    if (categories.length === 0) return;
-    if (subcategoryIdParam) {
-      const subId = parseInt(subcategoryIdParam, 10);
-      const category = categories.find(c => c.subcategories?.some((sub: any) => sub.id === subId));
-      if (category) {
-        setSelectedCategory(category.id);
-        setSelectedSubcategory(subId);
-      }
-    } 
-    else if (categorySlug) {
-      const matchedCategory = categories.find(c => c.slug === categorySlug);
-      if (matchedCategory) {
-        setSelectedCategory(matchedCategory.id);
-        setSelectedSubcategory(null);
-      }
+    if (sliderRef.current) {
+      sliderRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+      setCurrentSlidePage(0);
     }
-  }, [categories, categorySlug, subcategoryIdParam]);
+  }, [activeCategoryId]);
 
-  // پیدا کردن دسته‌بندی انتخاب شده (برای کاتالوگ)
-  const selectedCategoryData = selectedCategory
-    ? categories.find(c => c.id === selectedCategory)
+  // ==========================================
+  // 4. منطق فیلتر و جستجو
+  // ==========================================
+  const activeCategoryData = activeCategoryId !== 'all' 
+    ? categories.find(c => c.id === activeCategoryId) 
     : null;
+
+  const validSubcategoryIds = activeCategoryData 
+    ? activeCategoryData.subcategories.map(sub => sub.id)
+    : [];
 
   const filteredProducts = products.filter(product => {
-    let match = true;
-    if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) match = false;
-    if (selectedSubcategory) {
-      if (product.subcategoryId !== selectedSubcategory) match = false;
-    } else if (selectedCategory) {
-      const category = categories.find(c => c.id === selectedCategory);
-      const subIds = category?.subcategories?.map((s: any) => s.id) || [];
-      if (!subIds.includes(product.subcategoryId)) match = false;
-    }
-    return match;
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategoryId === 'all' || validSubcategoryIds.includes(product.subcategoryId);
+    return matchesSearch && matchesCategory;
   });
 
-  const selectedCategoryTitle = selectedCategory
-    ? categories.find(c => c.id === selectedCategory)?.title
-    : null;
-  const selectedSubcategoryTitle = selectedSubcategory
-    ? categories
-        .find(c => c.id === selectedCategory)
-        ?.subcategories?.find((s: any) => s.id === selectedSubcategory)?.title
-    : null;
+  // ==========================================
+  // 5. توابع اسلایدر دسکتاپ و نقاط (Dots)
+  // ==========================================
+  const scrollSlider = (direction: 'right' | 'left') => {
+    if (sliderRef.current) {
+      const scrollAmount = direction === 'left' ? -350 : 350;
+      sliderRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
 
+  const handleScroll = () => {
+    if (!sliderRef.current) return;
+    const { scrollLeft, clientWidth } = sliderRef.current;
+    // با استفاده از قدر مطلق (چون در حالت RTL ممکن است اعداد منفی باشند)
+    const absScroll = Math.abs(scrollLeft);
+    const page = Math.round(absScroll / clientWidth);
+    setCurrentSlidePage(page);
+  };
+
+  const scrollToPage = (pageIndex: number) => {
+    if (sliderRef.current) {
+      const { clientWidth } = sliderRef.current;
+      const isRTL = getComputedStyle(sliderRef.current).direction === 'rtl';
+      const scrollPos = pageIndex * clientWidth * (isRTL ? -1 : 1);
+      sliderRef.current.scrollTo({ left: scrollPos, behavior: 'smooth' });
+    }
+  };
+
+  // محاسبه تعداد نقاط راهنما (با فرض نمایش حدود 4 محصول در هر نمای دسکتاپ)
+  const totalDots = Math.ceil(filteredProducts.length / 4);
+
+  // استخراج تمام دسته‌بندی‌هایی که کاتالوگ دارند
+  const categoriesWithCatalogs = categories.filter(c => c.catalogUrl !== null);
+
+  // ==========================================
+  // 6. رابط کاربری (UI)
+  // ==========================================
   return (
-    <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
+    <div className="min-h-screen bg-[#F9FAFB] pb-20 font-[Vazir,'vazirmatn',sans-serif]" dir="rtl">
       
-      {/* Breadcrumb */}
+      {/* 1. Breadcrumb (نوار مسیر) */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
           <a href="/" className="hover:text-blue-600 transition">خانه</a>
-          <ChevronRight size={16} />
-          <a href="/products" className="hover:text-blue-600 transition">محصولات</a>
-          {selectedCategoryTitle && (
-            <>
-              <ChevronRight size={16} />
-              <span className="text-gray-800 font-bold">{selectedCategoryTitle}</span>
-            </>
-          )}
-          {selectedSubcategoryTitle && (
-            <>
-              <ChevronRight size={16} />
-              <span className="text-gray-800 font-bold">{selectedSubcategoryTitle}</span>
-            </>
-          )}
+          <ChevronLeft size={16} />
+          <span className="text-gray-800 font-bold">محصولات ما</span>
         </div>
       </div>
 
-      {/* محتوای اصلی */}
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex flex-col lg:flex-row gap-8">
-          
-          {/* سایدبار */}
-          <div className="w-full lg:w-1/4 space-y-6">
-            {/* جستجو */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Search size={18} className="text-blue-600" />
-                جستجوی محصول
-              </h3>
-              <div className="relative">
-                <input 
-                  type="text" 
-                  placeholder="نام محصول را وارد کنید..." 
-                  className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 transition text-sm text-gray-900 placeholder-gray-500"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
+      {/* هدر صفحه */}
+      <div className="pt-16 pb-8 text-center px-4">
+        <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 font-[Yekan,'B_Yekan',sans-serif] tracking-tight">
+          محصولات ما
+        </h1>
+        <p className="text-lg text-gray-600 font-medium max-w-2xl mx-auto">
+          اتصالات مدرن، سازه‌های ماندگار؛ تجربه‌ای از کیفیت و دوام در محصولات خوش‌صنعت
+        </p>
 
-            {/* کاتالوگ‌ها (شرکت + دسته‌بندی) */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
-              <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                <Download size={18} className="text-blue-600" />
-                دانلود کاتالوگ‌ها
-              </h3>
-              
-              {/* کاتالوگ شرکت (همیشه نمایش داده می‌شود در صورت وجود) */}
-              {companyCatalogUrl && (
-                <a
-                  href={companyCatalogUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition group"
-                >
-                  <div className="flex items-center gap-2">
-                    <Building2 size={18} className="text-blue-600" />
-                    <span className="text-sm font-bold text-gray-700 group-hover:text-blue-700">کاتالوگ جامع شرکت</span>
-                  </div>
-                  <Download size={16} className="text-blue-500" />
-                </a>
-              )}
-
-              {/* کاتالوگ دسته‌بندی انتخاب شده */}
-              {selectedCategoryData?.catalogUrl && (
-                <a
-                  href={selectedCategoryData.catalogUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition group"
-                >
-                  <div className="flex items-center gap-2">
-                    <FolderTree size={18} className="text-indigo-600" />
-                    <span className="text-sm font-bold text-gray-700 group-hover:text-indigo-700">
-                      کاتالوگ دسته {selectedCategoryData.title}
-                    </span>
-                  </div>
-                  <Download size={16} className="text-indigo-500" />
-                </a>
-              )}
-
-              {/* اگر هیچ کاتالوگی وجود نداشت */}
-              {!companyCatalogUrl && !selectedCategoryData?.catalogUrl && (
-                <p className="text-xs text-gray-400 text-center py-2">هیچ کاتالوگی برای دانلود موجود نیست.</p>
-              )}
-            </div>
-
-            {/* دسته‌بندی‌ها */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-24">
-              <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Filter size={18} className="text-blue-600" />
-                دسته‌بندی‌ها
-              </h3>
-              <div className="space-y-2">
-                <button 
-                  onClick={() => { setSelectedCategory(null); setSelectedSubcategory(null); }}
-                  className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${!selectedCategory ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  همه محصولات
-                </button>
-                {categories.map(category => (
-                  <div key={category.id} className="space-y-1">
-                    <button 
-                      onClick={() => { setSelectedCategory(category.id); setSelectedSubcategory(null); }}
-                      className={`w-full text-right px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex justify-between items-center ${selectedCategory === category.id ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-                    >
-                      {category.title}
-                    </button>
-                    {selectedCategory === category.id && category.subcategories && (
-                      <div className="pr-4 border-r-2 border-blue-100 mr-4 space-y-1 mt-1">
-                        {category.subcategories.map((sub: any) => (
-                          <button
-                            key={sub.id}
-                            onClick={() => setSelectedSubcategory(sub.id)}
-                            className={`w-full text-right px-3 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${selectedSubcategory === sub.id ? 'text-blue-700 bg-blue-50/50' : 'text-gray-500 hover:text-gray-800'}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${selectedSubcategory === sub.id ? 'bg-blue-600' : 'bg-gray-300'}`}></span>
-                            {sub.title}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* گالری محصولات (بدون دکمه دانلود برای محصولات تکی) */}
-          <div className="w-full lg:w-3/4">
-            <div className="flex items-center justify-between mb-6 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-              <div className="flex items-center gap-2 text-gray-600">
-                <LayoutGrid size={20} />
-                <span className="font-bold">نمایش محصولات</span>
-              </div>
-              <span className="text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                {filteredProducts.length} محصول یافت شد
-              </span>
-            </div>
-
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-32 text-blue-500">
-                <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-                <p className="font-bold text-gray-600">در حال دریافت محصولات...</p>
-              </div>
-            ) : filteredProducts.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {filteredProducts.map(product => (
-                  <div
-                    key={product.id}
-                    className="relative group w-full h-[360px] rounded-2xl bg-gray-100 border-2 border-gray-300 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:border-blue-500 overflow-hidden"
-                  >
-                    <img
-                      src={product.imageUrl}
-                      alt={product.title}
-                      className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
-                    <div className="absolute bottom-20 left-0 right-0 p-3 text-center text-white z-10">
-                      <h3 className="text-lg font-bold line-clamp-1">{product.title}</h3>
-                      <p className="text-sm text-gray-100 line-clamp-2 mt-1">{product.shortDesc || product.description}</p>
-                    </div>
-                    <a
-                      href={`/products/${product.slug}`}
-                      className="absolute left-1/2 -translate-x-1/2 bottom-2 opacity-0 group-hover:opacity-100 group-hover:bottom-8 transition-all duration-300 w-4/5 bg-blue-600 text-white text-center py-2 rounded-full text-sm font-bold shadow-md z-20"
-                    >
-                      اطلاعات بیشتر
-                    </a>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm py-32 text-center">
-                <Package size={64} className="mx-auto text-gray-200 mb-4" />
-                <h3 className="text-xl font-bold text-gray-600">محصولی یافت نشد!</h3>
-                <p className="text-gray-400 mt-2">با فیلترهای اعمال شده، هیچ محصولی در سیستم وجود ندارد.</p>
-                <button 
-                  onClick={() => { setSearchQuery(''); setSelectedCategory(null); setSelectedSubcategory(null); }}
-                  className="mt-6 text-blue-600 font-bold hover:underline flex items-center gap-2 mx-auto"
-                >
-                  حذف فیلترها و نمایش همه
-                  <ArrowRight size={16} />
-                </button>
-              </div>
+        {/* بخش دانلود تمامی کاتالوگ‌ها */}
+        {(companyCatalog || categoriesWithCatalogs.length > 0) && (
+          <div className="flex flex-wrap justify-center items-center gap-3 mt-8 max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
+            
+            {/* کاتالوگ شرکت */}
+            {companyCatalog && (
+              <a 
+                href={companyCatalog} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-white border border-gray-200 text-gray-800 px-5 py-2.5 rounded-full text-sm font-bold shadow-sm hover:shadow-md hover:border-blue-600 hover:text-blue-600 transition-all duration-300"
+              >
+                <Download size={16} className="text-blue-500" />
+                کاتالوگ جامع شرکت
+              </a>
             )}
+
+            {/* کاتالوگ‌های دسته‌بندی‌ها */}
+            {categoriesWithCatalogs.map(cat => (
+              <a 
+                key={cat.id}
+                href={cat.catalogUrl!} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-800 px-5 py-2.5 rounded-full text-sm font-bold shadow-sm hover:shadow-md hover:bg-blue-600 hover:text-white transition-all duration-300"
+              >
+                <Download size={16} />
+                کاتالوگ {cat.title}
+              </a>
+            ))}
           </div>
+        )}
+      </div>
+
+      {/* نوار جستجو و تب‌های دسته‌بندی */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mb-10">
+        
+        {/* جستجو (وسط‌چین شده) */}
+        <div className="mb-8 max-w-md mx-auto relative">
+          <input
+            type="text"
+            placeholder="جستجوی محصول در این دسته..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-white border border-gray-200 rounded-full py-3.5 px-6 pr-12 text-sm outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm transition-all text-gray-700 font-medium"
+          />
+          <Search size={20} className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
         </div>
+
+        {/* منوی دسته‌بندی */}
+        <div className="flex justify-start md:justify-center overflow-x-auto overflow-y-hidden whitespace-nowrap gap-6 pb-2 custom-scrollbar border-b border-gray-200">
+          <button
+            onClick={() => setActiveCategoryId('all')}
+            className={`pb-4 text-[16px] transition-all duration-300 relative ${
+              activeCategoryId === 'all' ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'
+            }`}
+          >
+            همه محصولات
+            {activeCategoryId === 'all' && (
+              <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full"></span>
+            )}
+          </button>
+          
+          {categories.map(category => {
+            const isActive = activeCategoryId === category.id;
+            return (
+              <button
+                key={category.id}
+                onClick={() => setActiveCategoryId(category.id)}
+                className={`pb-4 text-[16px] transition-all duration-300 relative ${
+                  isActive ? 'text-blue-600 font-bold' : 'text-gray-500 font-medium hover:text-gray-800'
+                }`}
+              >
+                {category.title}
+                {isActive && (
+                  <span className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 rounded-t-full"></span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* بخش اصلی نمایش محصولات */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8">
+        {loading ? (
+          /* اسکلتون لودینگ */
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="bg-white rounded-[8px] p-4 flex flex-col h-[360px] md:h-[460px] shadow-sm border border-gray-100 animate-pulse">
+                <div className="w-full h-[150px] md:h-[200px] bg-gray-200 rounded-lg mb-4"></div>
+                <div className="w-3/4 h-5 bg-gray-200 rounded mb-2"></div>
+                <div className="w-full h-4 bg-gray-200 rounded mb-1"></div>
+                <div className="w-full h-4 bg-gray-200 rounded mb-1"></div>
+                <div className="w-2/3 h-4 bg-gray-200 rounded mt-auto"></div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length > 0 ? (
+          
+          /* کانتینر محصولات (دارای دکمه‌های مجزا در دو طرف) */
+          <div className="flex items-center gap-4 relative">
+            
+            {/* دکمه راست (عقب در RTL) - بیرون از اسلایدر */}
+            <button 
+              onClick={() => scrollSlider('right')}
+              className="hidden md:flex flex-shrink-0 w-12 h-12 bg-white rounded-full shadow-md border border-gray-200 items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-all duration-300"
+            >
+              <ChevronRight size={24} />
+            </button>
+
+            <div 
+              ref={sliderRef}
+              onScroll={handleScroll}
+              className="grid grid-cols-2 gap-4 md:flex md:flex-row md:overflow-x-auto overflow-y-hidden md:snap-x md:gap-6 py-4 -my-4 px-2 w-full [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] animate-in fade-in duration-700"
+            >
+              {filteredProducts.map(product => (
+                <div 
+                  key={product.id} 
+                  className="md:min-w-[280px] md:max-w-[280px] md:snap-center h-[360px] md:h-[460px] bg-white rounded-[8px] shadow-[0_2px_8px_rgba(0,0,0,0.05)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.1)] transition-all duration-300 overflow-hidden flex flex-col cursor-pointer border border-transparent hover:border-blue-100"
+                >
+                  {/* تصویر */}
+                  <div className="w-full h-[150px] md:h-[200px] overflow-hidden relative bg-gray-100 border-b border-gray-50 flex-shrink-0">
+                    <img 
+                      src={product.imageUrl} 
+                      alt={product.title} 
+                      className="w-full h-full object-cover transform transition-transform duration-500 hover:scale-[1.05]"
+                    />
+                  </div>
+
+                  {/* محتوای کارت */}
+                  <div className="p-3 md:p-5 flex flex-col flex-grow">
+                    <h3 className="font-[Yekan,'B_Yekan',sans-serif] font-bold text-[14px] md:text-[18px] text-[#1F2937] md:mt-[4px] line-clamp-2 leading-snug">
+                      {product.title}
+                    </h3>
+                    <p className="text-[12px] md:text-[14px] text-[#6B7280] mt-[6px] md:mt-[10px] line-clamp-4 leading-relaxed">
+                      {product.shortDesc || product.description?.replace(/<[^>]*>?/gm, '').substring(0, 100)}...
+                    </p>
+                    
+                    {/* دکمه اطلاعات بیشتر */}
+                    <div className="mt-auto pt-[12px] md:pt-[16px]">
+                      <a 
+                        href={`/products/${product.slug}`}
+                        className="inline-flex w-full md:w-auto justify-center items-center gap-1 border border-blue-600 text-blue-600 px-3 md:px-5 py-1.5 md:py-2.5 rounded-full text-[12px] md:text-sm font-bold hover:bg-blue-600 hover:text-white transition-colors duration-300"
+                      >
+                        اطلاعات بیشتر
+                        <ChevronLeft size={16} className="rtl:rotate-0 ltr:rotate-180" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* دکمه چپ (جلو در RTL) - بیرون از اسلایدر */}
+            <button 
+              onClick={() => scrollSlider('left')}
+              className="hidden md:flex flex-shrink-0 w-12 h-12 bg-white rounded-full shadow-md border border-gray-200 items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 transition-all duration-300"
+            >
+              <ChevronLeft size={24} />
+            </button>
+
+          </div>
+        ) : (
+          /* حالت خالی (بدون محصول) */
+          <div className="text-center py-20 md:py-32 bg-white rounded-2xl shadow-sm border border-gray-100 mx-4 md:mx-0">
+            <div className="w-16 h-16 bg-gray-50 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100">
+              <Package size={32} />
+            </div>
+            <h3 className="text-lg md:text-xl font-bold text-gray-700 font-[Yekan,'B_Yekan',sans-serif]">محصولی یافت نشد!</h3>
+            <p className="text-sm md:text-base text-gray-500 mt-2 px-4">
+              هیچ محصولی با مشخصات مورد نظر شما در این بخش وجود ندارد.
+            </p>
+          </div>
+        )}
+
+        {/* نقاط صفحه‌بندی (Dots Indicator) - فقط در حالت دسکتاپ نمایش داده می‌شود */}
+        {!loading && filteredProducts.length > 0 && totalDots > 1 && (
+          <div className="hidden md:flex justify-center items-center gap-3 mt-8 mb-4">
+            {Array.from({ length: totalDots }).map((_, index) => {
+              const isActive = currentSlidePage === index;
+              return (
+                <button
+                  key={index}
+                  onClick={() => scrollToPage(index)}
+                  className={`rounded-full transition-all duration-300 ${
+                    isActive 
+                      ? 'w-[10px] h-[10px] bg-blue-600 ring-4 ring-blue-100' 
+                      : 'w-[8px] h-[8px] bg-gray-300 hover:bg-gray-400'
+                  }`}
+                  aria-label={`اسلاید ${index + 1}`}
+                />
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
-  );
-}
-
-// کامپوننت اصلی که با Suspense صادر می‌شود
-export default function ProductsStorePage() {
-  return (
-    <Suspense 
-      fallback={
-        <div className="min-h-screen flex items-center justify-center bg-[#f1f5f9]">
-          <div className="flex flex-col items-center text-blue-500">
-            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
-            <p className="font-bold text-gray-600">در حال بارگذاری فروشگاه...</p>
-          </div>
-        </div>
-      }
-    >
-      <ProductsStoreContent />
-    </Suspense>
   );
 }

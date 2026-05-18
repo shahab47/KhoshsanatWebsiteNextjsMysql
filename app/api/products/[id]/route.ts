@@ -6,32 +6,43 @@ import { deleteFromMinio } from '@/lib/minio';
 
 export async function GET(
   request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<any> }
 ) {
   try {
-    // در Next.js 15 پارامترها باید حتماً await شوند
     const resolvedParams = await params;
-    const id = parseInt(resolvedParams.id);
+    // استخراج هوشمند پارامتر (چه نام پوشه [id] باشد چه [slug])
+    const identifier = resolvedParams.id || resolvedParams.slug || Object.values(resolvedParams)[0] as string;
     
-    if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر' }, { status: 400 });
+    if (!identifier) return NextResponse.json({ error: 'شناسه نامعتبر' }, { status: 400 });
     
-    const product = await db.product.findUnique({ where: { id } });
+    // ۱. ابتدا سعی می‌کنیم محصول را از روی اسلاگ (متن) پیدا کنیم
+    let product = await db.product.findUnique({ where: { slug: identifier } });
+    
+    // ۲. اگر با اسلاگ پیدا نشد، آن را به عنوان آیدی (عدد) جستجو می‌کنیم
+    if (!product) {
+      const numericId = parseInt(identifier);
+      if (!isNaN(numericId)) {
+        product = await db.product.findUnique({ where: { id: numericId } });
+      }
+    }
+    
     if (!product) return NextResponse.json({ error: 'محصول یافت نشد' }, { status: 404 });
     
     return NextResponse.json(product);
   } catch (error) {
+    console.error("GET Error:", error);
     return NextResponse.json({ error: 'خطا در دریافت محصول' }, { status: 500 });
   }
 }
 
 export async function PUT(
   request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<any> }
 ) {
   try {
-    // باز کردن پارامترها با await
     const resolvedParams = await params;
-    const id = parseInt(resolvedParams.id);
+    const identifier = resolvedParams.id || resolvedParams.slug || Object.values(resolvedParams)[0] as string;
+    const id = parseInt(identifier);
     
     if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر' }, { status: 400 });
 
@@ -47,7 +58,7 @@ export async function PUT(
         shortDesc, 
         imageUrl, 
         gallery, 
-        subcategoryId: parseInt(subcategoryId), // اطمینان از عدد بودن شناسه دسته‌بندی
+        subcategoryId: parseInt(subcategoryId),
         order, 
         isActive 
       },
@@ -59,37 +70,32 @@ export async function PUT(
   }
 }
 
-// حذف محصول به همراه تمام عکس‌های آن از سرور MinIO
 export async function DELETE(
   request: NextRequest, 
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<any> }
 ) {
   try {
-    // باز کردن پارامترها با await
     const resolvedParams = await params;
-    const id = parseInt(resolvedParams.id);
+    const identifier = resolvedParams.id || resolvedParams.slug || Object.values(resolvedParams)[0] as string;
+    const id = parseInt(identifier);
     
     if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر' }, { status: 400 });
 
-    // ۱. اول اطلاعات محصول را می‌گیریم تا آدرس عکس‌هایش را داشته باشیم
     const product = await db.product.findUnique({ where: { id } });
     
     if (!product) {
       return NextResponse.json({ error: 'محصول یافت نشد' }, { status: 404 });
     }
 
-    // ۲. تصویر اصلی را از روی MinIO پاک می‌کنیم
     if (product.imageUrl) {
       await deleteFromMinio(product.imageUrl);
     }
 
-    // ۳. تمام تصاویر گالری را از روی MinIO پاک می‌کنیم
     if (product.gallery) {
       let galleryArray: string[] = [];
       if (typeof product.gallery === 'string') {
         try { galleryArray = JSON.parse(product.gallery); } catch(e){}
       } else if (Array.isArray(product.gallery)) {
-        // با اضافه کردن as string[] به تایپ‌اسکریپت می‌گوییم که ما مطمئنیم این یک آرایه از رشته‌هاست
         galleryArray = product.gallery as string[];
       }
 
@@ -98,7 +104,6 @@ export async function DELETE(
       }
     }
 
-    // ۴. حذف نهایی از دیتابیس
     await db.product.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

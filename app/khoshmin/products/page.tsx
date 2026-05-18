@@ -8,12 +8,8 @@ import {
   LayoutList, XCircle, Crop, X, Check, Settings, Type, Palette, Book, Copy, CheckCheck
 } from 'lucide-react';
 import HitmanTextEditor from '../../../components/hitmantexteditor';
-//import * as novel from 'novel';
 import GalleryManager, { GalleryItem } from '../../../components/GalleryManager';
 import { useModal } from '@/app/contexts/ModalContext';
-
-import dynamic from 'next/dynamic';
-//console.log(Object.keys(novel));
 
 // ==================== توابع کمکی ====================
 const apiFetch = async (url: string, options?: RequestInit) => {
@@ -31,10 +27,8 @@ export default function ProfessionalProductsManager() {
   const [activeTab, setActiveTab] = useState<'categories' | 'products'>('categories');
 
   // استیت کاتالوگ شرکت
-  const [companyCatalogFile, setCompanyCatalogFile] = useState<File | null>(null);
-  const [companyCatalogName, setCompanyCatalogName] = useState('');
   const [companyCatalogUploading, setCompanyCatalogUploading] = useState(false);
-  const [companyCatalogUrl, setCompanyCatalogUrl] = useState('');
+  const [companyCatalogUrl, setCompanyCatalogUrl] = useState<string>('');
 
   // استیت‌های محصولات
   const [currentView, setCurrentView] = useState<'list' | 'add'>('list');
@@ -72,11 +66,13 @@ export default function ProfessionalProductsManager() {
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // state برای رهگیری فایل‌های موقت آپلود شده در فرم محصولات
+  // state برای رهگیری فایل‌های موقت آپلود شده
   const [tempUploadedUrls, setTempUploadedUrls] = useState<string[]>([]);
-  // state برای رهگیری فایل‌های موقت آپلود شده در فرم دسته‌بندی
   const [tempCatUploadedUrls, setTempCatUploadedUrls] = useState<string[]>([]);
 
+  // ----------------------------------------------------
+  // دریافت اطلاعات اولیه از دیتابیس
+  // ----------------------------------------------------
   const fetchCategories = async () => {
     setLoadingCategories(true);
     try {
@@ -93,12 +89,23 @@ export default function ProfessionalProductsManager() {
     } catch (err) { } finally { setLoadingProducts(false); }
   };
 
+  const fetchCompanyCatalog = async () => {
+    try {
+      const res = await apiFetch('/api/products?action=company-catalog');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) setCompanyCatalogUrl(data.url);
+      }
+    } catch (err) { }
+  };
+
   useEffect(() => {
     fetchCategories();
     fetchProducts();
+    fetchCompanyCatalog(); // اجرا هنگام لود صفحه برای نمایش کاتالوگ آپلود شده
   }, []);
 
-  // جلوگیری از خروج ناخواسته صفحه در صورت وجود فایل‌های موقتی
+  // جلوگیری از خروج ناخواسته صفحه
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (tempUploadedUrls.length > 0 || tempCatUploadedUrls.length > 0) {
@@ -122,51 +129,71 @@ export default function ProfessionalProductsManager() {
   const isSlugDuplicate = allProducts.some(p => p.slug === formData.slug && p.id !== editingId);
 
   // ==========================================
-  // آپلود و مدیریت کاتالوگ جامع شرکت
+  // آپلود و مدیریت کاتالوگ جامع شرکت (آپلود خودکار)
   // ==========================================
-  const handleCompanyCatalogUpload = async () => {
-    if (!companyCatalogFile) return;
+  const handleCompanyCatalogUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     setCompanyCatalogUploading(true);
+    
+    // فایل مستقیماً با نام اصلی خودش و بدون تغییر نام آپلود می‌شود
     const fd = new FormData();
-    fd.append('file', companyCatalogFile);
+    fd.append('file', file);
     fd.append('type', 'company_catalog');
     fd.append('folder', 'KSCataloge');
-    if (companyCatalogName.trim()) fd.append('customName', companyCatalogName.trim());
 
     try {
+      // 1. آپلود فایل به سرور ابری MinIO
       const res = await apiFetch('/api/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('خطا در ارتباط با سرور');
+      if (!res.ok) throw new Error('خطا در ارتباط با سرور ابری.');
       const data = await res.json();
+      
+      // 2. ذخیره آدرس نهایی در دیتابیس
+      const saveRes = await apiFetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set-company-catalog', url: data.url })
+      });
+      if (!saveRes.ok) throw new Error('خطا در ثبت آدرس در دیتابیس.');
+      
       setCompanyCatalogUrl(data.url);
-      showAlert('کاتالوگ جامع شرکت با موفقیت آپلود شد ✅', 'موفقیت', 'success');
-      setCompanyCatalogFile(null);
-      setCompanyCatalogName('');
+      showAlert('کاتالوگ با موفقیت آپلود و در سیستم ذخیره شد ✅', 'موفقیت', 'success');
     } catch (err: any) {
       showAlert(`خطا در آپلود ❌\n\n${err.message}`, 'خطا', 'error');
     } finally {
       setCompanyCatalogUploading(false);
+      // پاک کردن مقدار اینپوت برای اینکه دوباره بتوان فایل را انتخاب کرد
+      e.target.value = '';
     }
   };
 
   const handleDeleteCompanyCatalog = async () => {
     if (!companyCatalogUrl) return;
+
     showConfirm({
       title: 'حذف کاتالوگ شرکت',
-      message: 'آیا از حذف کاتالوگ کلی شرکت مطمئن هستید؟',
+      message: 'آیا مطمئن هستید؟ این کار فایل کاتالوگ را از سرور و دیتابیس پاک می‌کند تا بتوانید فایل جدیدی آپلود کنید.',
       type: 'warning',
-      confirmText: 'بله، حذف شود',
+      confirmText: 'بله، کاملاً پاک شود',
       cancelText: 'انصراف',
       onConfirm: async () => {
+        setCompanyCatalogUploading(true);
         try {
-          const res = await apiFetch(`/api/upload?url=${encodeURIComponent(companyCatalogUrl)}`, { method: 'DELETE' });
-          if (res.ok) {
-            setCompanyCatalogUrl('');
-            showAlert('کاتالوگ قبلی با موفقیت حذف شد.', 'موفقیت', 'success');
-          } else {
-            showAlert('خطا در حذف کاتالوگ از سرور.', 'خطا', 'error');
-          }
-        } catch (error) {
-          showAlert('خطای ارتباط با سرور هنگام حذف کاتالوگ.', 'خطا', 'error');
+          // 1. حذف از سرور MinIO
+          const delFileRes = await apiFetch(`/api/upload?url=${encodeURIComponent(companyCatalogUrl)}`, { method: 'DELETE' });
+          if (!delFileRes.ok) throw new Error('فایل از روی فضای ابری پاک نشد.');
+          
+          // 2. حذف از دیتابیس
+          const delDbRes = await apiFetch('/api/products?action=company-catalog', { method: 'DELETE' });
+          if (!delDbRes.ok) throw new Error('رکورد از دیتابیس پاک نشد.');
+          
+          setCompanyCatalogUrl('');
+          showAlert('کاتالوگ با موفقیت از سیستم پاک شد. حالا می‌توانید کاتالوگ جدید را آپلود کنید.', 'موفقیت', 'success');
+        } catch (error: any) {
+          showAlert(error.message || 'خطا در حذف کاتالوگ.', 'خطا', 'error');
+        } finally {
+          setCompanyCatalogUploading(false);
         }
       }
     });
@@ -334,7 +361,6 @@ export default function ProfessionalProductsManager() {
     });
   };
 
-  // تابع برای خروج از فرم دسته‌بندی با بررسی فایل‌های موقتی
   const exitCategoryForm = async () => {
     if (tempCatUploadedUrls.length > 0) {
       showConfirm({
@@ -619,31 +645,39 @@ export default function ProfessionalProductsManager() {
   return (
     <div className="max-w-7xl mx-auto pb-20 text-gray-800" dir="rtl">
 
-      {/* نوار آپلود کاتالوگ شرکت */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row items-center gap-4">
-        <div className="flex items-center gap-3 w-full md:w-auto text-gray-700 font-bold whitespace-nowrap">
-          <Book className="text-blue-500" /> کاتالوگ جامع شرکت
+      {/* ========================================== */}
+      {/* نوار اختصاصی آپلود خودکار کاتالوگ شرکت */}
+      {/* ========================================== */}
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+        
+        <div className="flex items-center gap-3 text-gray-800 font-black text-lg">
+          <div className="bg-blue-100 p-2 rounded-xl text-blue-600"><Book size={24} /></div>
+          کاتالوگ جامع شرکت
         </div>
-        <div className="flex-1 flex flex-col md:flex-row gap-3 w-full">
-          <input type="text" placeholder="نام فایل (پیش‌فرض: نام اصلی فایل)" value={companyCatalogName} onChange={e => setCompanyCatalogName(e.target.value)} className="border border-gray-200 rounded-xl px-4 py-2 flex-1 outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-gray-50" />
-          <input type="file" accept="application/pdf" id="company-catalog-input" className="hidden" onChange={e => setCompanyCatalogFile(e.target.files?.[0] || null)} />
-          <label htmlFor="company-catalog-input" className="cursor-pointer bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-100 transition text-center whitespace-nowrap border border-blue-100">
-            {companyCatalogFile ? companyCatalogFile.name : 'انتخاب فایل PDF'}
-          </label>
-          <button onClick={handleCompanyCatalogUpload} disabled={!companyCatalogFile || companyCatalogUploading} className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-blue-700 transition disabled:opacity-50 flex items-center justify-center gap-2">
-            {companyCatalogUploading ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16} />} آپلود
-          </button>
+
+        <div className="w-full md:w-auto">
+          {companyCatalogUploading ? (
+            <div className="flex justify-center items-center gap-2 bg-blue-50 text-blue-600 px-6 py-2.5 rounded-xl border border-blue-100 font-bold w-full">
+              <Loader2 size={18} className="animate-spin" /> در حال آپلود...
+            </div>
+          ) : companyCatalogUrl ? (
+            <div className="flex items-center gap-3 w-full justify-between md:justify-end">
+               <a href={companyCatalogUrl} target="_blank" rel="noopener noreferrer" className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-emerald-100 transition shadow-sm" dir="ltr">
+                 مشاهده کاتالوگ فعلی <CheckCheck size={18} />
+               </a>
+               <button onClick={handleDeleteCompanyCatalog} className="bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-red-100 transition flex items-center gap-2 shadow-sm">
+                 <Trash2 size={18} /> حذف
+               </button>
+            </div>
+          ) : (
+            <>
+              <input type="file" accept="application/pdf" id="company-catalog-auto-input" className="hidden" onChange={handleCompanyCatalogUpload} />
+              <label htmlFor="company-catalog-auto-input" className="cursor-pointer bg-blue-600 text-white px-8 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 w-full">
+                <UploadCloud size={20} /> انتخاب و آپلود کاتالوگ جدید
+              </label>
+            </>
+          )}
         </div>
-        {companyCatalogUrl && (
-          <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0 justify-end">
-            <button onClick={() => { navigator.clipboard.writeText(companyCatalogUrl); showAlert('کپی شد!', 'موفقیت', 'success'); }} className="px-3 py-2 text-gray-500 hover:text-blue-600 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-2 text-xs font-bold transition">
-              <Copy size={16} /> کپی
-            </button>
-            <button onClick={handleDeleteCompanyCatalog} className="px-3 py-2 text-red-500 hover:text-red-700 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs font-bold transition">
-              <Trash2 size={16} /> حذف
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="mb-8">
@@ -872,10 +906,8 @@ export default function ProfessionalProductsManager() {
                 </button>
               </div>
 
-              {/* فرم محصول: چیدمان ۲ ستونه برابر */}
+              {/* فرم محصول */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-
-                {/* ستون مشخصات اصلی */}
                 <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm space-y-6 flex flex-col justify-start">
                   <h3 className="text-lg font-bold text-gray-700 border-b pb-3">مشخصات اصلی</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -908,7 +940,6 @@ export default function ProfessionalProductsManager() {
                   </div>
                 </div>
 
-                {/* ستون گالری محصول */}
                 <div className="space-y-8 flex flex-col">
                   <div className="bg-white p-6 md:p-8 rounded-2xl border border-gray-100 shadow-sm flex-1 flex flex-col min-h-[450px]">
                     <h3 className="text-lg font-bold text-gray-700 border-b pb-3 mb-6">تصاویر و کاتالوگ PDF</h3>

@@ -21,14 +21,13 @@ RUN npx prisma generate
 COPY . .
 
 # =============================================
-# تنظیمات داینامیک متصل به فایل .env
+# دریافت مقادیر از docker-compose در زمان Build
 # =============================================
-# ۱. دریافت مقادیر از docker-compose در زمان Build
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_ADMINER_URL
 ARG DATABASE_URL
 
-# ۲. تبدیل مقادیر دریافت شده به متغیرهای محیطی برای Next.js
+# تبدیل مقادیر دریافت شده به متغیرهای محیطی برای Next.js
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_ADMINER_URL=$NEXT_PUBLIC_ADMINER_URL
 ENV DATABASE_URL=$DATABASE_URL
@@ -37,10 +36,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# کپی فایل‌های استاتیک برای خروجی Standalone
-RUN cp -r public .next/standalone/ && \
-    cp -r .next/static .next/standalone/.next/
+# کپی فایل‌های استاتیک برای خروجی Standalone (ایمن‌سازی شده با || true)
+RUN cp -r public .next/standalone/ || true && \
+    cp -r .next/static .next/standalone/.next/ || true
 
 EXPOSE 3000
 
+# اعمال دیتابیس و اجرای سرور
 CMD ["sh", "-c", "npx prisma db push && cd .next/standalone && node server.js"]

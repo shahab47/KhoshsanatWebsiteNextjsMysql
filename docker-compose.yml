@@ -30,7 +30,7 @@ services:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
         NEXT_PUBLIC_ADMINER_URL: ${NEXT_PUBLIC_ADMINER_URL}
         DATABASE_URL: ${DATABASE_URL}
-    image: khoshsanatv7-app:latest
+    image: khoshsanatv8-app:latest
     container_name: ks_nextjs
     ports:
       - "127.0.0.1:3000:3000"   # فقط لوکال‌هاست – Nginx هاست پراکسی می‌کند
@@ -59,9 +59,9 @@ services:
     image: adminer:latest
     container_name: ks_adminer
     ports:
-      - "127.0.0.1:8081:8080"
+      - "8081:8080"   # باز شدن پورت کانتینر برای دسترسی عمومی با آی‌پی
     environment:
-      - ADMINER_DEFAULT_SERVER=${MINIO_ENDPOINT} # میتوانید آی‌پی دیتابیس را به عنوان پیش‌فرض قرار دهید
+      - ADMINER_DEFAULT_SERVER=${SERVER_IP}   # استفاده از متغیر داینامیک آی‌پی سرور
     networks:
       - ks_network
     restart: always

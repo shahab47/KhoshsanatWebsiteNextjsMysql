@@ -757,7 +757,7 @@ export default function MediaManager() {
       <div className="bg-white rounded-b-3xl shadow-sm border border-gray-100 border-t-0 overflow-hidden flex flex-col mb-10 cursor-default" onClick={handleBackgroundClick}>
         {/* نوار ابزار */}
         <div className="bg-slate-100 border-y border-gray-200 p-3 md:px-5 flex flex-col lg:flex-row items-center justify-between gap-4 min-h-[64px]" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-2 text-sm font-bold text-gray-600 overflow-x-auto whitespace-nowrap w-full lg:w-auto custom-scrollbar pb-1 lg:pb-0">
+          <div className="flex items-center gap-2 text-sm font-bold text-gray-600 overflow-x-auto overflow-y-hidden whitespace-nowrap w-full lg:w-auto custom-scrollbar pb-1 lg:pb-0">
             <div className="flex items-center gap-1 ml-2 border-l border-gray-300 pl-2">
               <button onClick={goForward} disabled={historyIndex === pathHistory.length - 1} className={`p-2 rounded-lg transition ${historyIndex === pathHistory.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-200'}`} title="جلو"><ArrowRight size={18} /></button>
               <button onClick={goBack} disabled={historyIndex === 0} className={`p-2 rounded-lg transition ${historyIndex === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-slate-700 hover:bg-slate-200'}`} title="عقب"><ArrowLeft size={18} /></button>
@@ -775,7 +775,7 @@ export default function MediaManager() {
             })}
           </div>
 
-          <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto whitespace-nowrap custom-scrollbar pb-1 lg:pb-0">
+          <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto overflow-y-hidden whitespace-nowrap custom-scrollbar pb-1 lg:pb-0">
             {selectedItems.length > 0 ? (
               <>
                 <span className="text-xs font-black text-blue-700 bg-blue-100 px-3 py-1.5 rounded-lg ml-2">{selectedItems.length} مورد</span>

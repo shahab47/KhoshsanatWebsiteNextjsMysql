@@ -122,7 +122,7 @@ export default function SingleProjectPage({ params }: { params: Promise<{ slug?:
       
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
-        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto whitespace-nowrap">
+        <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
           <a href="/" className="hover:text-blue-600 transition">خانه</a>
           <ChevronRight size={16} />
           <a href="/projects" className="hover:text-blue-600 transition">پروژه‌ها</a>

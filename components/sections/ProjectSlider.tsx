@@ -154,8 +154,7 @@ export default function ProjectsShowcase() {
       <div className="flex justify-end mb-6">
         <Link 
           href="/projects" 
-          className="group inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-gray-800 dark:text-gray-100 bg-transparent border border-gray-300 dark:border-gray-600 rounded-2xl hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all duration-300 shadow-sm"
-        >
+className="group inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-[#2D3644] bg-transparent border border-[#2D3644] rounded-2xl hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all duration-300 shadow-sm"        >
           مشاهده آرشیو پروژه‌ها
           <svg className="w-4 h-4 rtl:rotate-180 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
