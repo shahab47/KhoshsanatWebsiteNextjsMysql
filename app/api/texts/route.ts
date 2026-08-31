@@ -1,10 +1,10 @@
 // src/app/api/texts/route.ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { cleanupRemovedFiles, extractImagesFromHtml, isValidMinioUrl } from '@/lib/minio';
 
 // تبدیل تگ <font color="#..."> به <span style="color: ...">
 function convertFontToSpan(html: string): string {
-  // الگوی regex برای یافتن تگ‌های font با attribute color
   return html.replace(/<font\s+color=(["']?)(#[0-9a-fA-F]{6}|[a-z]+)\1\s*>/gi, (match, quote, color) => {
     return `<span style="color: ${color};">`;
   }).replace(/<\/font>/gi, '</span>');
@@ -25,8 +25,24 @@ export async function POST(request: Request) {
 
     for (const [key, value] of Object.entries(data)) {
       if (typeof value === 'string') {
-        // تبدیل تگ font به span
         const cleanValue = convertFontToSpan(value);
+
+        // بررسی و پاکسازی فایل‌های قدیمی MinIO در صورت تغییر تنظیمات
+        const oldSetting = await db.setting.findUnique({ where: { key } });
+        if (oldSetting && oldSetting.value !== cleanValue) {
+          const oldFiles: string[] = [];
+          if (isValidMinioUrl(oldSetting.value)) oldFiles.push(oldSetting.value);
+          oldFiles.push(...extractImagesFromHtml(oldSetting.value));
+
+          const newFiles: string[] = [];
+          if (isValidMinioUrl(cleanValue)) newFiles.push(cleanValue);
+          newFiles.push(...extractImagesFromHtml(cleanValue));
+
+          if (oldFiles.length > 0) {
+            await cleanupRemovedFiles(oldFiles, newFiles);
+          }
+        }
+
         await db.setting.upsert({
           where: { key },
           update: { value: cleanValue },

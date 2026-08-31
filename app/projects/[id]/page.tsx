@@ -1,180 +1,196 @@
-'use client';
-// مسیر فایل: src/app/projects/[slug]/page.tsx
+// app/projects/[id]/page.tsx
+import React from 'react';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { ChevronRight, MapPin, ArrowLeft, FolderOpen, FileText, Download } from 'lucide-react';
+import db from '@/lib/db';
+import ProjectDetailGallery from '@/components/projects/ProjectDetailGallery';
+import {
+  SITE_CONFIG,
+  generateProjectSchema,
+  generateBreadcrumbSchema,
+  getCanonicalUrl,
+  stripHtml,
+} from '@/lib/seo';
+import JsonLd from '@/components/seo/JsonLd';
 
-import React, { useState, useEffect, use } from 'react';
-import { ChevronRight, MapPin, LayoutGrid, ArrowLeft, FolderOpen, FileText, Download, Image as ImageIcon } from 'lucide-react';
+export const revalidate = 60; // بازسازی کش هر ۶۰ ثانیه
 
-export default function SingleProjectPage({ params }: { params: Promise<{ slug?: string, id?: string }> }) {
-  const resolvedParams = use(params);
+interface PageProps {
+  params: Promise<{ id?: string; slug?: string }>;
+}
+
+async function getProject(identifier?: string) {
+  if (!identifier) return null;
+  const decoded = decodeURIComponent(identifier);
+  const numericId = parseInt(decoded);
+
+  const project = await db.project.findFirst({
+    where: {
+      OR: [
+        { slug: decoded },
+        ...(!isNaN(numericId) ? [{ id: numericId }] : []),
+      ],
+      isActive: true,
+    },
+  });
+
+  return project;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const resolvedParams = await params;
   const identifier = resolvedParams.slug || resolvedParams.id;
-
-  const [project, setProject] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [activeImage, setActiveImage] = useState<string>('');
-  
-  const [images, setImages] = useState<{url: string, name: string}[]>([]);
-  const [files, setFiles] = useState<{url: string, name: string}[]>([]);
-
-  useEffect(() => {
-    const fetchProject = async () => {
-      if (!identifier) return;
-      
-      try {
-        const res = await fetch(`/api/projects/${encodeURIComponent(identifier)}`);
-        if (!res.ok) {
-          setProject(null);
-          setLoading(false);
-          return;
-        }
-        const found = await res.json();
-        
-        if (found && found.isActive) {
-          setProject(found);
-          setActiveImage(found.imageUrl || '');
-          
-          let allAttachments: any[] = [];
-          
-          // دریافت اطلاعات گالری
-          if (typeof found.gallery === 'string') {
-            try { allAttachments = JSON.parse(found.gallery); } catch(e){}
-          } else if (Array.isArray(found.gallery)) {
-            allAttachments = found.gallery;
-          }
-
-          // (اختیاری) اگر فیلد files جداگانه دارید، می‌توانید اضافه کنید
-          if (found.files) {
-            if (typeof found.files === 'string') {
-              try { allAttachments = [...allAttachments, ...JSON.parse(found.files)]; } catch(e){}
-            } else if (Array.isArray(found.files)) {
-              allAttachments = [...allAttachments, ...found.files];
-            }
-          }
-
-          const parsedImages: {url: string, name: string}[] = [];
-          const parsedFiles: {url: string, name: string}[] = [];
-
-          if (found.imageUrl) {
-            parsedImages.push({ url: found.imageUrl, name: 'تصویر اصلی' });
-          }
-
-          allAttachments.forEach((item: any) => {
-            let url = '';
-            if (typeof item === 'string') url = item;
-            else if (item && typeof item === 'object') {
-              url = item.imageUrl || item.url || item.path || item.src || '';
-              if (!url) {
-                const possibleKey = Object.keys(item).find(k => 
-                  typeof item[k] === 'string' && (item[k].startsWith('http') || item[k].startsWith('/'))
-                );
-                if (possibleKey) url = item[possibleKey];
-              }
-            }
-            if (!url) return;
-            
-            const name = typeof item === 'string' 
-              ? decodeURIComponent(url.split('/').pop() || 'فایل') 
-              : (item.name || item.title || decodeURIComponent(url.split('/').pop() || 'فایل'));
-
-            const isImg = /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(url);
-            if (isImg) {
-              if (!parsedImages.some(img => img.url === url)) parsedImages.push({url, name});
-            } else {
-              if (!parsedFiles.some(f => f.url === url)) parsedFiles.push({url, name});
-            }
-          });
-
-          setImages(parsedImages);
-          setFiles(parsedFiles);
-        }
-      } catch (err) {
-        console.error("خطا در دریافت پروژه:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchProject();
-  }, [identifier]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#f1f5f9] flex items-center justify-center">
-        <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
+  const project = await getProject(identifier);
 
   if (!project) {
-    return (
-      <div className="min-h-screen bg-[#f1f5f9] flex flex-col items-center justify-center px-6 text-center">
-        <LayoutGrid size={80} className="text-gray-300 mb-6" />
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">پروژه مورد نظر یافت نشد!</h1>
-        <p className="text-gray-500 mb-8 max-w-md">احتمالاً این پروژه حذف شده یا آدرس را اشتباه وارد کرده‌اید.</p>
-        <a href="/projects" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">
-          بازگشت به لیست پروژه‌ها
-        </a>
-      </div>
-    );
+    return {
+      title: 'پروژه یافت نشد',
+      robots: { index: false, follow: false },
+    };
   }
 
+  const plainDesc = stripHtml(project.content || SITE_CONFIG.description).substring(0, 160);
+  const title = `${project.title} | خوش‌صنعت پایدار`;
+  const canonicalPath = `/projects/${encodeURIComponent(project.slug)}`;
+  const imageUrl = project.imageUrl.startsWith('http')
+    ? project.imageUrl
+    : `${SITE_CONFIG.siteUrl}${project.imageUrl}`;
+
+  return {
+    title: {
+      absolute: title,
+    },
+    description: plainDesc,
+    alternates: {
+      canonical: canonicalPath,
+    },
+    openGraph: {
+      title,
+      description: plainDesc,
+      url: getCanonicalUrl(canonicalPath),
+      siteName: SITE_CONFIG.name,
+      locale: SITE_CONFIG.locale,
+      type: 'website',
+      images: [
+        {
+          url: imageUrl,
+          width: 800,
+          height: 600,
+          alt: project.title,
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: plainDesc,
+      images: [imageUrl],
+    },
+  };
+}
+
+export default async function SingleProjectPage({ params }: PageProps) {
+  const resolvedParams = await params;
+  const identifier = resolvedParams.slug || resolvedParams.id;
+  const project = await getProject(identifier);
+
+  if (!project) {
+    notFound();
+  }
+
+  // استخراج فایل‌ها و تصاویر ضمیمه
+  let allAttachments: any[] = [];
+  if (typeof project.gallery === 'string') {
+    try {
+      allAttachments = JSON.parse(project.gallery);
+    } catch (e) {
+      console.error('خطا در پارس گالری پروژه:', e);
+    }
+  } else if (Array.isArray(project.gallery)) {
+    allAttachments = project.gallery;
+  }
+
+  const parsedImages: { url: string; name: string }[] = [];
+  const parsedFiles: { url: string; name: string }[] = [];
+
+  if (project.imageUrl) {
+    parsedImages.push({ url: project.imageUrl, name: 'تصویر اصلی پروژه' });
+  }
+
+  allAttachments.forEach((item: any) => {
+    let url = '';
+    if (typeof item === 'string') url = item;
+    else if (item && typeof item === 'object') {
+      url = item.imageUrl || item.url || item.path || item.src || '';
+    }
+    if (!url) return;
+
+    const name =
+      typeof item === 'string'
+        ? decodeURIComponent(url.split('/').pop() || 'فایل')
+        : item.name || item.title || decodeURIComponent(url.split('/').pop() || 'فایل');
+
+    const isImg = /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i.test(url);
+    if (isImg) {
+      if (!parsedImages.some((img) => img.url === url)) parsedImages.push({ url, name });
+    } else {
+      if (!parsedFiles.some((f) => f.url === url)) parsedFiles.push({ url, name });
+    }
+  });
+
+  const breadcrumbSchema = generateBreadcrumbSchema([
+    { name: 'خانه', path: '/' },
+    { name: 'پروژه‌ها', path: '/projects' },
+    { name: project.title, path: `/projects/${project.slug}` },
+  ]);
+
+  const projectSchema = generateProjectSchema({
+    title: project.title,
+    slug: project.slug,
+    content: project.content,
+    imageUrl: project.imageUrl,
+    category: project.category,
+    location: project.location,
+    createdAt: project.createdAt,
+  });
+
   return (
-    <div className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
-      
+    <main className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
+      <JsonLd id="project-breadcrumb-schema" data={breadcrumbSchema} />
+      <JsonLd id="project-single-schema" data={projectSchema} />
+
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
-          <a href="/" className="hover:text-blue-600 transition">خانه</a>
+          <Link href="/" className="hover:text-blue-600 transition">
+            خانه
+          </Link>
           <ChevronRight size={16} />
-          <a href="/projects" className="hover:text-blue-600 transition">پروژه‌ها</a>
+          <Link href="/projects" className="hover:text-blue-600 transition">
+            پروژه‌ها
+          </Link>
           <ChevronRight size={16} />
-          <span className="text-gray-800 font-bold truncate max-w-[200px] sm:max-w-md">{project.title}</span>
+          <span className="text-gray-800 font-bold truncate max-w-[200px] sm:max-w-md">
+            {project.title}
+          </span>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <article className="max-w-7xl mx-auto px-6 py-10">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          
           <div className="grid grid-cols-1 lg:grid-cols-2">
-            
-            {/* ستون راست: گالری تصاویر */}
-            <div className="p-6 md:p-8 border-b lg:border-b-0 lg:border-l border-gray-100 bg-gray-50/30">
-              <div className="aspect-video lg:aspect-square rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shadow-sm mb-6">
-                {activeImage ? (
-                  <img 
-                    src={activeImage} 
-                    alt={project.title} 
-                    className="w-full h-full object-contain p-2"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <ImageIcon size={48} />
-                  </div>
-                )}
-              </div>
-              
-              {images.length > 1 && (
-                <div className="flex gap-3 overflow-x-auto pb-2">
-                  {images.map((img, index) => (
-                    <button 
-                      key={index} 
-                      onClick={() => setActiveImage(img.url)}
-                      title={img.name}
-                      className={`flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden border-2 transition-all ${
-                        activeImage === img.url 
-                          ? 'border-blue-500 shadow-md scale-105' 
-                          : 'border-gray-200 opacity-70 hover:opacity-100 hover:border-gray-300'
-                      }`}
-                    >
-                      <img src={img.url} className="w-full h-full object-cover" alt={img.name} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* ستون راست: گالری تصاویر تعاملی */}
+            <ProjectDetailGallery
+              title={project.title}
+              mainImageUrl={project.imageUrl}
+              images={parsedImages}
+            />
 
-            {/* ستون چپ: اطلاعات و محتوای پروژه */}
+            {/* ستون چپ: اطلاعات و محتوای پروژه (رندر سروری) */}
             <div className="p-6 md:p-8 flex flex-col">
-              {/* دسته‌بندی (بالای عنوان) */}
+              {/* دسته‌بندی */}
               {project.category && (
                 <div className="mb-4">
                   <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-bold border border-blue-100">
@@ -184,9 +200,9 @@ export default function SingleProjectPage({ params }: { params: Promise<{ slug?:
                 </div>
               )}
 
-              {/* ردیف عنوان و موقعیت (عنوان وسط، موقعیت سمت چپ) */}
-              <div className="flex justify-between items-center gap-4 mb-4">
-                <h1 className="text-3xl lg:text-4xl font-black text-gray-900 leading-tight text-center flex-1">
+              {/* ردیف عنوان و موقعیت */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                <h1 className="text-3xl lg:text-4xl font-black text-gray-900 leading-tight flex-1">
                   {project.title}
                 </h1>
                 {project.location && (
@@ -197,27 +213,29 @@ export default function SingleProjectPage({ params }: { params: Promise<{ slug?:
                 )}
               </div>
 
-              {/* خط جداکننده بین عنوان و محتوا */}
               <div className="border-t border-gray-200 my-4"></div>
 
               {/* محتوای رندر شده از ویرایشگر */}
               {project.content && (
-                <div 
-                  className="prose prose-gray max-w-none prose-headings:text-gray-800 prose-p:text-gray-600 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-img:rounded-xl prose-img:shadow-md mb-8"
+                <div
+                  className="prose prose-gray max-w-none prose-headings:text-gray-800 prose-p:text-gray-600 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-img:rounded-xl prose-img:shadow-md mb-8 leading-loose text-justify"
                   dangerouslySetInnerHTML={{ __html: project.content }}
                 />
               )}
 
-              {/* بخش فایل‌های ضمیمه (اسناد و مدارک) */}
-              {files.length > 0 && (
-                <div className="mt-6 mb-8 border-t border-gray-100 pt-6">
-                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+              {/* بخش فایل‌های ضمیمه */}
+              {parsedFiles.length > 0 && (
+                <section className="mt-6 mb-8 border-t border-gray-100 pt-6">
+                  <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <FileText className="text-blue-600" size={20} />
-                    فایل‌های ضمیمه پروژه
-                  </h3>
+                    فایل‌ها و مدارک ضمیمه پروژه
+                  </h2>
                   <div className="grid grid-cols-1 gap-3">
-                    {files.map((file, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition">
+                    {parsedFiles.map((file, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl hover:border-blue-300 hover:bg-blue-50/50 transition"
+                      >
                         <div className="flex items-center gap-3 overflow-hidden">
                           <div className="bg-white p-2 rounded-lg text-blue-600 shrink-0 shadow-sm">
                             <FileText size={18} />
@@ -234,26 +252,26 @@ export default function SingleProjectPage({ params }: { params: Promise<{ slug?:
                           className="flex items-center gap-1.5 bg-white text-blue-600 border border-blue-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-600 hover:text-white transition shrink-0 mr-2"
                         >
                           <Download size={16} />
-                          دانلود
+                          دانلود فایل
                         </a>
                       </div>
                     ))}
                   </div>
-                </div>
+                </section>
               )}
 
               <div className="mt-auto pt-8 border-t border-gray-100">
-                <a 
-                  href="/contact" 
+                <Link
+                  href="/contact"
                   className="inline-flex items-center justify-center gap-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md hover:shadow-lg"
                 >
                   شروع پروژه‌ای مشابه با ما <ArrowLeft size={20} />
-                </a>
+                </Link>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </article>
+    </main>
   );
 }

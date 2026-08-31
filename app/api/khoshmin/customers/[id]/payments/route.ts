@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { deleteFromMinio, cleanupRemovedFiles } from '@/lib/minio';
 
 async function syncCustomerBalance(customerId: number) {
   try {
@@ -135,6 +136,11 @@ export async function PUT(
       return NextResponse.json({ error: 'پرداخت یافت نشد' }, { status: 404 });
     }
 
+    // پاکسازی فایل قبلی در صورت تغییر پیوست
+    if (attachmentUrl !== undefined) {
+      await cleanupRemovedFiles([existing.attachmentUrl], [attachmentUrl]);
+    }
+
     const oldInvoiceId = existing.invoiceId;
     const newInvoiceId = invoiceId !== undefined ? (invoiceId ? parseInt(invoiceId) : null) : existing.invoiceId;
 
@@ -180,6 +186,11 @@ export async function DELETE(
     });
     if (!existing) {
       return NextResponse.json({ error: 'پرداخت یافت نشد' }, { status: 404 });
+    }
+
+    // حذف فایل پیوست رسید پرداخت از MinIO
+    if (existing.attachmentUrl) {
+      await deleteFromMinio(existing.attachmentUrl);
     }
 
     const linkedInvoiceId = existing.invoiceId;

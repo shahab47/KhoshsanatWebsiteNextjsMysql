@@ -1,6 +1,11 @@
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteFromMinio } from '@/lib/minio';
+import { 
+  extractUrlsFromJson, 
+  extractImagesFromHtml, 
+  cleanupRemovedFiles, 
+  deleteFilesFromMinio 
+} from '@/lib/minio';
 
 export async function GET() {
   try {
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(category, { status: 201 });
   } catch (error) {
-    console.error(error);
+    console.error('Error creating category:', error);
     return NextResponse.json({ error: 'خطا در ایجاد دسته‌بندی' }, { status: 500 });
   }
 }
@@ -45,10 +50,27 @@ export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
     const { id, title, slug, icon, imageUrl, imageSize, order, isActive, gallery, catalogUrl } = body;
-    if (!id) return NextResponse.json({ error: 'شناسه الزامی است' }, { status: 400 });
+    const catId = parseInt(id);
+    if (isNaN(catId)) return NextResponse.json({ error: 'شناسه الزامی است' }, { status: 400 });
     
+    // ۱. بررسی دسته‌بندی قدیمی و پاکسازی تفاضلی فایل‌های حذف/تعویض شده
+    const oldCategory = await db.category.findUnique({ where: { id: catId } });
+    if (oldCategory) {
+      const oldFiles = [
+        oldCategory.imageUrl,
+        oldCategory.catalogUrl,
+        ...extractUrlsFromJson(oldCategory.gallery)
+      ];
+      const newFiles = [
+        imageUrl,
+        catalogUrl,
+        ...extractUrlsFromJson(gallery)
+      ];
+      await cleanupRemovedFiles(oldFiles, newFiles);
+    }
+
     const category = await db.category.update({
-      where: { id: parseInt(id) },
+      where: { id: catId },
       data: {
         title,
         slug,
@@ -63,7 +85,7 @@ export async function PUT(request: NextRequest) {
     });
     return NextResponse.json(category);
   } catch (error) {
-    console.error(error);
+    console.error('Error updating category:', error);
     return NextResponse.json({ error: 'خطا در ویرایش دسته‌بندی' }, { status: 500 });
   }
 }
@@ -72,30 +94,52 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'شناسه الزامی است' }, { status: 400 });
+    const catId = parseInt(id || '');
+    if (isNaN(catId)) return NextResponse.json({ error: 'شناسه الزامی است' }, { status: 400 });
     
     const category = await db.category.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: catId },
+      include: {
+        subcategories: {
+          include: {
+            products: true
+          }
+        }
+      }
     });
     
-    if (category?.imageUrl) {
-      try { await deleteFromMinio(category.imageUrl); } catch (e) {}
+    if (!category) {
+      return NextResponse.json({ error: 'دسته‌بندی یافت نشد' }, { status: 404 });
     }
-    if (category?.catalogUrl) {
-      try { await deleteFromMinio(category.catalogUrl); } catch (e) {}
-    }
-    if (category?.gallery && Array.isArray(category.gallery)) {
-      for (const url of category.gallery) {
-        if (typeof url === 'string') {
-          try { await deleteFromMinio(url); } catch (e) {}
+
+    // جمع‌آوری تمام فایل‌های دسته‌بندی و تمام محصولات وابسته به زیرمجموعه‌های آن
+    const allFilesToDelete: string[] = [];
+
+    if (category.imageUrl) allFilesToDelete.push(category.imageUrl);
+    if (category.catalogUrl) allFilesToDelete.push(category.catalogUrl);
+    allFilesToDelete.push(...extractUrlsFromJson(category.gallery));
+
+    if (category.subcategories && Array.isArray(category.subcategories)) {
+      for (const sub of category.subcategories) {
+        if (sub.products && Array.isArray(sub.products)) {
+          for (const product of sub.products) {
+            if (product.imageUrl) allFilesToDelete.push(product.imageUrl);
+            if (product.catalogUrl) allFilesToDelete.push(product.catalogUrl);
+            allFilesToDelete.push(...extractUrlsFromJson(product.gallery));
+            allFilesToDelete.push(...extractImagesFromHtml(product.description));
+          }
         }
       }
     }
+
+    // حذف فیزیکی تمام فایل‌ها از باکت MinIO
+    await deleteFilesFromMinio(allFilesToDelete);
     
-    await db.category.delete({ where: { id: parseInt(id) } });
+    // حذف رکورد از دیتابیس
+    await db.category.delete({ where: { id: catId } });
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error(error);
+    console.error('Error deleting category:', error);
     return NextResponse.json({ error: 'خطا در حذف دسته‌بندی' }, { status: 500 });
   }
 }

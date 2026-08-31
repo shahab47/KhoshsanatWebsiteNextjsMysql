@@ -2,19 +2,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
-import { uploadToMinio, deleteFromMinio } from '@/lib/minio';
+import { 
+  uploadToMinio, 
+  deleteFilesFromMinio, 
+  cleanupRemovedFiles, 
+  extractUrlsFromJson, 
+  isValidMinioUrl 
+} from '@/lib/minio';
 
-// تابع کمکی برای اعتبارسنجی URL مینیو
-function isValidMinioUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') return false;
-  const bucket = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-  return (
-    (url.startsWith('http://') || url.startsWith('https://')) &&
-    url.includes(`/${bucket}/`)
-  );
-}
-
-// GET – بدون تغییر
+// GET – دریافت لیست تحویل بارها
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -77,7 +73,6 @@ export async function POST(
           signatureUrl = uploadedUrl;
         } else {
           console.error('آدرس برگشتی از MinIO معتبر نیست:', uploadedUrl);
-          // در اینجا می‌توانید خطا بدهید یا ادامه دهید (امضا ذخیره نمی‌شود)
         }
       } catch (err) {
         console.error('خطا در آپلود امضا به MinIO:', err);
@@ -133,7 +128,7 @@ export async function POST(
   }
 }
 
-// PUT – بدون تغییر خاص (اما می‌توانید validation اضافه کنید)
+// PUT – ویرایش تحویل بار
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -145,7 +140,7 @@ export async function PUT(
     const deliveryId = parseInt(url.searchParams.get('deliveryId') || '');
     const body = await request.json();
     
-    const { status, productName, quantity, unit, deliveryDate, description, signatureUrl } = body;
+    const { status, productName, quantity, unit, deliveryDate, description, signatureUrl, attachments } = body;
 
     if (isNaN(customerId) || isNaN(deliveryId)) {
       return NextResponse.json({ error: 'اطلاعات نامعتبر' }, { status: 400 });
@@ -158,14 +153,20 @@ export async function PUT(
       return NextResponse.json({ error: 'تحویل بار یافت نشد' }, { status: 404 });
     }
 
-    // اگر signatureUrl جدید داده شده و معتبر نیست، نادیده بگیر
+    // بررسی و پاکسازی تفاضلی فایل‌های امضا و پیوست‌های حذف/تعویض شده
+    const oldFiles = [
+      existing.signatureUrl,
+      ...extractUrlsFromJson(existing.attachments)
+    ];
+    const newFiles = [
+      signatureUrl !== undefined ? signatureUrl : existing.signatureUrl,
+      ...extractUrlsFromJson(attachments !== undefined ? attachments : existing.attachments)
+    ];
+    await cleanupRemovedFiles(oldFiles, newFiles);
+
     let finalSignatureUrl = existing.signatureUrl;
     if (signatureUrl !== undefined) {
-      if (signatureUrl && isValidMinioUrl(signatureUrl)) {
-        finalSignatureUrl = signatureUrl;
-      } else {
-        finalSignatureUrl = null;
-      }
+      finalSignatureUrl = signatureUrl && isValidMinioUrl(signatureUrl) ? signatureUrl : null;
     }
 
     const updated = await db.delivery.update({
@@ -178,6 +179,7 @@ export async function PUT(
         deliveryDate: deliveryDate ? new Date(deliveryDate) : existing.deliveryDate,
         description: description !== undefined ? (description || null) : existing.description,
         signatureUrl: finalSignatureUrl,
+        attachments: attachments !== undefined ? attachments : existing.attachments,
       }
     });
     return NextResponse.json(updated);
@@ -187,7 +189,7 @@ export async function PUT(
   }
 }
 
-// DELETE – حذف رکورد و فایل‌های MinIO (فقط در صورت معتبر بودن URL)
+// DELETE – حذف رکورد و فایل‌های MinIO
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -209,39 +211,12 @@ export async function DELETE(
       return NextResponse.json({ error: 'تحویل بار یافت نشد' }, { status: 404 });
     }
 
-    // حذف امضا فقط در صورت معتبر بودن URL
-    if (existing.signatureUrl && typeof existing.signatureUrl === 'string') {
-      if (isValidMinioUrl(existing.signatureUrl)) {
-        try {
-          await deleteFromMinio(existing.signatureUrl);
-        } catch (err) {
-          console.error('خطا در حذف امضا از MinIO:', err);
-        }
-      } else {
-        console.warn('امضا در MinIO نیست، حذف نمی‌شود:', existing.signatureUrl);
-      }
-    }
-
-    // حذف پیوست‌های معتبر
-    const attachments = existing.attachments;
-    if (attachments && Array.isArray(attachments)) {
-      for (const att of attachments) {
-        if (!att) continue;
-        let fileUrl: string | null = null;
-        if (typeof att === 'string') fileUrl = att;
-        else if (typeof att === 'object' && att !== null) fileUrl = (att as any).url;
-        
-        if (fileUrl && isValidMinioUrl(fileUrl)) {
-          try {
-            await deleteFromMinio(fileUrl);
-          } catch (err) {
-            console.error(`خطا در حذف فایل پیوست "${fileUrl}" از MinIO:`, err);
-          }
-        } else if (fileUrl) {
-          console.warn('فایل پیوست در MinIO نیست، حذف نمی‌شود:', fileUrl);
-        }
-      }
-    }
+    // پاکسازی کامل امضا و پیوست‌ها از باکت MinIO
+    const filesToDelete = [
+      existing.signatureUrl,
+      ...extractUrlsFromJson(existing.attachments)
+    ];
+    await deleteFilesFromMinio(filesToDelete);
 
     await db.delivery.delete({ where: { id: deliveryId } });
     return NextResponse.json({ success: true });

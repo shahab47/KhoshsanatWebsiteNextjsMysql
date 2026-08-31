@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { deleteFromMinio, cleanupRemovedFiles } from '@/lib/minio';
 
 async function syncCustomerBalance(customerId: number) {
   try {
@@ -113,6 +114,11 @@ export async function PUT(
       return NextResponse.json({ error: 'فاکتور یافت نشد' }, { status: 404 });
     }
 
+    // پاکسازی فایل قبلی در صورت تغییر پیوست
+    if (attachmentUrl !== undefined) {
+      await cleanupRemovedFiles([existing.attachmentUrl], [attachmentUrl]);
+    }
+
     let finalAmount = existing.finalAmount;
     if (amount !== undefined || discount !== undefined || tax !== undefined) {
       const newAmount = amount !== undefined ? amount : existing.amount;
@@ -167,6 +173,11 @@ export async function DELETE(
     }
     if (existing.payments.length > 0) {
       return NextResponse.json({ error: 'این فاکتور دارای پرداخت است و قابل حذف نمی‌باشد' }, { status: 400 });
+    }
+
+    // حذف فایل پیوست فاکتور از MinIO
+    if (existing.attachmentUrl) {
+      await deleteFromMinio(existing.attachmentUrl);
     }
 
     await db.invoiceItem.deleteMany({ where: { invoiceId } });

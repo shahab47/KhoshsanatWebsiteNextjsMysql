@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['192.168.3.27', 'localhost:3000'],
   // تنظیمات افزایش محدودیت حجم آپلود فایل
   experimental: {
     proxyClientMaxBodySize: '250mb',

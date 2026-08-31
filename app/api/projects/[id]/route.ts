@@ -2,7 +2,12 @@
 
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteFromMinio } from '@/lib/minio';
+import { 
+  extractUrlsFromJson, 
+  extractImagesFromHtml, 
+  cleanupRemovedFiles, 
+  deleteFilesFromMinio 
+} from '@/lib/minio';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -46,6 +51,22 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
     const { id: _, createdAt: __, updatedAt: ___, ...updateData } = body;
     
+    // ۱. بررسی پروژه قبلی و پاکسازی تفاضلی فایل‌های کاور، گالری و عکس‌های ادیتور متن
+    const oldProject = await db.project.findUnique({ where: { id } });
+    if (oldProject) {
+      const oldFiles = [
+        oldProject.imageUrl,
+        ...extractUrlsFromJson(oldProject.gallery),
+        ...extractImagesFromHtml(oldProject.content)
+      ];
+      const newFiles = [
+        body.imageUrl,
+        ...extractUrlsFromJson(body.gallery),
+        ...extractImagesFromHtml(body.content)
+      ];
+      await cleanupRemovedFiles(oldFiles, newFiles);
+    }
+
     const project = await db.project.update({
       where: { id },
       data: updateData
@@ -66,24 +87,14 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const project = await db.project.findUnique({ where: { id } });
     if (!project) return NextResponse.json({ error: 'یافت نشد' }, { status: 404 });
 
-    // 🟢 پاک کردن عکس اصلی و گالری از فضای ابری MinIO
-    if (project.imageUrl) {
-      try { await deleteFromMinio(project.imageUrl); } catch(e){}
-    }
+    // پاک کردن عکس اصلی، گالری و تصاویر ادیتور متن از فضای ابری MinIO
+    const allFilesToDelete = [
+      project.imageUrl,
+      ...extractUrlsFromJson(project.gallery),
+      ...extractImagesFromHtml(project.content)
+    ];
 
-    if (project.gallery) {
-      let galleryArray: string[] = [];
-      if (typeof project.gallery === 'string') {
-        try { galleryArray = JSON.parse(project.gallery); } catch(e){}
-      } else if (Array.isArray(project.gallery)) {
-        galleryArray = project.gallery as string[];
-      }
-      for (const url of galleryArray) {
-        if (typeof url === 'string') {
-          try { await deleteFromMinio(url); } catch(e){}
-        }
-      }
-    }
+    await deleteFilesFromMinio(allFilesToDelete);
 
     await db.project.delete({ where: { id } });
     return NextResponse.json({ success: true });

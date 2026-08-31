@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { SlideType } from '@prisma/client';
+import { deleteFromMinio } from '@/lib/minio';
 
 // تابع کمکی برای دریافت حجم تصویر از URL (فقط در زمان آپلود یا ویرایش)
 async function getImageSizeFromUrl(url: string): Promise<number | null> {
@@ -116,6 +117,9 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    const slideId = Number(id);
+    const existingSlide = await db.slide.findUnique({ where: { id: slideId } });
+
     const updateData: any = {};
     if (title !== undefined) updateData.title = title;
     if (subtitle !== undefined) updateData.subtitle = subtitle;
@@ -129,8 +133,11 @@ export async function PUT(request: NextRequest) {
       updateData.type = type as SlideType;
     }
     
-    // اگر imageUrl تغییر کرد، حجم رو دوباره محاسبه کن
+    // اگر imageUrl تغییر کرد، فایل قبلی را از MinIO حذف و حجم رو دوباره محاسبه کن
     if (imageUrl !== undefined) {
+      if (existingSlide?.imageUrl && existingSlide.imageUrl !== imageUrl) {
+        await deleteFromMinio(existingSlide.imageUrl);
+      }
       updateData.imageUrl = imageUrl;
       const newSize = await getImageSizeFromUrl(imageUrl);
       if (newSize) {
@@ -139,7 +146,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const updatedSlide = await db.slide.update({
-      where: { id: Number(id) },
+      where: { id: slideId },
       data: updateData,
     });
 

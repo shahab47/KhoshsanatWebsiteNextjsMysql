@@ -2,7 +2,12 @@
 
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteFromMinio } from '@/lib/minio';
+import { 
+  extractUrlsFromJson, 
+  extractImagesFromHtml, 
+  cleanupRemovedFiles, 
+  deleteFilesFromMinio 
+} from '@/lib/minio';
 
 export async function GET(
   request: NextRequest, 
@@ -49,6 +54,24 @@ export async function PUT(
     const body = await request.json();
     const { title, slug, description, shortDesc, imageUrl, catalogUrl, gallery, subcategoryId, order, isActive } = body;
     
+    // ۱. بررسی محصول قبلی و پاکسازی تفاضلی فایل‌های حذف/تعویض شده (کاور، کاتالوگ، گالری و تصاویر ادیتور)
+    const oldProduct = await db.product.findUnique({ where: { id } });
+    if (oldProduct) {
+      const oldFiles = [
+        oldProduct.imageUrl,
+        oldProduct.catalogUrl,
+        ...extractUrlsFromJson(oldProduct.gallery),
+        ...extractImagesFromHtml(oldProduct.description)
+      ];
+      const newFiles = [
+        imageUrl,
+        catalogUrl,
+        ...extractUrlsFromJson(gallery),
+        ...extractImagesFromHtml(description)
+      ];
+      await cleanupRemovedFiles(oldFiles, newFiles);
+    }
+
     const product = await db.product.update({
       where: { id },
       data: { 
@@ -88,26 +111,15 @@ export async function DELETE(
       return NextResponse.json({ error: 'محصول یافت نشد' }, { status: 404 });
     }
 
-    if (product.imageUrl) {
-      try { await deleteFromMinio(product.imageUrl); } catch(e){}
-    }
+    // جمع‌آوری تمام فایل‌های محصول شامل کاور، کاتالوگ، گالری و عکس‌های داخل متن توضیحات
+    const allFilesToDelete = [
+      product.imageUrl,
+      product.catalogUrl,
+      ...extractUrlsFromJson(product.gallery),
+      ...extractImagesFromHtml(product.description)
+    ];
 
-    if (product.catalogUrl) {
-      try { await deleteFromMinio(product.catalogUrl); } catch(e){}
-    }
-
-    if (product.gallery) {
-      let galleryArray: string[] = [];
-      if (typeof product.gallery === 'string') {
-        try { galleryArray = JSON.parse(product.gallery); } catch(e){}
-      } else if (Array.isArray(product.gallery)) {
-        galleryArray = product.gallery as string[];
-      }
-
-      for (const url of galleryArray) {
-        await deleteFromMinio(url);
-      }
-    }
+    await deleteFilesFromMinio(allFilesToDelete);
 
     await db.product.delete({ where: { id } });
 

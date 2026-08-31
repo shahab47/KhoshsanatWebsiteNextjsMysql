@@ -1,4 +1,4 @@
-// middleware.ts
+// proxy.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
@@ -16,12 +16,12 @@ async function verifyTokenEdge(token: string) {
       email?: string;
       allowedPaths?: string | null;
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // مسیرهای عمومی

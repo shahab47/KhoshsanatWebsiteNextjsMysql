@@ -2,6 +2,7 @@
 
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { deleteFromMinio } from '@/lib/minio';
 
 // ======================================================
 // GET – دریافت محصولات، کاتالوگ شرکت، یا لیست کاتالوگ دسته‌بندی‌ها
@@ -76,6 +77,15 @@ export async function POST(request: NextRequest) {
       if (!url) {
         return NextResponse.json({ error: 'آدرس کاتالوگ ارسال نشده است' }, { status: 400 });
       }
+
+      // حذف کاتالوگ قبلی در صورت تغییر
+      const oldSetting = await db.setting.findUnique({
+        where: { key: 'company_catalog_url' }
+      });
+      if (oldSetting?.value && oldSetting.value !== url) {
+        await deleteFromMinio(oldSetting.value);
+      }
+
       await db.setting.upsert({
         where: { key: 'company_catalog_url' },
         update: { value: url },
@@ -119,8 +129,15 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');
 
-    // ---- حذف کاتالوگ جامع شرکت از جدول Setting ----
+    // ---- حذف کاتالوگ جامع شرکت از MinIO و جدول Setting ----
     if (action === 'company-catalog') {
+      const setting = await db.setting.findUnique({
+        where: { key: 'company_catalog_url' }
+      });
+      if (setting?.value) {
+        await deleteFromMinio(setting.value);
+      }
+
       await db.setting.deleteMany({
         where: { key: 'company_catalog_url' }
       });

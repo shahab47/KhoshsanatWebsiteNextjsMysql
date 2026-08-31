@@ -2,25 +2,12 @@
 
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteFromMinio } from '@/lib/minio';
-
-// تابع کمکی برای استخراج لینک تصاویر از داخل کدهای HTML ادیتور
-const extractImagesFromHtml = (html?: string | null): string[] => {
-  if (!html) return [];
-  const imgRegex = /<img[^>]+src="([^">]+)"/g;
-  const urls: string[] = [];
-  let match;
-  while ((match = imgRegex.exec(html)) !== null) {
-    urls.push(match[1]);
-  }
-  return urls;
-};
-
-// تابع کمکی برای استخراج URL فایل‌های گالری از آرایه media
-const extractMediaUrls = (media?: any[] | null): string[] => {
-  if (!media || !Array.isArray(media)) return [];
-  return media.map(item => item.imageUrl || item.url || item).filter((u): u is string => typeof u === 'string');
-};
+import { 
+  extractUrlsFromJson, 
+  extractImagesFromHtml, 
+  cleanupRemovedFiles, 
+  deleteFilesFromMinio 
+} from '@/lib/minio';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -69,34 +56,26 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const oldArticle = await db.article.findUnique({ where: { id } });
     if (!oldArticle) return NextResponse.json({ error: 'مقاله یافت نشد' }, { status: 404 });
 
-    // 1. حذف تصویر کاور قدیمی در صورت تغییر
-    if (oldArticle.imageUrl && body.imageUrl && oldArticle.imageUrl !== body.imageUrl) {
-      try { await deleteFromMinio(oldArticle.imageUrl); } catch (e) {}
-    }
+    // ۱. پاکسازی تفاضلی تمام فایل‌های کاور، ادیتور متن و گالری با ماژول متمرکز
+    const oldFiles = [
+      oldArticle.imageUrl,
+      ...extractUrlsFromJson(oldArticle.media),
+      ...extractImagesFromHtml(oldArticle.content)
+    ];
+    const newFiles = [
+      body.imageUrl,
+      ...extractUrlsFromJson(body.media),
+      ...extractImagesFromHtml(body.content)
+    ];
+    await cleanupRemovedFiles(oldFiles, newFiles);
 
-    // 2. حذف تصاویر حذف‌شده از داخل ادیتور متن
-    const oldContentImages = extractImagesFromHtml(oldArticle.content);
-    const newContentImages = extractImagesFromHtml(body.content);
-    const removedContentImages = oldContentImages.filter(url => !newContentImages.includes(url));
-    for (const url of removedContentImages) {
-      try { await deleteFromMinio(url); } catch (e) {}
-    }
-
-    // 3. حذف فایل‌های گالری که در آرایه newMedia وجود ندارند
-    const oldMediaUrls = extractMediaUrls(oldArticle.media as any[]);
-    const newMediaUrls = extractMediaUrls(body.media);
-    const removedMediaUrls = oldMediaUrls.filter(url => !newMediaUrls.includes(url));
-    for (const url of removedMediaUrls) {
-      try { await deleteFromMinio(url); } catch (e) {}
-    }
-
-    // 4. تبدیل readTime به عدد
+    // ۲. تبدیل readTime به عدد
     let parsedReadTime = oldArticle.readTime;
     if (body.readTime !== undefined) {
       parsedReadTime = body.readTime ? parseInt(body.readTime.toString()) : null;
     }
 
-    // 5. به‌روزرسانی مقاله در دیتابیس
+    // ۳. به‌روزرسانی مقاله در دیتابیس
     const article = await db.article.update({
       where: { id },
       data: {
@@ -127,24 +106,16 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const article = await db.article.findUnique({ where: { id } });
     if (!article) return NextResponse.json({ error: 'مقاله‌ای یافت نشد' }, { status: 404 });
 
-    // 1. حذف تصویر کاور
-    if (article.imageUrl) {
-      try { await deleteFromMinio(article.imageUrl); } catch (e) {}
-    }
+    // جمع‌آوری و حذف تمام فایل‌های مقاله (کاور، تصاویر داخل متن، فایل‌های گالری)
+    const allFilesToDelete = [
+      article.imageUrl,
+      ...extractUrlsFromJson(article.media),
+      ...extractImagesFromHtml(article.content)
+    ];
 
-    // 2. حذف تصاویر درون ادیتور
-    const inlineImages = extractImagesFromHtml(article.content);
-    for (const url of inlineImages) {
-      try { await deleteFromMinio(url); } catch (e) {}
-    }
+    await deleteFilesFromMinio(allFilesToDelete);
 
-    // 3. حذف فایل‌های گالری (media)
-    const mediaUrls = extractMediaUrls(article.media as any[]);
-    for (const url of mediaUrls) {
-      try { await deleteFromMinio(url); } catch (e) {}
-    }
-
-    // 4. حذف رکورد مقاله از دیتابیس
+    // حذف رکورد مقاله از دیتابیس
     await db.article.delete({ where: { id } });
 
     return NextResponse.json({ success: true });

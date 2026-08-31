@@ -145,8 +145,21 @@ export default function UsersManager() {
               <input type="text" required className="w-full bg-gray-50 border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-500 mb-2 mr-2">ایمیل سازمانی</label>
+              <label className="block text-xs font-bold text-gray-500 mb-2 mr-2">ایمیل سازمانی (فرستنده رسمی)</label>
               <input type="email" required dir="ltr" className="w-full bg-gray-50 border border-gray-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-indigo-500" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} disabled={currentUser?.role !== 'MAIN_ADMIN'} />
+              <p className="text-[11px] text-gray-400 mt-1.5 mr-2">
+                این ایمیل به عنوان هویت فرستنده شما (مانند <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-700 font-mono">shayankhoshkar@khoshsanat.ir</code>) در سیستم ایمیل و مکاتبات استفاده می‌شود.
+              </p>
+            </div>
+
+            <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl flex items-center justify-between text-xs text-blue-900">
+              <div className="flex items-center gap-2">
+                <span className="font-bold">سامانه ایمیل سازمانی:</span>
+                <span>ارسال و بررسی مکاتبات رسمی با دامنه khoshsanat.ir</span>
+              </div>
+              <a href="/khoshmin/emails" className="font-black text-blue-600 hover:text-blue-800 underline flex items-center gap-1">
+                ورود به سیستم ایمیل
+              </a>
             </div>
 
             {currentUser?.role === 'MAIN_ADMIN' && (

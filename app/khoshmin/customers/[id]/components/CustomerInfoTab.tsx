@@ -116,7 +116,14 @@ export function CustomerInfoTab({ customerId }: { customerId: string }) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      <div className="flex justify-end border-b border-gray-100 pb-4">
+      <div className="flex justify-between items-center border-b border-gray-100 pb-4 flex-wrap gap-2">
+        <a
+          href={`/khoshmin/emails?to=${encodeURIComponent(customer.email)}&subject=${encodeURIComponent(`پاسخ به سفارش و استعلام ${customer.name}`)}`}
+          className="flex items-center gap-2 px-4 py-2 text-blue-600 bg-blue-50 border border-blue-200 rounded-xl hover:bg-blue-600 hover:text-white transition font-bold text-xs shadow-sm cursor-pointer"
+        >
+          <Mail size={16} /> ارسال ایمیل مستقیم به مشتری
+        </a>
+
         {!isEditing ? (
           <button onClick={() => setIsEditing(true)} className="flex items-center gap-2 px-5 py-2 text-blue-600 bg-blue-50 border border-blue-100 rounded-xl hover:bg-blue-600 hover:text-white transition-colors font-bold shadow-sm">
             <Edit size={18} /> ویرایش اطلاعات مشتری

@@ -5,9 +5,10 @@ import Categories from '@/components/sections/Categories';
 import EducationSlider from '@/components/sections/EducationSlider';
 import ProjectSlider from '@/components/sections/ProjectSlider';
 import WhyUs from '@/components/sections/WhyUs';
-//import ProductSlider from '@/components/sections/ProductSlider';<ProductSlider />
 import Footer from '@/components/layout/Footer';
 import MYRailProduct from '@/components/sections/MYRailProduct';
+import { SITE_CONFIG, generateWebSiteSchema } from '@/lib/seo';
+import JsonLd from '@/components/seo/JsonLd';
 
 export const revalidate = 60; // ISR هر ۶۰ ثانیه
 
@@ -24,21 +25,40 @@ export async function generateMetadata(): Promise<Metadata> {
     metaSettings.map(setting => [setting.key, setting.value])
   );
 
+  const title = meta.HOME_META_TITLE || SITE_CONFIG.defaultTitle;
+  const description = meta.HOME_META_DESCRIPTION || SITE_CONFIG.description;
+  const keywords = meta.HOME_META_KEYWORDS ? meta.HOME_META_KEYWORDS.split(',').map((k: string) => k.trim()) : SITE_CONFIG.defaultKeywords;
+
   return {
-    title: meta.HOME_META_TITLE || 'وب‌سایت شما',
-    description: meta.HOME_META_DESCRIPTION || 'توضیحات پیش‌فرض سایت',
-    keywords: meta.HOME_META_KEYWORDS || '',
+    title: {
+      absolute: title, // برای صفحه اصلی، تایتل دقیق بدون پسوند تکراری
+    },
+    description,
+    keywords,
+    alternates: {
+      canonical: '/',
+    },
     openGraph: {
-      title: meta.HOME_META_TITLE || 'وب‌سایت شما',
-      description: meta.HOME_META_DESCRIPTION || 'توضیحات پیش‌فرض سایت',
-      siteName: 'نام سایت شما',
-      locale: 'fa_IR',
+      title,
+      description,
+      siteName: SITE_CONFIG.name,
+      locale: SITE_CONFIG.locale,
       type: 'website',
+      url: SITE_CONFIG.siteUrl,
+      images: [
+        {
+          url: '/Logo.svg',
+          width: 800,
+          height: 600,
+          alt: SITE_CONFIG.name,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
-      title: meta.HOME_META_TITLE || 'وب‌سایت شما',
-      description: meta.HOME_META_DESCRIPTION || 'توضیحات پیش‌فرض سایت',
+      title,
+      description,
+      images: ['/Logo.svg'],
     },
   };
 }
@@ -48,7 +68,7 @@ export default async function Home() {
   const activeSlides = await db.slide.findMany({
     where: {
       isActive: true,
-      type: 'MAIN',          // فقط اسلایدهای MAIN
+      type: 'MAIN', // فقط اسلایدهای MAIN
     },
     orderBy: { order: 'asc' },
   });
@@ -74,14 +94,15 @@ export default async function Home() {
     overlayOpacity: sliderSettings.overlayOpacity ?? 0.7,
   };
 
+  const websiteSchema = generateWebSiteSchema();
+
   return (
     <main className="min-h-screen bg-ks-dark text-white flex flex-col">
-      {/* حالا تایپ‌ها کاملاً هماهنگ هستند و نیازی به as any نیست */}
+      <JsonLd id="website-schema" data={websiteSchema} />
       <HeroSlider slides={activeSlides} settings={safeSliderSettings} />
-      <MYRailProduct/>
-      <EducationSlider/>
-      <ProjectSlider/>
-      
+      <MYRailProduct />
+      <EducationSlider />
+      <ProjectSlider />
       <Categories />
       <WhyUs />
       <Footer />

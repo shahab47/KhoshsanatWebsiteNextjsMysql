@@ -303,3 +303,44 @@ enum DeliveryStatus {
   DELIVERED
   RETURNED
 }
+
+model VisitLog {
+  id             Int      @id @default(autoincrement())
+  path           String   @db.VarChar(500)
+  referrer       String?  @db.VarChar(1000)
+  referrerSource String?  @db.VarChar(100) // مثل Google, Instagram, Telegram, Direct, Torob
+  ip             String?  @db.VarChar(100)
+  city           String?  @db.VarChar(100) // شهر (مثلا تهران، اصفهان، مشهد)
+  country        String?  @db.VarChar(100) // نام کشور
+  countryCode    String?  @db.VarChar(10)  // کد کشور (IR, etc.)
+  device         String?  @db.VarChar(50)  // mobile, desktop, tablet
+  browser        String?  @db.VarChar(50)  // Chrome, Safari, Firefox, Edge
+  os             String?  @db.VarChar(50)  // Windows, Android, iOS, macOS, Linux
+  userAgent      String?  @db.Text
+  sessionHash    String?  @db.VarChar(100)
+  isBot          Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([referrerSource])
+  @@index([city])
+}
+
+model EmailLog {
+  id           Int      @id @default(autoincrement())
+  senderId     Int?
+  senderEmail  String   @db.VarChar(255)
+  senderName   String?  @db.VarChar(255)
+  recipient    String   @db.VarChar(255)
+  subject      String   @db.VarChar(500)
+  body         String   @db.LongText
+  status       String   @default("SENT") @db.VarChar(50) // SENT, FAILED
+  errorMessage String?  @db.Text
+  createdAt    DateTime @default(now())
+  customerId   Int?
+
+  @@index([createdAt])
+  @@index([recipient])
+  @@index([senderEmail])
+}

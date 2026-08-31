@@ -1,22 +1,21 @@
 import { NextResponse } from 'next/server';
-import { listMinioObjects, uploadToMinio, s3Client } from '@/lib/minio';
+import { 
+  listMinioObjects, 
+  uploadToMinio, 
+  s3Client, 
+  bucketName, 
+  formatMinioUrl, 
+  extractKeyFromUrl, 
+  getAllDatabaseFileUrls,
+  deleteFilesFromMinio,
+  extractImagesFromHtml,
+  extractUrlsFromJson
+} from '@/lib/minio';
 import { CopyObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import prisma from '@/lib/db';
 import { Prisma } from '@prisma/client';
-
-function getMinioBaseUrl() {
-  const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-  const isDev = process.env.NODE_ENV === 'development';
-  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
-  const endpoint = process.env.MINIO_ENDPOINT || '127.0.0.1:9000';
-  if (isDev) {
-    return `${protocol}://${endpoint}/${bucketName}`;
-  }
-  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://khoshsanat.ir').replace(/\/$/, '');
-  return `${siteUrl}/minio/${bucketName}`;
-}
 
 async function getAuthenticatedUser() {
   try {
@@ -28,7 +27,13 @@ async function getAuthenticatedUser() {
 }
 
 async function findDbUsage(url: string) {
-  const targetFieldNames = ['imageUrl', 'catalogUrl', 'gallery', 'media', 'url', 'attachmentUrl', 'signatureUrl', 'attachments'];
+  const targetKey = extractKeyFromUrl(url);
+  if (!targetKey) return [];
+
+  const targetFieldNames = [
+    'imageUrl', 'catalogUrl', 'gallery', 'media', 'url', 
+    'attachmentUrl', 'signatureUrl', 'attachments', 'content', 'description', 'value'
+  ];
   const models = Prisma.dmmf.datamodel.models;
   const usages: { model: string; id: number; field: string; isJson: boolean }[] = [];
 
@@ -38,13 +43,35 @@ async function findDbUsage(url: string) {
       const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
       try {
         // @ts-ignore
+        if (typeof prisma[delegateName]?.findMany !== 'function') continue;
+        // @ts-ignore
         const records = await prisma[delegateName].findMany();
         records.forEach((record: any) => {
           modelTargetFields.forEach(field => {
             const value = record[field.name];
             if (!value) return;
-            const isJson = field.type === 'Json' || Array.isArray(value);
-            if (value === url || (Array.isArray(value) && value.includes(url)) || (typeof value === 'string' && value.includes(url))) {
+
+            let isMatched = false;
+            let isJson = field.type === 'Json' || Array.isArray(value);
+
+            if (typeof value === 'string') {
+              if (field.name === 'content' || field.name === 'description' || value.includes('<img')) {
+                const htmlImages = extractImagesFromHtml(value);
+                isMatched = htmlImages.some(u => extractKeyFromUrl(u) === targetKey);
+              } else if (value.trim().startsWith('[') || value.trim().startsWith('{')) {
+                const jsonUrls = extractUrlsFromJson(value);
+                isMatched = jsonUrls.some(u => extractKeyFromUrl(u) === targetKey);
+                isJson = true;
+              } else {
+                isMatched = extractKeyFromUrl(value) === targetKey;
+              }
+            } else if (typeof value === 'object') {
+              const jsonUrls = extractUrlsFromJson(value);
+              isMatched = jsonUrls.some(u => extractKeyFromUrl(u) === targetKey);
+              isJson = true;
+            }
+
+            if (isMatched) {
               usages.push({ model: model.name, id: record.id, field: field.name, isJson });
             }
           });
@@ -63,7 +90,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'list';
     const prefix = searchParams.get('prefix') || '';
-    const minioBaseUrl = getMinioBaseUrl();
 
     if (action === 'check') {
       const urlToCheck = searchParams.get('url');
@@ -85,7 +111,7 @@ export async function GET(request: Request) {
             path: obj.name,
             size: obj.size,
             lastModified: obj.lastModified,
-            url: `${minioBaseUrl}/${obj.name}`
+            url: formatMinioUrl(obj.name)
           });
         }
       });
@@ -94,54 +120,39 @@ export async function GET(request: Request) {
 
     if (action === 'orphans') {
       const allMinioObjects = await listMinioObjects('', true);
-      const minioFileUrls = allMinioObjects.filter(o => !o.prefix && !o.name.endsWith('/')).map(o => `${minioBaseUrl}/${o.name}`);
-      let activeDatabaseUrls: string[] = [];
+      const minioFiles = allMinioObjects.filter(o => !o.prefix && o.name && !o.name.endsWith('/'));
+      
+      // استخراج تمام فایل‌های فعال از دیتابیس با موتور جامع
+      const activeDatabaseUrls = await getAllDatabaseFileUrls();
+      const activeDbKeys = new Set(
+        activeDatabaseUrls
+          .map(u => extractKeyFromUrl(u))
+          .filter((k): k is string => k !== null)
+      );
 
-      try {
-        const targetFieldNames = ['imageUrl', 'catalogUrl', 'gallery', 'media', 'url', 'attachmentUrl', 'signatureUrl', 'attachments'];
-        const models = Prisma.dmmf.datamodel.models;
+      const orphanedFiles = minioFiles
+        .filter(obj => !activeDbKeys.has(obj.name))
+        .map(obj => ({
+          name: obj.name.split('/').pop(),
+          path: obj.name,
+          size: obj.size,
+          lastModified: obj.lastModified,
+          url: formatMinioUrl(obj.name)
+        }));
 
-        for (const model of models) {
-          const modelTargetFields = model.fields.filter(f => targetFieldNames.includes(f.name));
-          if (modelTargetFields.length > 0) {
-            const selectQuery: Record<string, boolean> = {};
-            modelTargetFields.forEach(f => { selectQuery[f.name] = true; });
-            const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
-            // @ts-ignore
-            const records = await prisma[delegateName].findMany({ select: selectQuery });
-
-            records.forEach((record: any) => {
-              modelTargetFields.forEach(field => {
-                const value = record[field.name];
-                if (!value) return;
-                if (typeof value === 'string') {
-                  if (value.trim().startsWith('[')) {
-                    try {
-                      const parsed = JSON.parse(value);
-                      if (Array.isArray(parsed)) activeDatabaseUrls.push(...parsed);
-                    } catch { activeDatabaseUrls.push(value); }
-                  } else { activeDatabaseUrls.push(value); }
-                } else if (Array.isArray(value)) {
-                  activeDatabaseUrls.push(...value);
-                }
-              });
-            });
-          }
-        }
-      } catch (dbError) { return NextResponse.json({ success: false, message: 'خطا در خواندن دیتابیس' }, { status: 500 }); }
-
-      if (activeDatabaseUrls.length === 0) return NextResponse.json({ success: false, message: 'هیچ فایلی در دیتابیس یافت نشد' }, { status: 400 });
-
-      const orphanedUrls = minioFileUrls.filter(url => !activeDatabaseUrls.includes(url));
-      const orphanedFiles = allMinioObjects.filter(obj => orphanedUrls.some(url => url.endsWith(obj.name))).map(obj => ({
-        name: obj.name.split('/').pop(), path: obj.name, size: obj.size, lastModified: obj.lastModified, url: `${minioBaseUrl}/${obj.name}`
-      }));
-
-      return NextResponse.json({ success: true, totalMinioFiles: minioFileUrls.length, totalDbFiles: activeDatabaseUrls.length, orphansCount: orphanedFiles.length, orphans: orphanedFiles });
+      return NextResponse.json({ 
+        success: true, 
+        totalMinioFiles: minioFiles.length, 
+        totalDbFiles: activeDbKeys.size, 
+        orphansCount: orphanedFiles.length, 
+        orphans: orphanedFiles 
+      });
     }
 
     return NextResponse.json({ success: false, message: 'عملیات درخواستی نامعتبر است' }, { status: 400 });
-  } catch (error: any) { return NextResponse.json({ success: false, message: error.message || 'خطای سرور در پردازش درخواست' }, { status: 500 }); }
+  } catch (error: any) { 
+    return NextResponse.json({ success: false, message: error.message || 'خطای سرور در پردازش درخواست' }, { status: 500 }); 
+  }
 }
 
 export async function POST(request: Request) {
@@ -171,10 +182,9 @@ export async function POST(request: Request) {
 
     // در حالت Replace، نیازی به آپدیت دیتابیس نیست. فقط فایل رو روی فایل قبلی رونویسی (Overwrite) می‌کنیم.
     if (replaceUrl) {
-      const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-      const oldObjectPath = replaceUrl.split(`/${bucketName}/`)[1];
-      if (oldObjectPath) {
-        finalFileName = oldObjectPath.split('/').pop() || file.name;
+      const oldKey = extractKeyFromUrl(replaceUrl);
+      if (oldKey) {
+        finalFileName = oldKey.split('/').pop() || file.name;
       }
     }
 
@@ -182,7 +192,9 @@ export async function POST(request: Request) {
     const newUrl = await uploadToMinio(buffer, finalFileName, folder, file.type);
     
     return NextResponse.json({ success: true, url: newUrl });
-  } catch (error: any) { return NextResponse.json({ success: false, message: error.message || 'خطای سرور در آپلود فایل' }, { status: 500 }); }
+  } catch (error: any) { 
+    return NextResponse.json({ success: false, message: error.message || 'خطای سرور در آپلود فایل' }, { status: 500 }); 
+  }
 }
 
 export async function PUT(request: Request) {
@@ -192,24 +204,22 @@ export async function PUT(request: Request) {
 
     const body = await request.json();
     const { action } = body;
-    const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-    const minioBaseUrl = getMinioBaseUrl();
 
     // 🟢 تغییر نام (Rename) - آپدیت دیتابیس برای فایل و پوشه
     if (action === 'rename') {
       const { type, path, newName, oldUrl } = body;
       
       if (type === 'file' && oldUrl && newName) {
-        const oldObjectName = oldUrl.split(`/${bucketName}/`)[1];
+        const oldObjectName = extractKeyFromUrl(oldUrl) || path;
         const pathParts = oldObjectName.split('/');
         pathParts.pop(); 
         const prefix = pathParts.length > 0 ? pathParts.join('/') + '/' : '';
         const newObjectName = `${prefix}${newName}`;
 
-        await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: `${bucketName}/${oldObjectName}`, Key: newObjectName }));
+        await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: encodeURI(`${bucketName}/${oldObjectName}`), Key: newObjectName }));
         await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: oldObjectName }));
 
-        const newUrl = `${minioBaseUrl}/${newObjectName}`;
+        const newUrl = formatMinioUrl(newObjectName);
         const usages = await findDbUsage(oldUrl);
         for (const usage of usages) {
           const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
@@ -230,11 +240,11 @@ export async function PUT(request: Request) {
           const relativePath = obj.name.substring(path.length);
           const newObjectName = `${newFolderPath}${relativePath}`;
           
-          await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: `${bucketName}/${obj.name}`, Key: newObjectName }));
+          await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: encodeURI(`${bucketName}/${obj.name}`), Key: newObjectName }));
           await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: obj.name }));
 
-          const oldObjUrl = `${minioBaseUrl}/${obj.name}`;
-          const newObjUrl = `${minioBaseUrl}/${newObjectName}`;
+          const oldObjUrl = formatMinioUrl(obj.name);
+          const newObjUrl = formatMinioUrl(newObjectName);
           const usages = await findDbUsage(oldObjUrl);
           for (const usage of usages) {
             const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
@@ -255,12 +265,12 @@ export async function PUT(request: Request) {
           const fileName = item.newName ? item.newName : oldObjectName.split('/').pop();
           const newObjectName = `${destination}${fileName}`;
           
-          await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: `${bucketName}/${oldObjectName}`, Key: newObjectName }));
+          await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: encodeURI(`${bucketName}/${oldObjectName}`), Key: newObjectName }));
           
           if (isCut) {
             await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: oldObjectName }));
-            const oldUrl = `${minioBaseUrl}/${oldObjectName}`;
-            const newUrl = `${minioBaseUrl}/${newObjectName}`;
+            const oldUrl = formatMinioUrl(oldObjectName);
+            const newUrl = formatMinioUrl(newObjectName);
             const usages = await findDbUsage(oldUrl);
             for (const usage of usages) {
               const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
@@ -277,12 +287,12 @@ export async function PUT(request: Request) {
             const relativePath = obj.name.substring(item.path.length);
             const newObjectName = `${destination}${folderName}/${relativePath}`;
             
-            await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: `${bucketName}/${obj.name}`, Key: newObjectName }));
+            await s3Client.send(new CopyObjectCommand({ Bucket: bucketName, CopySource: encodeURI(`${bucketName}/${obj.name}`), Key: newObjectName }));
             
             if (isCut) {
               await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: obj.name }));
-              const oldUrl = `${minioBaseUrl}/${obj.name}`;
-              const newUrl = `${minioBaseUrl}/${newObjectName}`;
+              const oldUrl = formatMinioUrl(obj.name);
+              const newUrl = formatMinioUrl(newObjectName);
               const usages = await findDbUsage(oldUrl);
               for (const usage of usages) {
                 const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
@@ -297,7 +307,9 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json({ success: false, message: 'عملیات نامعتبر' }, { status: 400 });
-  } catch (error: any) { return NextResponse.json({ success: false, message: error.message || 'خطای سرور در ویرایش فایل' }, { status: 500 }); }
+  } catch (error: any) { 
+    return NextResponse.json({ success: false, message: error.message || 'خطای سرور در ویرایش فایل' }, { status: 500 }); 
+  }
 }
 
 export async function DELETE(request: Request) {
@@ -306,40 +318,43 @@ export async function DELETE(request: Request) {
     if (!user || user.role !== 'MAIN_ADMIN') return NextResponse.json({ success: false, message: 'عدم دسترسی' }, { status: 403 });
 
     const { items, removeFromDb } = await request.json(); 
-    const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-    const minioBaseUrl = getMinioBaseUrl();
+    const keysToDelete: string[] = [];
 
     for (const item of items) {
       if (item.type === 'file') {
-        if (removeFromDb && item.url) {
-          const usages = await findDbUsage(item.url);
-          for (const usage of usages) {
-            const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-            const resetVal = usage.isJson ? null : null;
-            // @ts-ignore
-            await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: resetVal } });
+        const itemKey = item.path || extractKeyFromUrl(item.url);
+        if (itemKey) {
+          keysToDelete.push(itemKey);
+          if (removeFromDb) {
+            const usages = await findDbUsage(item.url || itemKey);
+            for (const usage of usages) {
+              const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
+              // @ts-ignore
+              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: null } });
+            }
           }
         }
-        await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: item.path }));
       } else if (item.type === 'folder') {
         const objects = await listMinioObjects(item.path, true);
         for (const obj of objects) {
           if (!obj.name) continue;
-          const objUrl = `${minioBaseUrl}/${obj.name}`;
+          keysToDelete.push(obj.name);
           if (removeFromDb) {
-            const usages = await findDbUsage(objUrl);
+            const usages = await findDbUsage(obj.name);
             for (const usage of usages) {
               const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-              const resetVal = usage.isJson ? null : null;
               // @ts-ignore
-              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: resetVal } });
+              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: null } });
             }
           }
-          await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: obj.name }));
         }
       }
     }
 
+    await deleteFilesFromMinio(keysToDelete);
+
     return NextResponse.json({ success: true });
-  } catch (error: any) { return NextResponse.json({ success: false, message: error.message || 'خطای سرور در حذف فایل' }, { status: 500 }); }
+  } catch (error: any) { 
+    return NextResponse.json({ success: false, message: error.message || 'خطای سرور در حذف فایل' }, { status: 500 }); 
+  }
 }

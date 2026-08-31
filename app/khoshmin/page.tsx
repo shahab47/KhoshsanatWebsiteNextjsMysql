@@ -2,7 +2,10 @@
 // مسیر فایل: src/app/khoshmin/page.tsx
 
 import React, { useEffect, useState } from 'react';
-import { Image as ImageIcon, Type, Briefcase, Package, Users, ArrowLeft, Building2, GraduationCap, Bell, UserPlus, HardDrive } from 'lucide-react';
+import {
+  Image as ImageIcon, Type, Briefcase, Package, Users, ArrowLeft,
+  Building2, GraduationCap, Bell, UserPlus, HardDrive, TrendingUp, Activity, Mail
+} from 'lucide-react';
 
 interface CustomerStats {
   total: number;
@@ -13,6 +16,7 @@ interface CustomerStats {
 export default function AdminDashboard() {
   const [user, setUser] = useState<any>(null);
   const [customerStats, setCustomerStats] = useState<CustomerStats | null>(null);
+  const [analyticsStats, setAnalyticsStats] = useState<{ todayVisits: number; uniqueVisitors: number } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,8 +29,17 @@ export default function AdminDashboard() {
         const statsRes = await fetch('/api/khoshmin/customers/stats');
         const statsData = await statsRes.json();
         setCustomerStats(statsData);
+
+        const analyticsRes = await fetch('/api/khoshmin/analytics?range=today');
+        if (analyticsRes.ok) {
+          const analyticsData = await analyticsRes.json();
+          setAnalyticsStats({
+            todayVisits: analyticsData.kpi?.todayVisits || 0,
+            uniqueVisitors: analyticsData.kpi?.uniqueVisitors || 0,
+          });
+        }
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching dashboard data:', error);
       } finally {
         setLoading(false);
       }
@@ -36,6 +49,20 @@ export default function AdminDashboard() {
 
   // تمام کارت‌های پیش‌فرض
   const allCards = [
+    {
+      href: '/khoshmin/analytics',
+      title: 'آمار و تحلیل هوشمند بازدید',
+      desc: analyticsStats
+        ? `امروز: ${analyticsStats.todayVisits.toLocaleString('fa-IR')} بازدید (${analyticsStats.uniqueVisitors.toLocaleString('fa-IR')} مشتری یکتا)`
+        : 'مشاهده شهرها، منابع ورودی (گوگل، اینستاگرام) و صفحات پربازدید',
+      icon: <TrendingUp size={32} />,
+      color: 'bg-blue-100 text-blue-600',
+      hover: 'hover:bg-blue-50 hover:border-blue-300',
+      badge: analyticsStats && analyticsStats.todayVisits > 0 ? {
+        count: analyticsStats.todayVisits,
+        text: `امروز: ${analyticsStats.todayVisits.toLocaleString('fa-IR')} بازدید`
+      } : null
+    },
     {
       href: '/khoshmin/users',
       title: user?.role === 'MAIN_ADMIN' ? 'مدیریت کاربران' : 'پروفایل من',
@@ -48,7 +75,7 @@ export default function AdminDashboard() {
       href: '/khoshmin/customers',
       title: 'مدیریت مشتریان',
       desc: 'لیست مشتریان، پیام‌های جدید و مدیریت سفارشات',
-      icon: <Users size={32} />,
+      icon: <UserPlus size={32} />,
       color: 'bg-emerald-100 text-emerald-600',
       hover: 'hover:bg-emerald-50 hover:border-emerald-300',
       badge: customerStats && (customerStats.unreadMessages > 0 || customerStats.newCustomers > 0) ? {
@@ -57,12 +84,20 @@ export default function AdminDashboard() {
       } : null
     },
     {
+      href: '/khoshmin/emails',
+      title: 'سیستم ایمیل سازمانی',
+      desc: 'ارسال ایمیل رسمی با دامنه khoshsanat.ir، تاریخچه و تنظیمات SMTP',
+      icon: <Mail size={32} />,
+      color: 'bg-blue-100 text-blue-600',
+      hover: 'hover:bg-blue-50 hover:border-blue-300'
+    },
+    {
       href: '/khoshmin/projects',
       title: 'مدیریت پروژه‌ها',
       desc: 'ثبت و ویرایش پروژه‌های انجام شده',
       icon: <Building2 size={32} />,
-      color: 'bg-emerald-100 text-emerald-600',
-      hover: 'hover:bg-emerald-50 hover:border-emerald-300'
+      color: 'bg-amber-100 text-amber-600',
+      hover: 'hover:bg-amber-50 hover:border-amber-300'
     },
     {
       href: '/khoshmin/education',
@@ -93,8 +128,8 @@ export default function AdminDashboard() {
       title: 'مدیریت اسلایدر',
       desc: 'آپلود و حذف تصاویر صفحه اصلی',
       icon: <ImageIcon size={32} />,
-      color: 'bg-blue-100 text-blue-600',
-      hover: 'hover:bg-blue-50 hover:border-blue-300'
+      color: 'bg-sky-100 text-sky-600',
+      hover: 'hover:bg-sky-50 hover:border-sky-300'
     },
     {
       href: '/khoshmin/logo',
@@ -128,7 +163,6 @@ export default function AdminDashboard() {
   const allowedRoutes = getUserAllowedRoutes();
   const visibleCards = allCards.filter(card => {
     if (user?.role === 'MAIN_ADMIN') return true;
-    // صفحه پروفایل من همیشه مجاز است
     if (card.href === '/khoshmin/users') return true;
     return allowedRoutes.includes(card.href);
   });
@@ -142,14 +176,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 font-[Vazir,'vazirmatn',sans-serif]">
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-black text-gray-800 mb-2">
             {user?.name ? `${user.name} عزیز، خوش‌ آمدید 👋` : 'خوش آمدید 👋'}
           </h2>
           <p className="text-gray-500 text-base leading-relaxed">
-            به پنل مدیریت سایت خوش‌صنعت خوش آمدید. از این بخش می‌توانید به سرعت به تمام ابزارها دسترسی داشته باشید.
+            به پنل مدیریت سایت خوش‌صنعت پایدار خوش آمدید. از این بخش می‌توانید به سرعت به آمار و تمام ابزارها دسترسی داشته باشید.
           </p>
         </div>
         {user?.role && (
@@ -163,23 +197,18 @@ export default function AdminDashboard() {
         {visibleCards.map((card) => (
           <a key={card.href} href={card.href} className={`flex flex-col p-6 bg-white border border-gray-100 rounded-3xl transition-all group ${card.hover} shadow-sm hover:shadow-xl relative`}>
             {card.badge && (
-              <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs rounded-full px-3 py-1.5 shadow-lg flex items-center gap-1 z-10">
-                <Bell size={12} />
+              <div className="absolute -top-3 -right-3 bg-blue-600 text-white text-xs rounded-full px-3 py-1.5 shadow-lg flex items-center gap-1 z-10 font-bold">
+                <Activity size={12} />
                 <span>{card.badge.text}</span>
               </div>
             )}
 
             <div className={`w-16 h-16 ${card.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner relative`}>
               {card.icon}
-              {card.badge && card.badge.count > 0 && (
-                <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {card.badge.count > 9 ? '9+' : card.badge.count}
-                </div>
-              )}
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-800 mb-2">{card.title}</h3>
-              <p className="text-sm text-gray-500 mb-6">{card.desc}</p>
+              <p className="text-sm text-gray-500 mb-6 line-clamp-2">{card.desc}</p>
             </div>
             <div className="mt-auto flex items-center gap-2 text-sm font-black text-blue-600 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
               ورود به بخش <ArrowLeft size={16} />
