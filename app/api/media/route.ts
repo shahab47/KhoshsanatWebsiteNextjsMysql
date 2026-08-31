@@ -6,6 +6,18 @@ import { cookies } from 'next/headers';
 import prisma from '@/lib/db';
 import { Prisma } from '@prisma/client';
 
+function getMinioBaseUrl() {
+  const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
+  const isDev = process.env.NODE_ENV === 'development';
+  const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+  const endpoint = process.env.MINIO_ENDPOINT || '127.0.0.1:9000';
+  if (isDev) {
+    return `${protocol}://${endpoint}/${bucketName}`;
+  }
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://khoshsanat.ir').replace(/\/$/, '');
+  return `${siteUrl}/minio/${bucketName}`;
+}
+
 async function getAuthenticatedUser() {
   try {
     const cookieStore = await cookies();
@@ -18,7 +30,7 @@ async function getAuthenticatedUser() {
 async function findDbUsage(url: string) {
   const targetFieldNames = ['imageUrl', 'catalogUrl', 'gallery', 'media', 'url', 'attachmentUrl', 'signatureUrl', 'attachments'];
   const models = Prisma.dmmf.datamodel.models;
-  const usages: { model: string; id: number; field: string }[] = [];
+  const usages: { model: string; id: number; field: string; isJson: boolean }[] = [];
 
   for (const model of models) {
     const modelTargetFields = model.fields.filter(f => targetFieldNames.includes(f.name));
@@ -31,8 +43,9 @@ async function findDbUsage(url: string) {
           modelTargetFields.forEach(field => {
             const value = record[field.name];
             if (!value) return;
+            const isJson = field.type === 'Json' || Array.isArray(value);
             if (value === url || (Array.isArray(value) && value.includes(url)) || (typeof value === 'string' && value.includes(url))) {
-              usages.push({ model: model.name, id: record.id, field: field.name });
+              usages.push({ model: model.name, id: record.id, field: field.name, isJson });
             }
           });
         });
@@ -50,8 +63,7 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action') || 'list';
     const prefix = searchParams.get('prefix') || '';
-    const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-    const minioBaseUrl = `${process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${bucketName}`;
+    const minioBaseUrl = getMinioBaseUrl();
 
     if (action === 'check') {
       const urlToCheck = searchParams.get('url');
@@ -157,7 +169,7 @@ export async function POST(request: Request) {
 
     let finalFileName = file.name;
 
-    // 🟢 در حالت Replace، نیازی به آپدیت دیتابیس نیست. فقط فایل رو روی فایل قبلی رونویسی (Overwrite) می‌کنیم.
+    // در حالت Replace، نیازی به آپدیت دیتابیس نیست. فقط فایل رو روی فایل قبلی رونویسی (Overwrite) می‌کنیم.
     if (replaceUrl) {
       const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
       const oldObjectPath = replaceUrl.split(`/${bucketName}/`)[1];
@@ -181,7 +193,7 @@ export async function PUT(request: Request) {
     const body = await request.json();
     const { action } = body;
     const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-    const minioBaseUrl = `${process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${bucketName}`;
+    const minioBaseUrl = getMinioBaseUrl();
 
     // 🟢 تغییر نام (Rename) - آپدیت دیتابیس برای فایل و پوشه
     if (action === 'rename') {
@@ -295,6 +307,7 @@ export async function DELETE(request: Request) {
 
     const { items, removeFromDb } = await request.json(); 
     const bucketName = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
+    const minioBaseUrl = getMinioBaseUrl();
 
     for (const item of items) {
       if (item.type === 'file') {
@@ -302,8 +315,9 @@ export async function DELETE(request: Request) {
           const usages = await findDbUsage(item.url);
           for (const usage of usages) {
             const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
+            const resetVal = usage.isJson ? null : null;
             // @ts-ignore
-            await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: "" } });
+            await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: resetVal } });
           }
         }
         await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: item.path }));
@@ -311,13 +325,14 @@ export async function DELETE(request: Request) {
         const objects = await listMinioObjects(item.path, true);
         for (const obj of objects) {
           if (!obj.name) continue;
-          const objUrl = `${process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http'}://${process.env.MINIO_ENDPOINT}:${process.env.MINIO_PORT}/${bucketName}/${obj.name}`;
+          const objUrl = `${minioBaseUrl}/${obj.name}`;
           if (removeFromDb) {
             const usages = await findDbUsage(objUrl);
             for (const usage of usages) {
               const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
+              const resetVal = usage.isJson ? null : null;
               // @ts-ignore
-              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: "" } });
+              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: resetVal } });
             }
           }
           await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: obj.name }));

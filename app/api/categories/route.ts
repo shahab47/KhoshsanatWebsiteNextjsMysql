@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { deleteFromMinio } from '@/lib/minio';
 
 export async function GET() {
   try {
@@ -77,23 +78,17 @@ export async function DELETE(request: NextRequest) {
       where: { id: parseInt(id) },
     });
     
-    const deleteFile = async (url?: string | null) => {
-      if (url) {
-        try {
-          await fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/upload?url=${encodeURIComponent(url)}`, {
-            method: 'DELETE',
-          });
-        } catch (err) {}
-      }
-    };
-    
-    await deleteFile(category?.imageUrl);
-    await deleteFile(category?.catalogUrl);
+    if (category?.imageUrl) {
+      try { await deleteFromMinio(category.imageUrl); } catch (e) {}
+    }
+    if (category?.catalogUrl) {
+      try { await deleteFromMinio(category.catalogUrl); } catch (e) {}
+    }
     if (category?.gallery && Array.isArray(category.gallery)) {
       for (const url of category.gallery) {
-        if (typeof url === 'string') {        // ← اضافه کردن این خط
-      await deleteFile(url);
-    }
+        if (typeof url === 'string') {
+          try { await deleteFromMinio(url); } catch (e) {}
+        }
       }
     }
     

@@ -242,9 +242,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     let uniqueName: string;
     if (customName) {
-      uniqueName = `${customName}.${finalExtension}`;
+      const cleanCustomName = customName.replace(/\.[^/.]+$/, "");
+      uniqueName = `${cleanCustomName}.${finalExtension}`;
     } else {
-      const baseName = validFile.name.replace(/\s+/g, '-').split('.').shift() || 'file';
+      const dotIndex = validFile.name.lastIndexOf('.');
+      const baseName = (dotIndex !== -1 ? validFile.name.substring(0, dotIndex) : validFile.name).replace(/\s+/g, '-') || 'file';
       uniqueName = `${Date.now()}-${baseName}.${finalExtension}`;
     }
 
@@ -344,7 +346,14 @@ export async function DELETE(request: Request): Promise<NextResponse> {
     if (!user) return NextResponse.json({ success: false, message: 'دسترسی غیرمجاز.' }, { status: 401 });
 
     const { searchParams } = new URL(request.url);
-    const url = searchParams.get('url');
+    let url = searchParams.get('url');
+
+    if (!url) {
+      try {
+        const body = await request.json();
+        url = body.url;
+      } catch (e) {}
+    }
 
     if (!url) return NextResponse.json({ success: false, message: 'آدرس فایل الزامی است' }, { status: 400 });
 

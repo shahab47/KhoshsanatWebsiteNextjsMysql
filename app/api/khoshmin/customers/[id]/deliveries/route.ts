@@ -7,11 +7,11 @@ import { uploadToMinio, deleteFromMinio } from '@/lib/minio';
 // تابع کمکی برای اعتبارسنجی URL مینیو
 function isValidMinioUrl(url: string): boolean {
   if (!url || typeof url !== 'string') return false;
-  // باید با http:// یا https:// شروع شود و شامل پورت 9000 یا آدرس مینیو باشد
-  const minioEndpoint = process.env.MINIO_ENDPOINT || '45.149.78.107:9000';
   const bucket = process.env.MINIO_BUCKET_NAME || 'khoshsanat-media';
-  const pattern = new RegExp(`^https?://${minioEndpoint.replace(/\./g, '\\.')}/${bucket}/`);
-  return pattern.test(url);
+  return (
+    (url.startsWith('http://') || url.startsWith('https://')) &&
+    url.includes(`/${bucket}/`)
+  );
 }
 
 // GET – بدون تغییر

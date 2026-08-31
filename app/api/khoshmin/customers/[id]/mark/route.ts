@@ -33,6 +33,10 @@ export async function PATCH(
           where: { customerId, isRead: false },
           data: { isRead: true }
         });
+        await db.customer.update({
+          where: { id: customerId },
+          data: { unreadMessagesCount: 0 }
+        });
         break;
 
       case 'notes':

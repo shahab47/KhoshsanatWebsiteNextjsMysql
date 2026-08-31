@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { deleteFromMinio } from '@/lib/minio';
 
 export async function DELETE(
   request: NextRequest,
@@ -14,6 +15,14 @@ export async function DELETE(
         { error: 'شناسه نامعتبر است' },
         { status: 400 }
       );
+    }
+
+    const slide = await db.slide.findUnique({
+      where: { id: slideId },
+    });
+
+    if (slide?.imageUrl) {
+      try { await deleteFromMinio(slide.imageUrl); } catch (e) {}
     }
 
     await db.slide.delete({

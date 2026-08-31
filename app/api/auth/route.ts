@@ -14,6 +14,11 @@ export async function GET() {
     
     try {
         const user = await verifyToken(token);
+        if (!user) {
+            const response = NextResponse.json({ user: null });
+            response.cookies.delete('admin_token');
+            return response;
+        }
         return NextResponse.json({ user });
     } catch (error) {
         // اگر توکن منقضی یا نامعتبر است، کوکی را پاک کن
@@ -44,7 +49,13 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'اطلاعات ورود صحیح نیست' }, { status: 401 });
         }
 
-        const token = await signToken({ id: user.id, role: user.role, name: user.name, email: user.email });
+        const token = await signToken({
+            id: user.id,
+            role: user.role,
+            name: user.name,
+            email: user.email,
+            allowedPaths: user.allowedPaths
+        });
         const res = NextResponse.json({ success: true });
         
         // تشخیص پروتکل امن (HTTPS) از هدر Nginx
@@ -78,11 +89,41 @@ export async function POST(req: Request) {
             data: { resetToken, resetTokenExp: new Date(Date.now() + 3600000) }
         });
         
-        // شبیه‌سازی ارسال ایمیل در کنسول (در تولید، ایمیل واقعی بفرست)
-        const resetLink = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login?reset=${resetToken}`;
+        // شبیه‌سازی ارسال ایمیل در کنسول
+        const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000'}/login?reset=${resetToken}`;
         console.log(`\n\nReset Link: ${resetLink}\n\n`);
         
-        return NextResponse.json({ success: true, message: 'لینک بازیابی در کنسول چاپ شد.' });
+        return NextResponse.json({ success: true, message: 'لینک بازیابی رمز عبور با موفقیت ایجاد شد.' });
+    }
+
+    if (action === 'reset') {
+        const { token, newPassword } = body;
+        if (!token || !newPassword || newPassword.length < 6) {
+            return NextResponse.json({ error: 'توکن نامعتبر است یا رمز عبور جدید باید حداقل ۶ کاراکتر باشد' }, { status: 400 });
+        }
+
+        const user = await db.user.findFirst({
+            where: {
+                resetToken: token,
+                resetTokenExp: { gte: new Date() }
+            }
+        });
+
+        if (!user) {
+            return NextResponse.json({ error: 'لینک بازیابی منقضی شده است یا نامعتبر می‌باشد' }, { status: 400 });
+        }
+
+        const hash = await bcrypt.hash(newPassword, 10);
+        await db.user.update({
+            where: { id: user.id },
+            data: {
+                password: hash,
+                resetToken: null,
+                resetTokenExp: null
+            }
+        });
+
+        return NextResponse.json({ success: true, message: 'رمز عبور با موفقیت تغییر یافت. اکنون می‌توانید وارد شوید.' });
     }
 
     return NextResponse.json({ error: 'عملیات نامعتبر' }, { status: 400 });

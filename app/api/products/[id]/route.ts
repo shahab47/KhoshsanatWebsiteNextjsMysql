@@ -47,7 +47,7 @@ export async function PUT(
     if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر' }, { status: 400 });
 
     const body = await request.json();
-    const { title, slug, description, shortDesc, imageUrl, gallery, subcategoryId, order, isActive } = body;
+    const { title, slug, description, shortDesc, imageUrl, catalogUrl, gallery, subcategoryId, order, isActive } = body;
     
     const product = await db.product.update({
       where: { id },
@@ -57,8 +57,9 @@ export async function PUT(
         description, 
         shortDesc, 
         imageUrl, 
+        catalogUrl: catalogUrl !== undefined ? (catalogUrl || null) : undefined,
         gallery, 
-        subcategoryId: parseInt(subcategoryId),
+        subcategoryId: subcategoryId ? parseInt(subcategoryId) : undefined,
         order, 
         isActive 
       },
@@ -88,7 +89,11 @@ export async function DELETE(
     }
 
     if (product.imageUrl) {
-      await deleteFromMinio(product.imageUrl);
+      try { await deleteFromMinio(product.imageUrl); } catch(e){}
+    }
+
+    if (product.catalogUrl) {
+      try { await deleteFromMinio(product.catalogUrl); } catch(e){}
     }
 
     if (product.gallery) {

@@ -1,8 +1,9 @@
-// نسخه نهایی Header با fallback قوی
+// نسخه نهایی Header با پشتیبانی از Next.js Link و عدم نمایش در لاگین و پنل ادمین
 'use client';
-// مسیر فایل: src/components/layout/Header.tsx
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Menu, X } from 'lucide-react';
 
@@ -11,15 +12,14 @@ interface HeaderProps {
 }
 
 export default function Header({ logoUrl }: HeaderProps) {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [currentPath, setCurrentPath] = useState('/');
   
   // مدیریت fallback لوگو
   const [logoSrc, setLogoSrc] = useState<string>('/Logo.svg');
   const [logoError, setLogoError] = useState(false);
 
-  // تعیین مقدار اولیه و بروزرسانی بر اساس prop
   useEffect(() => {
     if (logoUrl && logoUrl.trim() !== '' && !logoError) {
       setLogoSrc(logoUrl.trim());
@@ -28,7 +28,6 @@ export default function Header({ logoUrl }: HeaderProps) {
     }
   }, [logoUrl, logoError]);
 
-  // هندلر خطا
   const handleImageError = useCallback(() => {
     if (!logoError && logoSrc !== '/Logo.svg') {
       setLogoError(true);
@@ -36,30 +35,25 @@ export default function Header({ logoUrl }: HeaderProps) {
     }
   }, [logoError, logoSrc]);
 
-  // مدیریت تغییرات آدرس
+  // اسکرول صفحه اصلی
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const updatePath = () => {
-        setCurrentPath(window.location.pathname + window.location.hash);
-      };
-      updatePath();
-      window.addEventListener('popstate', updatePath);
-      window.addEventListener('hashchange', updatePath);
-      return () => {
-        window.removeEventListener('popstate', updatePath);
-        window.removeEventListener('hashchange', updatePath);
-      };
-    }
-  }, []);
-
-  // مدیریت اسکرول
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // قفل کردن اسکرول هنگام باز بودن منوی موبایل
+  // بستن منوی موبایل با تغییر مسیر
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // قفل اسکرول هنگام باز بودن منو موبایل
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -69,13 +63,13 @@ export default function Header({ logoUrl }: HeaderProps) {
     return () => { document.body.style.overflow = ''; };
   }, [isMobileMenuOpen]);
 
-  const currentPathname = currentPath.split('#')[0] || '/';
-  const isAdminRoute = currentPathname.startsWith('/khoshmin');
-  const isHomePage = currentPathname === '/';
+  const currentPath = pathname || '/';
+  const isExcludedRoute = currentPath.startsWith('/khoshmin') || currentPath === '/login' || currentPath.startsWith('/login/');
+  const isHomePage = currentPath === '/';
 
-  if (isAdminRoute) return null;
+  if (isExcludedRoute) return null;
 
-  // منطق فیلتر رنگ لوگو (می‌توانید تغییر دهید)
+  // منطق فیلتر رنگ لوگو
   let logoFilter = 'none';
   if (!isHomePage) {
     logoFilter = 'brightness(0) invert(1)';
@@ -93,9 +87,9 @@ export default function Header({ logoUrl }: HeaderProps) {
 
   let headerClasses = 'w-full z-40 transition-all duration-300 ';
   if (isHomePage) {
-    headerClasses += `fixed top-0 ${scrolled ? 'bg-white py-2 md:py-3' : 'bg-transparent py-4 md:py-5'}`;
+    headerClasses += `fixed top-0 ${scrolled ? 'bg-white py-2 md:py-3 shadow-sm' : 'bg-transparent py-4 md:py-5'}`;
   } else {
-    headerClasses += `sticky top-0 bg-[#2D3644] py-2 md:py-3`;
+    headerClasses += `sticky top-0 bg-[#2D3644] py-2 md:py-3 shadow-md`;
   }
 
   let defaultTextColor = 'text-white';
@@ -124,7 +118,7 @@ export default function Header({ logoUrl }: HeaderProps) {
           </div>
 
           <div className="flex items-center">
-            <a
+            <Link
               href="/"
               className="flex-shrink-0"
               onClick={(e) => {
@@ -141,33 +135,33 @@ export default function Header({ logoUrl }: HeaderProps) {
                 style={{ filter: logoFilter }}
                 onError={handleImageError}
               />
-            </a>
+            </Link>
           </div>
 
           <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
             {navLinks.map((link) => {
               const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
               return (
-                <a
+                <Link
                   key={link.name}
                   href={link.href}
                   className={`relative group py-2 ${defaultTextColor} ${hoverTextColor} transition-colors ${isActive ? activeTextColor : ''}`}
                 >
                   {link.name}
                   <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-blue-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
-                </a>
+                </Link>
               );
             })}
           </nav>
 
           <div className="flex items-center gap-4">
             <div className="hidden md:block">
-              <a
+              <Link
                 href="/contact"
                 className={`${buttonClasses} px-6 py-2.5 rounded-xl text-sm font-bold transition-colors border border-blue-500/50 inline-block`}
               >
                 درخواست استعلام
-              </a>
+              </Link>
             </div>
             <div className="md:hidden w-10"></div>
           </div>
@@ -210,25 +204,25 @@ export default function Header({ logoUrl }: HeaderProps) {
                 {navLinks.map((link) => {
                   const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
                   return (
-                    <a
+                    <Link
                       key={link.name}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`px-4 py-3 rounded-xl font-bold transition-all text-lg ${isActive ? 'text-white bg-blue-600 shadow-md' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50'}`}
                     >
                       {link.name}
-                    </a>
+                    </Link>
                   );
                 })}
               </div>
               <div className="p-6 border-t border-blue-200/50 mt-auto">
-                <a
+                <Link
                   href="/#contact"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-colors shadow-lg text-center inline-block"
                 >
                   تماس با واحد فروش
-                </a>
+                </Link>
               </div>
             </motion.div>
           </>

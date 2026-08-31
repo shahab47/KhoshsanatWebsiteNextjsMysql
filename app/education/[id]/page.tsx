@@ -26,19 +26,16 @@ export default function ArticleDetailPage({ params }: { params: Promise<{ slug?:
     const fetchArticle = async () => {
       if (!identifier) return;
       try {
-        const res = await fetch('/api/education');
-        if (!res.ok) throw new Error(`پاسخ شبکه ناموفق بود. وضعیت: ${res.status}`);
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          const decodedIdentifier = decodeURIComponent(identifier);
-          const found = data.find((a: any) => {
-            const isSlugMatch = a.slug === identifier || a.slug === decodedIdentifier || encodeURIComponent(a.slug) === identifier;
-            const isIdMatch = a.id.toString() === identifier || a.id.toString() === decodedIdentifier;
-            return (isSlugMatch || isIdMatch) && a.isActive;
-          });
-          if (found) {
-            setArticle(found);
-            setActiveImage(found.imageUrl || '');
+        const res = await fetch(`/api/education/${encodeURIComponent(identifier)}`);
+        if (!res.ok) {
+          setArticle(null);
+          setLoading(false);
+          return;
+        }
+        const found = await res.json();
+        if (found && found.isActive) {
+          setArticle(found);
+          setActiveImage(found.imageUrl || '');
             let allAttachments: any[] = [];
             if (found.media) {
               if (typeof found.media === 'string') {

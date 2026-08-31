@@ -423,7 +423,6 @@ export default function AdvancedRichEditor({
     Color,
     Highlight.configure({ multicolor: true }),
     Placeholder.configure({ placeholder }),
-    DeleteImagesPlugin,
     Gapcursor,
     TableKit.configure({
         table: { resizable: true },
@@ -482,7 +481,7 @@ export default function AdvancedRichEditor({
       if (onChange) {
         const htmlContent = editor.getHTML();
         if (htmlContent === '<p></p>' || htmlContent === '') {
-          onChange('<p>.</p>');
+          onChange('');
         } else {
           onChange(htmlContent);
         }

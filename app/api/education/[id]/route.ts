@@ -19,13 +19,51 @@ const extractImagesFromHtml = (html?: string | null): string[] => {
 // تابع کمکی برای استخراج URL فایل‌های گالری از آرایه media
 const extractMediaUrls = (media?: any[] | null): string[] => {
   if (!media || !Array.isArray(media)) return [];
-  return media.map(item => item.imageUrl).filter(Boolean);
+  return media.map(item => item.imageUrl || item.url || item).filter((u): u is string => typeof u === 'string');
 };
+
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const resolvedParams = await params;
+    const identifier = decodeURIComponent(resolvedParams.id);
+    const parsedId = parseInt(identifier);
+
+    let article = null;
+    if (!isNaN(parsedId)) {
+      article = await db.article.findFirst({
+        where: {
+          OR: [
+            { id: parsedId },
+            { slug: identifier }
+          ]
+        }
+      });
+    } else {
+      article = await db.article.findFirst({
+        where: { slug: identifier }
+      });
+    }
+
+    if (!article) {
+      return NextResponse.json({ error: 'مقاله یافت نشد' }, { status: 404 });
+    }
+
+    return NextResponse.json({
+      ...article,
+      media: article.media || []
+    });
+  } catch (error: any) {
+    console.error('Error fetching single article:', error);
+    return NextResponse.json({ error: 'خطا در دریافت مقاله' }, { status: 500 });
+  }
+}
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
+    if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر است' }, { status: 400 });
+
     const body = await request.json();
 
     const oldArticle = await db.article.findUnique({ where: { id } });
@@ -33,41 +71,37 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     // 1. حذف تصویر کاور قدیمی در صورت تغییر
     if (oldArticle.imageUrl && body.imageUrl && oldArticle.imageUrl !== body.imageUrl) {
-      await deleteFromMinio(oldArticle.imageUrl);
+      try { await deleteFromMinio(oldArticle.imageUrl); } catch (e) {}
     }
 
-    // 2. حذف تصاویر حذف‌شده از داخل ادیتور متن (Diffing)
+    // 2. حذف تصاویر حذف‌شده از داخل ادیتور متن
     const oldContentImages = extractImagesFromHtml(oldArticle.content);
     const newContentImages = extractImagesFromHtml(body.content);
     const removedContentImages = oldContentImages.filter(url => !newContentImages.includes(url));
     for (const url of removedContentImages) {
-      if (url.includes('khoshsanat-media') || url.includes('45.149.78.107')) {
-        await deleteFromMinio(url);
-      }
+      try { await deleteFromMinio(url); } catch (e) {}
     }
 
-    // 3. حذف فایل‌های گالری که در آرایه newMedia وجود ندارند (Diffing برای media)
+    // 3. حذف فایل‌های گالری که در آرایه newMedia وجود ندارند
     const oldMediaUrls = extractMediaUrls(oldArticle.media as any[]);
     const newMediaUrls = extractMediaUrls(body.media);
     const removedMediaUrls = oldMediaUrls.filter(url => !newMediaUrls.includes(url));
     for (const url of removedMediaUrls) {
-      if (url.includes('khoshsanat-media') || url.includes('45.149.78.107')) {
-        await deleteFromMinio(url);
-      }
+      try { await deleteFromMinio(url); } catch (e) {}
     }
 
-    // 4. تبدیل readTime به عدد (در صورت وجود)
+    // 4. تبدیل readTime به عدد
     let parsedReadTime = oldArticle.readTime;
     if (body.readTime !== undefined) {
       parsedReadTime = body.readTime ? parseInt(body.readTime.toString()) : null;
     }
 
-    // 5. به‌روزرسانی مقاله در دیتابیس (همراه با فیلد media)
+    // 5. به‌روزرسانی مقاله در دیتابیس
     const article = await db.article.update({
       where: { id },
       data: {
         title: body.title,
-        slug: body.slug,
+        slug: body.slug ? body.slug.trim().toLowerCase() : oldArticle.slug,
         excerpt: body.excerpt,
         content: body.content,
         category: body.category,
@@ -75,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         imageUrl: body.imageUrl,
         isActive: body.isActive,
         readTime: parsedReadTime,
-        media: body.media || []   // ذخیره آرایه گالری
+        media: body.media || []
       }
     });
     return NextResponse.json(article);
@@ -88,29 +122,26 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
   try {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
+    if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر است' }, { status: 400 });
 
     const article = await db.article.findUnique({ where: { id } });
     if (!article) return NextResponse.json({ error: 'مقاله‌ای یافت نشد' }, { status: 404 });
 
     // 1. حذف تصویر کاور
     if (article.imageUrl) {
-      await deleteFromMinio(article.imageUrl);
+      try { await deleteFromMinio(article.imageUrl); } catch (e) {}
     }
 
     // 2. حذف تصاویر درون ادیتور
     const inlineImages = extractImagesFromHtml(article.content);
     for (const url of inlineImages) {
-      if (url.includes('khoshsanat-media') || url.includes('45.149.78.107')) {
-        await deleteFromMinio(url);
-      }
+      try { await deleteFromMinio(url); } catch (e) {}
     }
 
     // 3. حذف فایل‌های گالری (media)
     const mediaUrls = extractMediaUrls(article.media as any[]);
     for (const url of mediaUrls) {
-      if (url.includes('khoshsanat-media') || url.includes('45.149.78.107')) {
-        await deleteFromMinio(url);
-      }
+      try { await deleteFromMinio(url); } catch (e) {}
     }
 
     // 4. حذف رکورد مقاله از دیتابیس

@@ -85,7 +85,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ---- ایجاد محصول جدید (رفتار پیش‌فرض) ----
-    const { title, slug, description, shortDesc, imageUrl, gallery, subcategoryId, order, isActive } = body;
+    const { title, slug, description, shortDesc, imageUrl, catalogUrl, gallery, subcategoryId, order, isActive } = body;
     if (!title || !slug || !description || !imageUrl || !subcategoryId) {
       return NextResponse.json({ error: 'فیلدهای ضروری کامل نیستند' }, { status: 400 });
     }
@@ -97,6 +97,7 @@ export async function POST(request: NextRequest) {
         description,
         shortDesc: shortDesc || null,
         imageUrl,
+        catalogUrl: catalogUrl || null,
         gallery: gallery || null,
         subcategoryId: parseInt(subcategoryId),
         order: order || 0,

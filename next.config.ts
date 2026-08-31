@@ -1,8 +1,7 @@
-/** @type {import('next').NextConfig} */
+import type { NextConfig } from 'next';
 
-
-const nextConfig = {
-  // تنظیمات افزایش محدودیت حجم آپلود فایل (اضافه شده برای کاتالوگ‌ها)
+const nextConfig: NextConfig = {
+  // تنظیمات افزایش محدودیت حجم آپلود فایل
   experimental: {
     proxyClientMaxBodySize: '250mb',
     serverActions: {
@@ -26,21 +25,17 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'http',
-        hostname: 'nginx',
+        protocol: 'https',
+        hostname: 'khoshsanat.ir',
         pathname: '/**',
-      }
+      },
     ],
     loader: 'custom',
     loaderFile: './lib/image-loader.ts',
-    unoptimized: true,
   },
   
   // خروجی مستقل برای داکر
   output: 'standalone',
-  
-  // هدایت هوشمند ترافیک رسانه‌ای مینیو در محیط توسعه ویندوز
-
 
   // هدرهای امنیتی
   async headers() {
@@ -68,15 +63,6 @@ const nextConfig = {
   // تنظیمات کامپایلر
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
-  },
-  
-  // تنظیمات Turbopack
-  turbopack: {
-    rules: {
-      '*.svg': {
-        loaders: ['@svgr/webpack'],
-      },
-    },
   },
 };
 

@@ -20,15 +20,15 @@ export default function SingleProjectPage({ params }: { params: Promise<{ slug?:
       if (!identifier) return;
       
       try {
-        const res = await fetch('/api/projects');
-        const allProjects = await res.json();
+        const res = await fetch(`/api/projects/${encodeURIComponent(identifier)}`);
+        if (!res.ok) {
+          setProject(null);
+          setLoading(false);
+          return;
+        }
+        const found = await res.json();
         
-        const decodedIdentifier = decodeURIComponent(identifier);
-        const found = allProjects.find((p: any) => 
-          (p.slug === decodedIdentifier || p.id.toString() === decodedIdentifier) && p.isActive
-        );
-        
-        if (found) {
+        if (found && found.isActive) {
           setProject(found);
           setActiveImage(found.imageUrl || '');
           

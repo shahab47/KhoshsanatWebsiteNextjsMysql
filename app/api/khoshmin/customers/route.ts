@@ -36,9 +36,13 @@ export async function GET() {
     const customersWithNotifications = customers.map(customer => ({
       ...customer,
       hasNotification: (customer._count.messages > 0) || (customer._count.notes > 0),
+      unreadMessagesCount: customer._count.messages,
+      newNotesCount: customer._count.notes,
       _count: {
         unreadMessages: customer._count.messages,
-        newNotes: customer._count.notes
+        newNotes: customer._count.notes,
+        messages: customer._count.messages,
+        notes: customer._count.notes
       }
     }));
 

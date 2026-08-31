@@ -3,6 +3,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 
+async function syncCustomerBalance(customerId: number) {
+  try {
+    const validInvoices = await db.invoice.aggregate({
+      where: { customerId, status: { not: 'CANCELLED' } },
+      _sum: { finalAmount: true }
+    });
+    const totalPaid = await db.payment.aggregate({
+      where: { customerId },
+      _sum: { amount: true }
+    });
+    const debt = (validInvoices._sum.finalAmount || 0) - (totalPaid._sum.amount || 0);
+    await db.customer.update({
+      where: { id: customerId },
+      data: { totalDebt: debt, totalPaid: totalPaid._sum.amount || 0 }
+    });
+  } catch (err) {
+    console.error('Error syncing customer balance:', err);
+  }
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -33,7 +53,6 @@ export async function POST(
     const customerId = parseInt(id);
     const body = await request.json();
     
-    // 🟢 فیلد attachmentUrl اضافه شد
     const { description, amount, discount = 0, tax = 0, dueDate, attachmentUrl } = body;
 
     if (isNaN(customerId) || !amount || amount <= 0) {
@@ -55,19 +74,21 @@ export async function POST(
         finalAmount,
         description: description || null,
         dueDate: dueDate ? new Date(dueDate) : null,
-        attachmentUrl: attachmentUrl || null, // 🟢 ذخیره در دیتابیس
+        attachmentUrl: attachmentUrl || null,
         items: {
           create: [{ title: description || 'خدمات/محصول', quantity: 1, unitPrice: amount, total: amount }]
         }
       }
     });
+
+    await syncCustomerBalance(customerId);
+
     return NextResponse.json(invoice, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: 'خطا در ایجاد فاکتور' }, { status: 500 });
   }
 }
 
-// اضافه کردن متد PUT برای ویرایش
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -79,14 +100,12 @@ export async function PUT(
     const invoiceId = parseInt(url.searchParams.get('invoiceId') || '');
     const body = await request.json();
     
-    // 🟢 فیلد attachmentUrl اضافه شد
     const { amount, discount, tax, dueDate, status, description, attachmentUrl } = body;
 
     if (isNaN(customerId) || isNaN(invoiceId)) {
       return NextResponse.json({ error: 'اطلاعات نامعتبر' }, { status: 400 });
     }
 
-    // بررسی تعلق فاکتور به این مشتری
     const existing = await db.invoice.findFirst({
       where: { id: invoiceId, customerId }
     });
@@ -94,7 +113,6 @@ export async function PUT(
       return NextResponse.json({ error: 'فاکتور یافت نشد' }, { status: 404 });
     }
 
-    // محاسبه مجدد finalAmount در صورت تغییر مبلغ، تخفیف یا مالیات
     let finalAmount = existing.finalAmount;
     if (amount !== undefined || discount !== undefined || tax !== undefined) {
       const newAmount = amount !== undefined ? amount : existing.amount;
@@ -113,9 +131,12 @@ export async function PUT(
         dueDate: dueDate !== undefined ? (dueDate ? new Date(dueDate) : null) : existing.dueDate,
         status: status ?? existing.status,
         description: description !== undefined ? (description || null) : existing.description,
-        attachmentUrl: attachmentUrl !== undefined ? (attachmentUrl || null) : existing.attachmentUrl, // 🟢 آپدیت دیتابیس
+        attachmentUrl: attachmentUrl !== undefined ? (attachmentUrl || null) : existing.attachmentUrl,
       }
     });
+
+    await syncCustomerBalance(customerId);
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error(error);
@@ -123,7 +144,6 @@ export async function PUT(
   }
 }
 
-// اضافه کردن متد DELETE برای حذف
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -149,9 +169,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'این فاکتور دارای پرداخت است و قابل حذف نمی‌باشد' }, { status: 400 });
     }
 
-    // حذف آیتم‌ها و سپس خود فاکتور
     await db.invoiceItem.deleteMany({ where: { invoiceId } });
     await db.invoice.delete({ where: { id: invoiceId } });
+
+    await syncCustomerBalance(customerId);
+
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'خطا در حذف فاکتور' }, { status: 500 });
