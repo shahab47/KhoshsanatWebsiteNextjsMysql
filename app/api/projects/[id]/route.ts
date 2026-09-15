@@ -2,6 +2,7 @@
 
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-middleware';
 import { 
   extractUrlsFromJson, 
   extractImagesFromHtml, 
@@ -44,10 +45,13 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
     if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر است' }, { status: 400 });
-
+    
     const body = await request.json();
     const { id: _, createdAt: __, updatedAt: ___, ...updateData } = body;
     
@@ -80,6 +84,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
     if (isNaN(id)) return NextResponse.json({ error: 'شناسه نامعتبر است' }, { status: 400 });

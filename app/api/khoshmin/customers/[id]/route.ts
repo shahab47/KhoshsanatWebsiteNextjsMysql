@@ -3,12 +3,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { extractUrlsFromJson, deleteFilesFromMinio } from '@/lib/minio';
+import { requireAuth } from '@/lib/auth-middleware';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     
@@ -47,6 +51,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     
@@ -104,6 +111,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     

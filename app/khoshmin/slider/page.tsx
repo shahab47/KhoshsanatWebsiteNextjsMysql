@@ -3,109 +3,7 @@
 import React, { useState, useEffect, useRef, ReactNode } from 'react';
 import { Settings, Loader2, Save, ImageIcon, X, AlertTriangle } from 'lucide-react';
 import GalleryManager, { GalleryItem } from '@/components/GalleryManager';
-
-// ------------------------------------------------------------------
-// کامپوننت مودال عمومی (Promise-based)
-// ------------------------------------------------------------------
-interface ModalOptions {
-  title: string;
-  message: string;
-  confirmText?: string;
-  cancelText?: string;
-}
-
-interface ConfirmModalProps {
-  isOpen: boolean;
-  options: ModalOptions | null;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
-
-function ConfirmModal({ isOpen, options, onConfirm, onCancel }: ConfirmModalProps) {
-  if (!isOpen || !options) return null;
-
-  return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" dir="rtl">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-6 h-6 text-amber-500" />
-            <h3 className="text-xl font-bold text-gray-800">{options.title}</h3>
-          </div>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600">
-            <X size={22} />
-          </button>
-        </div>
-        <div className="mb-6 text-gray-700 text-sm leading-relaxed whitespace-pre-line">
-          {options.message}
-        </div>
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={onCancel}
-            className="px-5 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold"
-          >
-            {options.cancelText || 'خیر'}
-          </button>
-          <button
-            onClick={onConfirm}
-            className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-sm"
-          >
-            {options.confirmText || 'بله'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Hook برای مدیریت مودال به صورت Promise
-function useConfirmModal() {
-  const [modalState, setModalState] = useState<{
-    isOpen: boolean;
-    options: ModalOptions | null;
-    resolve: ((value: boolean) => void) | null;
-  }>({
-    isOpen: false,
-    options: null,
-    resolve: null,
-  });
-
-  const confirm = (options: ModalOptions): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setModalState({
-        isOpen: true,
-        options,
-        resolve,
-      });
-    });
-  };
-
-  const handleConfirm = () => {
-    if (modalState.resolve) {
-      modalState.resolve(true);
-    }
-    setModalState({ isOpen: false, options: null, resolve: null });
-  };
-
-  const handleCancel = () => {
-    if (modalState.resolve) {
-      modalState.resolve(false);
-    }
-    setModalState({ isOpen: false, options: null, resolve: null });
-  };
-
-  return {
-    confirm,
-    modalComponent: (
-      <ConfirmModal
-        isOpen={modalState.isOpen}
-        options={modalState.options}
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-      />
-    ),
-  };
-}
+import { useModal } from '@/app/contexts/ModalContext';
 
 // ------------------------------------------------------------------
 // کامپوننت تنظیمات اسلایدر
@@ -193,14 +91,15 @@ function SliderTab({
   type,
   title,
   description,
-  textMode,
   aspectRatio,
+  textMode,
   themeColor,
   uploadTypeFolder,
   tempItems,
   setTempItems,
   confirmDelete,
 }: SliderTabProps) {
+  const { showAlert } = useModal();
   const [slides, setSlides] = useState<GalleryItem[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -240,7 +139,7 @@ function SliderTab({
         }
       }
     } catch (err: any) {
-      alert(err.message || 'خطا در آپلود');
+      showAlert(err.message || 'خطا در آپلود فایل', 'خطا', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -259,11 +158,11 @@ function SliderTab({
         await fetchSlides();
         setTempItems(prev => prev.filter(id => id !== item.id.toString()));
       } else {
-        alert('خطا در حذف از دیتابیس');
+        showAlert('خطا در حذف از دیتابیس', 'خطا', 'error');
       }
     } catch (err) {
       console.error(err);
-      alert('خطا در ارتباط با سرور');
+      showAlert('خطا در ارتباط با سرور', 'خطای شبکه', 'error');
     }
   };
 
@@ -278,7 +177,7 @@ function SliderTab({
       await fetchSlides();
       setTempItems(prev => prev.filter(id => id !== item.id.toString()));
     } else {
-      alert('خطا در ذخیره اطلاعات');
+      showAlert('خطا در ذخیره اطلاعات', 'خطا', 'error');
     }
   };
 
@@ -288,7 +187,10 @@ function SliderTab({
     fd.append('type', uploadTypeFolder);
     fd.append('optimize', optimizeFlag ? 'true' : 'false');
     const uploadRes = await fetch('/api/upload', { method: 'POST', body: fd, credentials: 'include' });
-    if (!uploadRes.ok) throw new Error('خطا در آپلود عکس کراپ شده');
+    if (!uploadRes.ok) {
+      showAlert('خطا در آپلود عکس برش خورده', 'خطا', 'error');
+      return;
+    }
     const data = await uploadRes.json();
     if (data.success && data.url) {
       if (item.imageUrl) {
@@ -326,11 +228,11 @@ export default function SliderManager() {
   const [tempMainIds, setTempMainIds] = useState<string[]>([]);
   const [tempProductIds, setTempProductIds] = useState<string[]>([]);
 
-  const { confirm, modalComponent } = useConfirmModal();
+  const { confirm, showAlert } = useModal();
 
   // تأییدیه‌های حذف را به تب‌ها می‌دهیم
   const confirmDelete = async (message: string): Promise<boolean> => {
-    return confirm({ title: 'تأیید حذف', message, confirmText: 'بله', cancelText: 'خیر' });
+    return confirm({ title: 'تأیید حذف تصویر', message, confirmText: 'بله، حذف شود', cancelText: 'انصراف', type: 'error' });
   };
 
   useEffect(() => {
@@ -347,7 +249,7 @@ export default function SliderManager() {
       .then(data => data && setSettings(data));
   }, []);
 
-  // هشدار هنگام بستن صفحه (مرورگر فقط اجازه confirm می‌دهد، نمی‌توان از مودال سفارشی استفاده کرد)
+  // هشدار هنگام بستن صفحه
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (tempMainIds.length > 0 || tempProductIds.length > 0) {
@@ -380,6 +282,7 @@ export default function SliderManager() {
       message: `شما ${currentTemp.length} فایل جدید آپلود کرده‌اید اما هنوز متنی برای آنها وارد نکرده‌اید.\nآیا می‌خواهید این فایل‌ها حذف شوند؟\n(انتخاب «خیر» به معنای نگهداری فایل‌ها و عدم نمایش دوباره این پیام است)`,
       confirmText: 'بله، حذف شود',
       cancelText: 'خیر، نگهداری شود',
+      type: 'warning',
     });
 
     if (userConfirmed) {
@@ -402,9 +305,9 @@ export default function SliderManager() {
     });
     if (res.ok) {
       setSettings(newSettings);
-      alert('تنظیمات با موفقیت ذخیره شد');
+      showAlert('تنظیمات با موفقیت ذخیره شد.', 'عملیات موفق', 'success');
     } else {
-      alert('خطا در ذخیره تنظیمات');
+      showAlert('خطا در ذخیره تنظیمات', 'خطا', 'error');
     }
   };
 
@@ -475,8 +378,6 @@ export default function SliderManager() {
           confirmDelete={confirmDelete}
         />
       )}
-
-      {modalComponent}
     </div>
   );
 }

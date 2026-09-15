@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ChevronRight, MapPin, ArrowLeft, FolderOpen, FileText, Download } from 'lucide-react';
 import db from '@/lib/db';
 import ProjectDetailGallery from '@/components/projects/ProjectDetailGallery';
@@ -12,6 +12,7 @@ import {
   generateBreadcrumbSchema,
   getCanonicalUrl,
   stripHtml,
+  sanitizeHtml,
 } from '@/lib/seo';
 import JsonLd from '@/components/seo/JsonLd';
 
@@ -94,10 +95,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function SingleProjectPage({ params }: PageProps) {
   const resolvedParams = await params;
   const identifier = resolvedParams.slug || resolvedParams.id;
+  const decodedParam = decodeURIComponent(identifier || '');
   const project = await getProject(identifier);
 
   if (!project) {
     notFound();
+  }
+
+  // هدایت خودکار شناسه‌های عددی به اسلاگ استاندارد فارسی
+  if (decodedParam !== project.slug) {
+    redirect(`/projects/${encodeURIComponent(project.slug)}`);
   }
 
   // استخراج فایل‌ها و تصاویر ضمیمه
@@ -219,7 +226,7 @@ export default async function SingleProjectPage({ params }: PageProps) {
               {project.content && (
                 <div
                   className="prose prose-gray max-w-none prose-headings:text-gray-800 prose-p:text-gray-600 prose-strong:text-gray-800 prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-img:rounded-xl prose-img:shadow-md mb-8 leading-loose text-justify"
-                  dangerouslySetInnerHTML={{ __html: project.content }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(project.content) }}
                 />
               )}
 

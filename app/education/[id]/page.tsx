@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import {
   Calendar,
   Clock,
@@ -20,6 +20,7 @@ import {
   generateBreadcrumbSchema,
   getCanonicalUrl,
   stripHtml,
+  sanitizeHtml,
 } from '@/lib/seo';
 import JsonLd from '@/components/seo/JsonLd';
 
@@ -105,10 +106,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ArticleDetailPage({ params }: PageProps) {
   const resolvedParams = await params;
   const identifier = resolvedParams.slug || resolvedParams.id;
+  const decodedParam = decodeURIComponent(identifier || '');
   const article = await getArticle(identifier);
 
   if (!article) {
     notFound();
+  }
+
+  // هدایت خودکار شناسه‌های عددی به اسلاگ استاندارد فارسی
+  if (decodedParam !== article.slug) {
+    redirect(`/education/${encodeURIComponent(article.slug)}`);
   }
 
   let allAttachments: any[] = [];
@@ -281,7 +288,7 @@ export default async function ArticleDetailPage({ params }: PageProps) {
 
               {/* متن کامل مقاله */}
               <div className="prose prose-gray max-w-none text-gray-700 leading-loose text-justify prose-headings:text-gray-800 prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:text-blue-700 prose-img:rounded-xl prose-img:shadow-md">
-                <div dangerouslySetInnerHTML={{ __html: article.content }} />
+                <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }} />
               </div>
             </div>
           </div>

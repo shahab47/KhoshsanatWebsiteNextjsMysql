@@ -1,9 +1,13 @@
 // app/api/khoshmin/analytics/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const range = searchParams.get('range') || '7d'; // 'today', '7d', '30d', 'all'
 

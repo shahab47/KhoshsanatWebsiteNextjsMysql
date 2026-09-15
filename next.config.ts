@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['192.168.3.27', 'localhost:3000'],
-  // تنظیمات افزایش محدودیت حجم آپلود فایل
+  // تنظیمات حجم آپلود فایل (۲۵۰ مگابایت برای کاربران احرازهویت‌شده)
   experimental: {
     proxyClientMaxBodySize: '250mb',
     serverActions: {
@@ -55,6 +55,18 @@ const nextConfig: NextConfig = {
           {
             key: 'X-XSS-Protection',
             value: '1; mode=block',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
           },
         ],
       },

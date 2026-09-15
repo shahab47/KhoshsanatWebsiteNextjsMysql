@@ -96,24 +96,24 @@ export default async function ContactPage() {
   };
 
   return (
-    <main className="min-h-screen pb-10" style={{ backgroundColor: 'rgb(247, 249, 250)' }} dir="rtl">
+    <main className="min-h-screen bg-ks-light-50 pb-16" dir="rtl">
       <JsonLd id="contact-breadcrumb-schema" data={breadcrumbSchema} />
       <JsonLd id="contact-page-schema" data={contactPageSchema} />
 
       {/* نوار مسیر (Breadcrumb) */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
-          <Link href="/" className="hover:text-blue-600 transition">
+          <Link href="/" className="hover:text-ks-blue-500 transition-colors">
             خانه
           </Link>
           <ChevronRight size={16} />
-          <span className="text-gray-800 font-bold">تماس با ما و استعلام</span>
+          <span className="text-gray-900 font-bold">تماس با ما و استعلام</span>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pt-10">
         <header className="mb-8 text-center md:text-right">
-          <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-3">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3 tracking-tight">
             ارتباط با ما و درخواست استعلام قیمت
           </h1>
           <p className="text-gray-600 max-w-3xl leading-relaxed">
@@ -122,16 +122,16 @@ export default async function ContactPage() {
         </header>
 
         <div className="flex flex-col lg:flex-row-reverse gap-8">
-          {/* بخش فرم تماس (کلاینت ساید با اعتبارسنجی) */}
+          {/* بخش فرم تماس */}
           <div className="lg:w-2/3">
             <ContactForm />
 
             {/* نقشه موقعیت مکانی */}
-            <section className="mt-8 bg-white rounded-2xl p-4 border-2 shadow-md overflow-hidden" style={{ borderColor: '#2563EB' }}>
-              <h2 className="font-bold mb-3 mr-2" style={{ color: '#2D3644' }}>
+            <section className="mt-8 bg-white rounded-2xl p-6 border border-gray-200 shadow-sm overflow-hidden">
+              <h2 className="font-bold text-lg text-gray-900 mb-4">
                 موقعیت دفتر و کارخانه روی نقشه
               </h2>
-              <div className="rounded-xl overflow-hidden h-64 w-full">
+              <div className="rounded-xl overflow-hidden h-64 w-full border border-gray-200">
                 <iframe
                   title="موقعیت مکانی شرکت خوش‌صنعت پایدار"
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.917457370039!2d51.389144!3d35.689197!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8e0e9e8f3b0f3b%3A0x7c3c6f5b4f8a67e3!2sTehran!5e0!3m2!1sen!2s!4v1712345678901!5m2!1sen!2s"
@@ -147,70 +147,70 @@ export default async function ContactPage() {
             </section>
           </div>
 
-          {/* بخش اطلاعات تماس (رندر سروری و NAP معتبر برای سئو محلی) */}
+          {/* بخش اطلاعات تماس */}
           <aside className="lg:w-1/3 space-y-6">
-            <div className="bg-white rounded-2xl p-6 border-2 shadow-md" style={{ borderColor: '#2563EB' }}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-xl" style={{ backgroundColor: '#2563EB20' }}>
-                  <MapPin style={{ color: '#2563EB' }} size={24} />
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="p-3 rounded-xl bg-ks-blue-50 text-ks-blue-500 border border-ks-blue-100">
+                  <MapPin size={22} />
                 </div>
-                <h2 className="text-xl font-bold" style={{ color: '#2D3644' }}>
+                <h2 className="text-lg font-bold text-gray-900">
                   آدرس دفتر مرکزی و کارخانه
                 </h2>
               </div>
-              <p className="leading-relaxed text-gray-700">{address}</p>
+              <p className="leading-relaxed text-gray-700 text-sm">{address}</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border-2 shadow-md" style={{ borderColor: '#2563EB' }}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-xl" style={{ backgroundColor: '#2563EB20' }}>
-                  <Phone style={{ color: '#2563EB' }} size={24} />
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="p-3 rounded-xl bg-ks-blue-50 text-ks-blue-500 border border-ks-blue-100">
+                  <Phone size={22} />
                 </div>
-                <h2 className="text-xl font-bold" style={{ color: '#2D3644' }}>
+                <h2 className="text-lg font-bold text-gray-900">
                   شماره‌های تماس
                 </h2>
               </div>
-              <a href={`tel:${phone.replace(/\s+/g, '')}`} className="text-lg font-mono text-blue-600 hover:underline block" dir="ltr">
+              <a href={`tel:${phone.replace(/\s+/g, '')}`} className="text-base font-bold font-mono text-ks-blue-500 hover:underline block" dir="ltr">
                 {phone}
               </a>
-              <p className="text-sm mt-2 text-gray-500">ساعات پاسخگویی: ۸ الی ۱۷ (شنبه تا چهارشنبه)</p>
+              <p className="text-xs mt-2 text-gray-500">ساعات پاسخگویی: ۸ الی ۱۷ (شنبه تا چهارشنبه)</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border-2 shadow-md" style={{ borderColor: '#2563EB' }}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-xl" style={{ backgroundColor: '#2563EB20' }}>
-                  <Mail style={{ color: '#2563EB' }} size={24} />
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="p-3 rounded-xl bg-ks-blue-50 text-ks-blue-500 border border-ks-blue-100">
+                  <Mail size={22} />
                 </div>
-                <h2 className="text-xl font-bold" style={{ color: '#2D3644' }}>
+                <h2 className="text-lg font-bold text-gray-900">
                   پست الکترونیک رسمی
                 </h2>
               </div>
-              <a href={`mailto:${email}`} className="text-blue-600 hover:underline block" dir="ltr">
+              <a href={`mailto:${email}`} className="text-sm font-semibold text-ks-blue-500 hover:underline block" dir="ltr">
                 {email}
               </a>
-              <p className="text-sm mt-2 text-gray-500">ارسال نقشه‌ها و استعلام‌های رسمی شاپ‌دراوینگ</p>
+              <p className="text-xs mt-2 text-gray-500">ارسال نقشه‌ها و استعلام‌های رسمی شاپ‌دراوینگ</p>
             </div>
 
-            <div className="bg-white rounded-2xl p-6 border-2 shadow-md" style={{ borderColor: '#2563EB' }}>
-              <div className="flex items-center gap-4 mb-6">
-                <div className="p-3 rounded-xl" style={{ backgroundColor: '#2563EB20' }}>
-                  <Clock style={{ color: '#2563EB' }} size={24} />
+            <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3.5 mb-4">
+                <div className="p-3 rounded-xl bg-ks-blue-50 text-ks-blue-500 border border-ks-blue-100">
+                  <Clock size={22} />
                 </div>
-                <h2 className="text-xl font-bold" style={{ color: '#2D3644' }}>
+                <h2 className="text-lg font-bold text-gray-900">
                   ساعات کاری و پذیرش
                 </h2>
               </div>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2.5 text-sm">
                 <li className="flex justify-between text-gray-700">
                   <span>شنبه تا چهارشنبه:</span>
-                  <span className="font-semibold">۸:۰۰ – ۱۷:۰۰</span>
+                  <span className="font-semibold text-gray-900">۸:۰۰ – ۱۷:۰۰</span>
                 </li>
                 <li className="flex justify-between text-gray-700">
                   <span>پنجشنبه:</span>
-                  <span className="font-semibold">۸:۰۰ – ۱۳:۰۰</span>
+                  <span className="font-semibold text-gray-900">۸:۰۰ – ۱۳:۰۰</span>
                 </li>
                 <li className="flex justify-between text-gray-700">
-                  <span>جمعه و روزهای تعطیل رسمی:</span>
+                  <span>جمعه و تعطیلات رسمی:</span>
                   <span className="text-red-500 font-semibold">تعطیل</span>
                 </li>
               </ul>

@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-middleware';
 
 // GET: دریافت تمام دسته‌بندی‌ها
 export async function GET() {
@@ -16,6 +17,9 @@ export async function GET() {
 // POST: ایجاد دسته‌بندی جدید
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { title } = await request.json();
     if (!title || typeof title !== 'string' || title.trim() === '') {
       return NextResponse.json({ error: 'عنوان دسته‌بندی الزامی است' }, { status: 400 });
@@ -34,6 +38,9 @@ export async function POST(request: NextRequest) {
 // PUT: ویرایش عنوان دسته‌بندی
 export async function PUT(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { oldTitle, newTitle } = await request.json();
     if (!oldTitle || !newTitle || newTitle.trim() === '') {
       return NextResponse.json({ error: 'عنوان قدیم و جدید الزامی است' }, { status: 400 });
@@ -61,6 +68,9 @@ export async function PUT(request: NextRequest) {
 // DELETE: حذف دسته‌بندی
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const title = searchParams.get('title');
     if (!title) {

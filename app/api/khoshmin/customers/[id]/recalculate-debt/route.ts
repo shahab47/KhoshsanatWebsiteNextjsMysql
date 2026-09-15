@@ -1,56 +1,89 @@
 // src/app/api/khoshmin/customers/[id]/recalculate-debt/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
-// POST - محاسبه مجدد بدهی مشتری
+// POST - محاسبه مجدد و موازنه کامل حسابداری مشتری و فاکتورها
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     
     if (isNaN(customerId)) {
       return NextResponse.json({ error: 'آیدی مشتری نامعتبر است' }, { status: 400 });
     }
+
+    // ۱. بازسازی و همگام‌سازی وضعیت تسویه تک‌تک فاکتورهای مشتری
+    const customerInvoices = await db.invoice.findMany({
+      where: { customerId },
+      include: { payments: true }
+    });
+
+    const now = new Date();
+    for (const invoice of customerInvoices) {
+      const paidSum = invoice.payments.reduce((acc, p) => acc + (p.amount || 0), 0);
+      let status = invoice.status;
+      if (status !== 'CANCELLED') {
+        if (paidSum >= invoice.finalAmount && invoice.finalAmount > 0) {
+          status = 'PAID';
+        } else if (paidSum > 0) {
+          status = 'PARTIAL';
+        } else {
+          if (invoice.dueDate && new Date(invoice.dueDate) < now) {
+            status = 'OVERDUE';
+          } else {
+            status = 'PENDING';
+          }
+        }
+      }
+      await db.invoice.update({
+        where: { id: invoice.id },
+        data: { paidAmount: paidSum, status }
+      });
+    }
     
-    // 🟢 اصلاح مهم محاسباتی: 
-    // برای محاسبه درست تراز مالی، باید تمام فاکتورهایی که "لغو نشده‌اند" را جمع بزنیم.
-    // چه فاکتور پرداخت شده باشد (PAID) و چه در انتظار (PENDING)، مبلغ آن باید جزو "هزینه‌های مشتری" حساب شود.
+    // ۲. محاسبه مجموع تمام فاکتورهای لغو نشده
     const validInvoices = await db.invoice.aggregate({
       where: {
-        customerId: customerId,
-        status: { not: 'CANCELLED' } // فقط فاکتورهای لغو شده را از محاسبات خارج می‌کنیم
+        customerId,
+        status: { not: 'CANCELLED' }
       },
       _sum: { finalAmount: true }
     });
     
-    // محاسبه مجموع همه پرداختی‌های ثبت شده برای این مشتری
+    // ۳. محاسبه مجموع تمام پرداختی‌های ثبت شده برای این مشتری
     const totalPaid = await db.payment.aggregate({
-      where: { customerId: customerId },
+      where: { customerId },
       _sum: { amount: true }
     });
     
-    // بدهی نهایی = (کل فاکتورهای معتبر) منهای (کل مبالغ پرداختی)
-    // اگر این عدد مثبت شود یعنی مشتری بدهکار است
-    // اگر منفی شود یعنی مشتری بستانکار (طلبکار / پیش‌پرداخت داشته) است
-    const totalDebt = (validInvoices._sum.finalAmount || 0) - (totalPaid._sum.amount || 0);
+    // ۴. تراز نهایی بدهی/بستانکاری
+    const totalInv = validInvoices._sum.finalAmount || 0;
+    const totalPay = totalPaid._sum.amount || 0;
+    const totalDebt = totalInv - totalPay;
     
-    // بروزرسانی فیلدهای مربوطه در اطلاعات مشتری در دیتابیس
+    // ۵. بروزرسانی در دیتابیس
     const updatedCustomer = await db.customer.update({
       where: { id: customerId },
       data: {
         totalDebt: totalDebt,
-        totalPaid: totalPaid._sum.amount || 0
+        totalPaid: totalPay
       }
     });
     
     return NextResponse.json({
       customerId: updatedCustomer.id,
-      totalDebt: updatedCustomer.totalDebt,
+      totalInvoices: totalInv,
       totalPaid: updatedCustomer.totalPaid,
-      message: 'بدهی با موفقیت محاسبه و بروزرسانی شد'
+      totalDebt: updatedCustomer.totalDebt,
+      syncedInvoicesCount: customerInvoices.length,
+      message: 'تراز مالی مشتری و وضعیت تمام فاکتورها با موفقیت موازنه شد'
     });
     
   } catch (error) {

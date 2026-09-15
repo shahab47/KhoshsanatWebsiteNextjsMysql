@@ -25,7 +25,7 @@ const MAX_FILE_SIZE = 250 * 1024 * 1024;
 const ALLOWED_TYPES = [
   'sliders', 'education', 'editor-media', 'general',
   'product-slider', 'categories', 'products', 'projects',
-  'company_catalog', 'KSCataloge'
+  'company_catalog', 'KSCataloge', 'payments', 'invoices', 'receipts'
 ];
 
 const CUSTOM_NAME_REGEX = /^[\w\-\s\.\u0600-\u06FF]+$/;
@@ -156,13 +156,46 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const q = searchParams.get('q') || '75';
 
     if (!url) return new NextResponse('URL missing', { status: 400 });
-    if (!/\.(jpg|jpeg|png|webp|gif)$/i.test(url)) return NextResponse.redirect(url);
+
+    // اعتبارسنجی دقیق URL و جلوگیری از حملات SSRF و Open Redirect
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(url);
+    } catch {
+      return new NextResponse('Invalid URL', { status: 400 });
+    }
+
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      return new NextResponse('Invalid protocol', { status: 400 });
+    }
+
+    // مسدودسازی آدرس‌های داخلی و خصوصی (SSRF Protection)
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const isPrivate = 
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname === '169.254.169.254' ||
+      hostname.startsWith('10.') ||
+      hostname.startsWith('192.168.') ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname);
+
+    if (isPrivate && !process.env.ALLOW_LOCAL_IMGPROXY) {
+      return new NextResponse('Forbidden internal address', { status: 403 });
+    }
+
+    // اعتبارسنجی پسوند فایل فقط روی pathname (نه query string)
+    if (!/\.(jpg|jpeg|png|webp|gif|svg)$/i.test(parsedUrl.pathname)) {
+      return new NextResponse('Invalid image format', { status: 400 });
+    }
     
     const key = process.env.IMGPROXY_KEY;
     const salt = process.env.IMGPROXY_SALT;
     const imgproxyHost = process.env.IMGPROXY_URL;
     
-    if (!key || !salt || !imgproxyHost) return NextResponse.redirect(url);
+    if (!key || !salt || !imgproxyHost) {
+      return new NextResponse('Image proxy not configured', { status: 503 });
+    }
     
     const encodedUrl = urlSafeBase64(Buffer.from(url));
     const path = `/rs:fill:${w}:0:0/q:${q}/${encodedUrl}`;
@@ -182,7 +215,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           'Cache-Control': 'public, max-age=31536000, immutable' 
         } 
       });
-    } catch (e: any) { return NextResponse.redirect(url); }
+    } catch (e: any) { 
+      return new NextResponse('Image fetch failed', { status: 502 }); 
+    }
   } catch (globalGetErr: any) { return new NextResponse('Internal Server Error', { status: 500 }); }
 }
 

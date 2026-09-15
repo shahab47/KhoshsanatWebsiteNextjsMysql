@@ -9,6 +9,7 @@ import {
   extractUrlsFromJson, 
   isValidMinioUrl 
 } from '@/lib/minio';
+import { requireAuth } from '@/lib/auth-middleware';
 
 // GET – دریافت لیست تحویل بارها
 export async function GET(
@@ -16,6 +17,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     if (isNaN(customerId)) {
@@ -27,8 +31,7 @@ export async function GET(
     });
     return NextResponse.json(deliveries);
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'خطا در دریافت تحویل بار' }, { status: 500 });
+    return NextResponse.json({ error: 'خطا در دریافت تحویل‌ها' }, { status: 500 });
   }
 }
 
@@ -38,6 +41,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     if (isNaN(customerId)) {
@@ -134,6 +140,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const url = new URL(request.url);
@@ -195,6 +204,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const url = new URL(request.url);

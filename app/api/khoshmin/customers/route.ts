@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
 // GET - دریافت لیست مشتریان به همراه وضعیت نوتیف
 export async function GET() {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const customers = await db.customer.findMany({
       select: {
         id: true,
@@ -59,6 +63,9 @@ export async function GET() {
 // POST - ایجاد مشتری جدید (بدون تغییر)
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { name, email, phone, company, address, nationalId, status } = body;
     

@@ -1,9 +1,13 @@
 // src/app/api/khoshmin/customers/stats/route.ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
 export async function GET() {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     

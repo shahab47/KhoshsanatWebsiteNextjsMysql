@@ -59,98 +59,106 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 md:p-8 border-2 shadow-md" style={{ borderColor: '#2563EB' }}>
+    <div className="bg-white rounded-2xl p-6 md:p-8 border border-gray-200 shadow-sm">
       <div className="flex items-center gap-3 mb-6">
-        <MessageSquare style={{ color: '#2563EB' }} size={28} />
-        <h2 className="text-2xl font-bold" style={{ color: '#2D3644' }}>ارسال پیام و استعلام قیمت</h2>
+        <MessageSquare className="text-ks-blue-500" size={28} />
+        <h2 className="text-2xl font-bold text-gray-900">ارسال پیام و استعلام قیمت</h2>
       </div>
-      <form className="space-y-6" onSubmit={handleSubmit}>
+      <form className="space-y-6" onSubmit={handleSubmit} noValidate>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label htmlFor="contact-name" className="block text-sm font-bold mb-2" style={{ color: '#2D3644' }}>
-              نام و نام خانوادگی *
+            <label htmlFor="contact-name" className="block text-sm font-bold mb-2 text-gray-800">
+              نام و نام خانوادگی <span className="text-red-500" aria-hidden="true">*</span>
             </label>
             <div className="relative">
-              <User className="absolute right-3 top-3" style={{ color: '#9ca3af' }} size={18} />
+              <User className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={18} />
               <input
                 id="contact-name"
                 type="text"
                 name="name"
+                required
+                aria-required="true"
+                aria-invalid={errors.name ? "true" : "false"}
                 value={formData.name}
                 onChange={handleChange}
-                className={`w-full border-2 rounded-xl py-3 pr-11 pl-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                  errors.name ? 'border-red-500' : 'border-blue-500'
+                className={`w-full border rounded-xl py-3 pr-11 pl-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 transition-colors ${
+                  errors.name ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-ks-blue-500'
                 }`}
-                style={{ backgroundColor: '#ffffff', color: '#2D3644' }}
                 placeholder="مثال: علی محمدی"
               />
             </div>
-            {errors.name && <p className="text-red-500 text-xs mt-1 mr-1">{errors.name}</p>}
+            {errors.name && <p className="text-red-500 text-xs mt-1 mr-1" role="alert">{errors.name}</p>}
           </div>
           <div>
-            <label htmlFor="contact-email" className="block text-sm font-bold mb-2" style={{ color: '#2D3644' }}>
-              آدرس ایمیل *
+            <label htmlFor="contact-email" className="block text-sm font-bold mb-2 text-gray-800">
+              آدرس ایمیل <span className="text-red-500" aria-hidden="true">*</span>
             </label>
             <div className="relative">
-              <MailIcon className="absolute right-3 top-3" style={{ color: '#9ca3af' }} size={18} />
+              <MailIcon className="absolute right-3 top-3.5 text-gray-400 pointer-events-none" size={18} />
               <input
                 id="contact-email"
                 type="email"
                 name="email"
+                dir="ltr"
+                required
+                aria-required="true"
+                aria-invalid={errors.email ? "true" : "false"}
                 value={formData.email}
                 onChange={handleChange}
-                className={`w-full border-2 rounded-xl py-3 pr-11 pl-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-                  errors.email ? 'border-red-500' : 'border-blue-500'
+                className={`w-full border rounded-xl py-3 pr-11 pl-4 text-left bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 transition-colors ${
+                  errors.email ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-ks-blue-500'
                 }`}
-                style={{ backgroundColor: '#ffffff', color: '#2D3644' }}
                 placeholder="example@domain.com"
               />
             </div>
-            {errors.email && <p className="text-red-500 text-xs mt-1 mr-1">{errors.email}</p>}
+            {errors.email && <p className="text-red-500 text-xs mt-1 mr-1" role="alert">{errors.email}</p>}
           </div>
         </div>
         <div>
-          <label htmlFor="contact-subject" className="block text-sm font-bold mb-2" style={{ color: '#2D3644' }}>
-            موضوع پیام *
+          <label htmlFor="contact-subject" className="block text-sm font-bold mb-2 text-gray-800">
+            موضوع پیام <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <input
             id="contact-subject"
             type="text"
             name="subject"
+            required
+            aria-required="true"
+            aria-invalid={errors.subject ? "true" : "false"}
             value={formData.subject}
             onChange={handleChange}
-            className={`w-full border-2 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-              errors.subject ? 'border-red-500' : 'border-blue-500'
+            className={`w-full border rounded-xl py-3 px-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 transition-colors ${
+              errors.subject ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-ks-blue-500'
             }`}
-            style={{ backgroundColor: '#ffffff', color: '#2D3644' }}
             placeholder="درخواست مشاوره / استعلام قیمت / سفارش ساخت"
           />
-          {errors.subject && <p className="text-red-500 text-xs mt-1 mr-1">{errors.subject}</p>}
+          {errors.subject && <p className="text-red-500 text-xs mt-1 mr-1" role="alert">{errors.subject}</p>}
         </div>
         <div>
-          <label htmlFor="contact-message" className="block text-sm font-bold mb-2" style={{ color: '#2D3644' }}>
-            متن پیام *
+          <label htmlFor="contact-message" className="block text-sm font-bold mb-2 text-gray-800">
+            متن پیام <span className="text-red-500" aria-hidden="true">*</span>
           </label>
           <textarea
             id="contact-message"
             name="message"
             rows={6}
+            required
+            aria-required="true"
+            aria-invalid={errors.message ? "true" : "false"}
             value={formData.message}
             onChange={handleChange}
-            className={`w-full border-2 rounded-xl py-3 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
-              errors.message ? 'border-red-500' : 'border-blue-500'
+            className={`w-full border rounded-xl py-3 px-4 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 transition-colors ${
+              errors.message ? 'border-red-500 focus:border-red-500' : 'border-gray-200 focus:border-ks-blue-500'
             }`}
-            style={{ backgroundColor: '#ffffff', color: '#2D3644' }}
             placeholder="شرح درخواست، ابعاد، تیراژ یا مشخصات فنی قطعات مورد نظر..."
           />
-          {errors.message && <p className="text-red-500 text-xs mt-1 mr-1">{errors.message}</p>}
+          {errors.message && <p className="text-red-500 text-xs mt-1 mr-1" role="alert">{errors.message}</p>}
         </div>
         <div>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full md:w-auto text-white font-bold py-3 px-8 rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-            style={{ backgroundColor: '#2563EB' }}
+            className="w-full md:w-auto text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-sm bg-ks-blue-500 hover:bg-ks-blue-600 focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <Send size={20} />
             {isSubmitting ? 'در حال ارسال...' : 'ارسال درخواست استعلام'}
@@ -158,16 +166,17 @@ export default function ContactForm() {
         </div>
         {successMessage && (
           <div
-            className={`p-3 rounded-xl text-center text-sm ${
+            className={`p-4 rounded-xl text-center text-sm font-medium ${
               successMessage.includes('✅')
-                ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-red-100 text-red-700 border border-red-300'
+                ? 'bg-green-50 text-green-700 border border-green-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
             }`}
+            role="status"
           >
             {successMessage}
           </div>
         )}
-        <p className="text-xs text-center" style={{ color: '#6b7280' }}>
+        <p className="text-xs text-center text-gray-500">
           پس از ثبت درخواست، کارشناسان فنی و مهندسی خوش‌صنعت در اسرع وقت با شما تماس خواهند گرفت.
         </p>
       </form>

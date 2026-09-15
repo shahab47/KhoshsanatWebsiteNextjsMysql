@@ -1,0 +1,44 @@
+model:
+  default: auto
+  provider: custom
+  base_url: http://127.0.0.1:20131/v1
+  api_key: sk-9router-local-gateway-key
+fallback_providers: []
+toolsets:
+  - hermes-cli
+agent:
+  max_turns: 150
+  gateway_timeout: 1800
+  restart_drain_timeout: 180
+  api_max_retries: 3
+  tool_use_enforcement: auto
+  task_completion_guidance: true
+  parallel_tool_call_guidance: true
+  environment_probe: true
+  coding_context: auto
+  gateway_timeout_warning: 900
+  clarify_timeout: 600
+  gateway_notify_interval: 180
+  verbose: false
+  reasoning_effort: medium
+terminal:
+  backend: local
+  modal_mode: auto
+  cwd: d:/khoshsanat/ks-engineering-web
+  timeout: 180
+  persistent_shell: true
+file_read_max_chars: 100000
+telegram:
+  reactions: false
+  allowed_chats: ''
+  require_mention: false
+  allow_bots: all
+  group_policy: open
+  dm_policy: open
+approvals:
+  mode: manual
+  timeout: 60
+  mcp_reload_confirm: true
+security:
+  allow_private_urls: true
+  redact_secrets: true

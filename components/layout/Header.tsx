@@ -111,7 +111,8 @@ export default function Header({ logoUrl }: HeaderProps) {
           <div className="flex items-center md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className={`p-2 -mr-2 ${defaultTextColor} transition-colors focus:outline-none`}
+              aria-label="باز کردن منوی ناوبری"
+              className={`p-2 -mr-2 ${defaultTextColor} transition-colors focus:outline-none focus:ring-2 focus:ring-ks-blue-500 rounded-lg`}
             >
               <Menu size={28} />
             </button>
@@ -120,7 +121,7 @@ export default function Header({ logoUrl }: HeaderProps) {
           <div className="flex items-center">
             <Link
               href="/"
-              className="flex-shrink-0"
+              className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 rounded-lg"
               onClick={(e) => {
                 if (currentPath === '/') {
                   e.preventDefault();
@@ -130,7 +131,7 @@ export default function Header({ logoUrl }: HeaderProps) {
             >
               <img 
                 src={logoSrc}
-                alt="KS Engineering" 
+                alt="خوش‌صنعت پایدار" 
                 className="h-10 md:h-12 w-auto object-contain transition-all duration-300"
                 style={{ filter: logoFilter }}
                 onError={handleImageError}
@@ -138,17 +139,17 @@ export default function Header({ logoUrl }: HeaderProps) {
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-bold">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-bold" aria-label="ناوبری اصلی">
             {navLinks.map((link) => {
               const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`relative group py-2 ${defaultTextColor} ${hoverTextColor} transition-colors ${isActive ? activeTextColor : ''}`}
+                  className={`relative group py-2 ${defaultTextColor} ${hoverTextColor} transition-colors focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50 rounded-lg px-2 ${isActive ? activeTextColor : ''}`}
                 >
                   {link.name}
-                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-blue-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-ks-blue-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
                 </Link>
               );
             })}
@@ -158,7 +159,7 @@ export default function Header({ logoUrl }: HeaderProps) {
             <div className="hidden md:block">
               <Link
                 href="/contact"
-                className={`${buttonClasses} px-6 py-2.5 rounded-xl text-sm font-bold transition-colors border border-blue-500/50 inline-block`}
+                className={`${buttonClasses} px-6 py-2.5 rounded-xl text-sm font-bold transition-all border border-ks-blue-500/50 inline-block focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50`}
               >
                 درخواست استعلام
               </Link>
@@ -176,31 +177,37 @@ export default function Header({ logoUrl }: HeaderProps) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 md:hidden"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 md:hidden"
+              aria-hidden="true"
             />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 w-3/4 max-w-sm h-[100dvh] bg-[#EFF6FF] shadow-2xl z-50 md:hidden flex flex-col"
+              className="fixed top-0 right-0 w-3/4 max-w-sm h-[100dvh] bg-[#1a1d21]/95 backdrop-blur-xl border-l border-white/10 shadow-2xl z-50 md:hidden flex flex-col text-white"
               dir="rtl"
+              role="dialog"
+              aria-modal="true"
+              aria-label="منوی موبایل"
             >
-              <div className="flex items-center justify-between p-6 border-b border-blue-200/50">
+              <div className="flex items-center justify-between p-6 border-b border-white/10">
                 <img 
                   src={logoSrc} 
-                  alt="Logo" 
-                  className="h-10 w-auto" 
+                  alt="لوگو خوش‌صنعت پایدار" 
+                  className="h-10 w-auto"
+                  style={{ filter: 'brightness(0) invert(1)' }}
                   onError={handleImageError}
                 />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="p-2 bg-white/80 hover:bg-white rounded-full text-[#2D3644] transition-colors shadow-sm"
+                  aria-label="بستن منو"
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors focus:outline-none focus:ring-2 focus:ring-ks-blue-500"
                 >
                   <X size={20} />
                 </button>
               </div>
-              <div className="flex flex-col gap-2 p-6 flex-1">
+              <nav className="flex flex-col gap-2 p-6 flex-1 overflow-y-auto" aria-label="منوی ناوبری موبایل">
                 {navLinks.map((link) => {
                   const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
                   return (
@@ -208,18 +215,18 @@ export default function Header({ logoUrl }: HeaderProps) {
                       key={link.name}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`px-4 py-3 rounded-xl font-bold transition-all text-lg ${isActive ? 'text-white bg-blue-600 shadow-md' : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50'}`}
+                      className={`px-4 py-3 rounded-xl font-bold transition-all text-base ${isActive ? 'text-white bg-ks-blue-500 shadow-md' : 'text-gray-300 hover:text-white hover:bg-white/5'}`}
                     >
                       {link.name}
                     </Link>
                   );
                 })}
-              </div>
-              <div className="p-6 border-t border-blue-200/50 mt-auto">
+              </nav>
+              <div className="p-6 border-t border-white/10 mt-auto">
                 <Link
-                  href="/#contact"
+                  href="/contact"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-xl font-bold transition-colors shadow-lg text-center inline-block"
+                  className="w-full bg-ks-blue-500 hover:bg-ks-blue-600 text-white py-3.5 rounded-xl font-bold transition-all shadow-md text-center inline-block"
                 >
                   تماس با واحد فروش
                 </Link>

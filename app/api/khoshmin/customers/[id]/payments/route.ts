@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { deleteFromMinio, cleanupRemovedFiles } from '@/lib/minio';
+import { requireAuth } from '@/lib/auth-middleware';
 
 async function syncCustomerBalance(customerId: number) {
   try {
@@ -39,7 +40,11 @@ async function syncInvoicePayments(invoiceId: number) {
       } else if (paidSum > 0) {
         status = 'PARTIAL';
       } else {
-        status = 'PENDING';
+        if (invoice.dueDate && new Date(invoice.dueDate) < new Date()) {
+          status = 'OVERDUE';
+        } else {
+          status = 'PENDING';
+        }
       }
     }
     await db.invoice.update({
@@ -56,6 +61,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     if (isNaN(customerId)) {
@@ -77,6 +85,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const body = await request.json();
@@ -117,6 +128,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const url = new URL(request.url);
@@ -127,6 +141,10 @@ export async function PUT(
 
     if (isNaN(customerId) || isNaN(paymentId)) {
       return NextResponse.json({ error: 'اطلاعات نامعتبر' }, { status: 400 });
+    }
+
+    if (amount !== undefined && (typeof amount !== 'number' || isNaN(amount) || amount <= 0)) {
+      return NextResponse.json({ error: 'مبلغ پرداختی باید بزرگتر از صفر باشد' }, { status: 400 });
     }
 
     const existing = await db.payment.findFirst({
@@ -172,6 +190,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const url = new URL(request.url);

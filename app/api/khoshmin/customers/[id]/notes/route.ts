@@ -1,12 +1,16 @@
 // src/app/api/khoshmin/customers/[id]/notes/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     if (isNaN(customerId)) {
@@ -27,6 +31,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const { note } = await request.json();
@@ -47,6 +54,9 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const url = new URL(request.url);
@@ -79,6 +89,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { id } = await params;
     const customerId = parseInt(id);
     const url = new URL(request.url);

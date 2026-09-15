@@ -6,6 +6,7 @@ import Header from '@/components/layout/Header';
 import { SITE_CONFIG, generateOrganizationSchema } from '@/lib/seo';
 import JsonLd from '@/components/seo/JsonLd';
 import AnalyticsTracker from '@/components/seo/AnalyticsTracker';
+import { ModalProvider } from '@/app/contexts/ModalContext';
 
 const vazirLocal = localFont({
   src: [
@@ -119,9 +120,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         className={`${vazirLocal.className} bg-ks-dark text-white antialiased selection:bg-blue-600 selection:text-white`}
         suppressHydrationWarning
       >
-        <AnalyticsTracker />
-        <Header logoUrl={logoUrl} />
-        {children}
+        <ModalProvider>
+          <AnalyticsTracker />
+          <Header logoUrl={logoUrl} />
+          {children}
+        </ModalProvider>
       </body>
     </html>
   );

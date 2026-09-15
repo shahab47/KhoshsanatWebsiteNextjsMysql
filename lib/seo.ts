@@ -51,6 +51,56 @@ export function stripHtml(html?: string | null): string {
     .trim();
 }
 
+// تگ‌های کاملاً ممنوع و خطرناک برای جلوگیری از حملات XSS
+const DANGEROUS_TAGS = [
+  'script',
+  'iframe',
+  'object',
+  'embed',
+  'applet',
+  'meta',
+  'link',
+  'form',
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'base',
+  'frame',
+  'frameset',
+];
+
+const EVENT_HANDLER_REGEX = /\son\w+\s*=\s*(['"][^'"]*['"]|[^\s>]+)/gi;
+const DANGEROUS_PROTOCOL_REGEX = /(href|src|action)\s*=\s*(['"]?)\s*(javascript:|vbscript:|data:text\/html)/gi;
+
+/**
+ * پاکسازی رشته HTML از تگ‌ها و اتریبیوت‌های مخرب برای جلوگیری از XSS
+ */
+export function sanitizeHtml(dirtyHtml?: string | null): string {
+  if (!dirtyHtml || typeof dirtyHtml !== 'string') return '';
+
+  let clean = dirtyHtml;
+
+  // ۱. حذف کامل تگ‌های خطرناک به همراه محتوای داخلی آن‌ها
+  for (const tag of DANGEROUS_TAGS) {
+    const tagRegex = new RegExp(`<${tag}\\b[^<]*(?:(?!<\\/${tag}>)<[^<]*)*<\\/${tag}>`, 'gi');
+    clean = clean.replace(tagRegex, '');
+    const singleTagRegex = new RegExp(`<${tag}\\b[^>]*\\/?>`, 'gi');
+    clean = clean.replace(singleTagRegex, '');
+  }
+
+  // ۲. حذف تمام Event Handler ها (onload, onerror, onclick, onmouseover, ...)
+  clean = clean.replace(EVENT_HANDLER_REGEX, '');
+
+  // ۳. حذف پروتکل‌های خطرناک در لینک‌ها و تصاویر
+  clean = clean.replace(DANGEROUS_PROTOCOL_REGEX, '$1=$2#blocked');
+
+  // ۴. حذف تگ‌های comment
+  clean = clean.replace(/<!--[\s\S]*?-->/g, '');
+
+  return clean;
+}
+
 /**
  * ایجاد لینک کامل کنونیکال بر اساس مسیر
  */
@@ -253,5 +303,23 @@ export function generateProjectSchema(project: {
       name: project.location,
     } : undefined,
     inLanguage: 'fa-IR',
+  };
+}
+
+/**
+ * اسکیمای سوالات متداول (FAQPage Schema)
+ */
+export function generateFAQSchema(faqs: { question: string; answer: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer,
+      },
+    })),
   };
 }

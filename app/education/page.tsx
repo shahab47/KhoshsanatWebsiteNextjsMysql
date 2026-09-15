@@ -75,39 +75,39 @@ export default async function EducationPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
+    <main className="min-h-screen bg-ks-light-50 pb-20" dir="rtl">
       <JsonLd id="education-breadcrumb-schema" data={breadcrumbSchema} />
       <JsonLd id="education-blog-schema" data={blogSchema} />
 
       {/* Breadcrumb - نوار مسیر */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
-          <Link href="/" className="hover:text-blue-600 transition">
+          <Link href="/" className="hover:text-ks-blue-500 transition-colors">
             خانه
           </Link>
           <ChevronRight size={16} />
-          <span className="text-gray-800 font-bold">آکادمی و مقالات</span>
+          <span className="text-gray-900 font-bold">آکادمی و مقالات</span>
         </div>
       </div>
 
       {/* هدر صفحه */}
-      <header className="bg-white border-b border-gray-200 pt-12 pb-16 px-6 text-center">
+      <header className="bg-white border-b border-gray-200 pt-12 pb-14 px-6 text-center">
         <div className="max-w-7xl mx-auto">
-          <div className="inline-flex items-center justify-center gap-3 text-blue-600 mb-4 font-bold bg-blue-50 px-4 py-2 rounded-full border border-blue-100">
-            <GraduationCap size={24} />
+          <div className="inline-flex items-center justify-center gap-2.5 text-ks-blue-500 mb-4 font-bold bg-ks-blue-50 px-4 py-1.5 rounded-full border border-ks-blue-100 text-sm">
+            <GraduationCap size={20} />
             <span>آکادمی و پایگاه دانش خوش‌صنعت</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-5 text-gray-900 tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900 tracking-tight">
             دانش‌نامه و مقالات تخصصی مهندسی
           </h1>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-gray-600 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
             به‌روزترین مقالات تخصصی، آموزش‌های فنی و استانداردهای مهندسی در حوزه صنعت، فولاد و سازه‌های فلزی را در این بخش مطالعه فرمایید.
           </p>
         </div>
       </header>
 
       {/* لیست و جستجوی مقالات */}
-      <section className="pt-2">
+      <section className="pt-4">
         <EducationListInteractive initialArticles={articles} />
       </section>
     </main>

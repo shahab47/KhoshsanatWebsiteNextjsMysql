@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
 import { SlideType } from '@prisma/client';
 import { deleteFromMinio } from '@/lib/minio';
+import { requireAuth } from '@/lib/auth-middleware';
 
 // تابع کمکی برای دریافت حجم تصویر از URL (فقط در زمان آپلود یا ویرایش)
 async function getImageSizeFromUrl(url: string): Promise<number | null> {
@@ -43,6 +44,9 @@ export async function GET(request: NextRequest) {
 // POST: ایجاد اسلاید جدید با محاسبه خودکار حجم
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { imageUrl, size, type } = body;
 
@@ -95,6 +99,9 @@ export async function POST(request: NextRequest) {
 // PUT: ویرایش اسلاید
 export async function PUT(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const {
       id,

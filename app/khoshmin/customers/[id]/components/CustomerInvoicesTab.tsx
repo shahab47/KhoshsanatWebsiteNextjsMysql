@@ -7,13 +7,13 @@ import DatePicker from 'react-multi-date-picker';
 import persian from 'react-date-object/calendars/persian';
 import persian_fa from 'react-date-object/locales/persian_fa';
 
+const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+const isPdf = (url: string) => /\.pdf$/i.test(url);
+
 function MultiFileUpload({ urls, onChange, title = "مستندات و فایل‌های ضمیمه" }: { urls: string[], onChange: (urls: string[]) => void, title?: string }) {
   const { showAlert, showConfirm } = useModal();
   const [isUploading, setIsUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-  const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
-  const isPdf = (url: string) => /\.pdf$/i.test(url);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -25,7 +25,7 @@ function MultiFileUpload({ urls, onChange, title = "مستندات و فایل�
     for (let i = 0; i < files.length; i++) {
       const fd = new FormData();
       fd.append('file', files[i]);
-      fd.append('type', 'general');
+      fd.append('type', 'invoices');
 
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
@@ -175,41 +175,82 @@ const toDateObject = (dateStr: string | null): Date | undefined => {
 };
 
 function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen: boolean; onClose: () => void; onSubmit: (data: any) => Promise<void>; submitting: boolean }) {
-  const { showAlert } = useModal();
+  const { showAlert, showConfirm } = useModal();
   const [form, setForm] = useState<{description: string, amount: number, discount: number, tax: number, dueDate: string, attachmentUrls: string[]}>({ 
     description: '', amount: 0, discount: 0, tax: 0, dueDate: '', attachmentUrls: [] 
   });
-  const hasSubmitted = useRef(false);
+  const [tempUploadedUrls, setTempUploadedUrls] = useState<string[]>([]);
+  const originalFormRef = useRef(form);
 
   useEffect(() => {
-    if (!isOpen) {
-      if (form.attachmentUrls.length > 0 && !hasSubmitted.current) {
-        form.attachmentUrls.forEach(async (url) => {
-          try {
-            await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
-          } catch (e) { console.error('خطا در حذف فایل بی‌صاحب:', e); }
-        });
-      }
-      hasSubmitted.current = false;
+    if (isOpen) {
+      originalFormRef.current = { ...form };
+      setTempUploadedUrls([]);
     }
-  }, [isOpen, form.attachmentUrls]);
+  }, [isOpen]);
+
+  const hasChanges = () => {
+    return JSON.stringify(form) !== JSON.stringify(originalFormRef.current);
+  };
+
+  const handleClose = () => {
+    if (hasChanges()) {
+      showConfirm({
+        title: 'خروج بدون ذخیره',
+        message: 'اطلاعات وارد شده یا فایل‌های آپلود شده ذخیره نشده‌اند. آیا مطمئن هستید که می‌خواهید خارج شوید؟',
+        type: 'warning',
+        confirmText: 'بله، خارج شوم',
+        cancelText: 'خیر، بمانم',
+        onConfirm: async () => {
+          if (tempUploadedUrls.length > 0) {
+            for (const url of tempUploadedUrls) {
+              try {
+                await fetch('/api/upload', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+              } catch (e) {}
+            }
+          }
+          setForm({ description: '', amount: 0, discount: 0, tax: 0, dueDate: '', attachmentUrls: [] });
+          setTempUploadedUrls([]);
+          onClose();
+        },
+      });
+    } else {
+      onClose();
+    }
+  };
 
   if (!isOpen) return null;
+
+  const baseAmount = Number(form.amount) || 0;
+  const discountAmount = Number(form.discount) || 0;
+  const taxAmount = Number(form.tax) || 0;
+  const calculatedFinal = Math.max(0, baseAmount - discountAmount + taxAmount);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.amount <= 0) {
-      showAlert('مبلغ فاکتور باید بزرگتر از صفر باشد.', 'خطا', 'error');
+      showAlert('مبلغ پایه فاکتور باید بزرگتر از صفر باشد.', 'خطا', 'error');
       return;
     }
-    hasSubmitted.current = true;
+    if (form.discount > form.amount) {
+      showAlert('مبلغ تخفیف نمی‌تواند از مبلغ پایه بیشتر باشد.', 'خطا', 'error');
+      return;
+    }
+
     const submitData = {
       ...form,
       attachmentUrl: form.attachmentUrls.length > 0 ? JSON.stringify(form.attachmentUrls) : null
     };
     await onSubmit(submitData);
+    setTempUploadedUrls([]);
     setForm({ description: '', amount: 0, discount: 0, tax: 0, dueDate: '', attachmentUrls: [] });
     onClose();
+  };
+
+  const handleAttachmentChange = (newUrls: string[]) => {
+    const addedUrls = newUrls.filter(url => !form.attachmentUrls.includes(url));
+    setTempUploadedUrls(prev => [...prev, ...addedUrls]);
+    setForm(prev => ({ ...prev, attachmentUrls: newUrls }));
   };
 
   const blockInvalidChars = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -236,7 +277,7 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
             <div className="p-2 bg-blue-50 text-blue-600 rounded-xl"><FileText size={24} /></div>
             <h3 className="text-xl font-black text-gray-800">ایجاد فاکتور جدید</h3>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-xl transition-colors"><X size={24} /></button>
+          <button onClick={handleClose} className="p-2 hover:bg-gray-100 text-gray-400 hover:text-gray-600 rounded-xl transition-colors"><X size={24} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -248,6 +289,30 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
           <div className="grid grid-cols-2 gap-4">
             <div><label className="block text-sm font-bold text-gray-700 mb-1">تخفیف (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={form.discount || ''} onChange={(e) => setForm({ ...form, discount: parseFloat(e.target.value) || 0 })} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500" /></div>
             <div><label className="block text-sm font-bold text-gray-700 mb-1">مالیات (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={form.tax || ''} onChange={(e) => setForm({ ...form, tax: parseFloat(e.target.value) || 0 })} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none focus:ring-2 focus:ring-blue-500" /></div>
+          </div>
+
+          {/* پیش‌نمایش زنده محاسبات مالی فاکتور */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-2">
+            <div className="flex justify-between items-center text-slate-600">
+              <span>مبلغ پایه:</span>
+              <span className="font-bold text-slate-800">{baseAmount.toLocaleString('fa-IR')} تومان</span>
+            </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between items-center text-rose-600">
+                <span>تخفیف:</span>
+                <span className="font-bold">-{discountAmount.toLocaleString('fa-IR')} تومان</span>
+              </div>
+            )}
+            {taxAmount > 0 && (
+              <div className="flex justify-between items-center text-blue-600">
+                <span>مالیات / ارزش افزوده:</span>
+                <span className="font-bold">+{taxAmount.toLocaleString('fa-IR')} تومان</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2 border-t border-slate-200 text-sm font-black text-slate-900">
+              <span>مبلغ نهایی قابل پرداخت:</span>
+              <span className="text-base font-black text-blue-600">{calculatedFinal.toLocaleString('fa-IR')} تومان</span>
+            </div>
           </div>
 
           <div dir="rtl">
@@ -266,7 +331,7 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
 
           <MultiFileUpload 
             urls={form.attachmentUrls} 
-            onChange={(urls) => setForm({ ...form, attachmentUrls: urls })} 
+            onChange={handleAttachmentChange} 
             title="مستندات و اسکن فاکتور" 
           />
 
@@ -276,10 +341,10 @@ function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: { isOpen:
           </div>
 
           <div className="pt-4 flex gap-3 sticky bottom-0 bg-white border-t border-gray-50 mt-4 pb-2">
-            <button type="submit" disabled={submitting} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-lg shadow-blue-500/30">
+            <button type="submit" disabled={submitting} className="flex-1 flex items-center justify-center gap-2 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-md shadow-blue-500/10">
               <CheckCircle2 size={20} /> صدور فاکتور
             </button>
-            <button type="button" onClick={onClose} className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors">انصراف</button>
+            <button type="button" onClick={handleClose} className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors">انصراف</button>
           </div>
         </form>
       </div>
@@ -312,6 +377,8 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [unallocatedAmount, setUnallocatedAmount] = useState<number>(0);
   
   const [editForm, setEditForm] = useState<{
     amount: number; discount: number; tax: number; dueDate: string; status: string; description: string; attachmentUrls: string[];
@@ -323,10 +390,19 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
 
   const fetchInvoices = async () => {
     try {
-      const res = await fetch(`/api/khoshmin/customers/${customerId}/invoices`);
-      if (!res.ok) throw new Error('خطا در دریافت فاکتورها');
-      const data = await res.json();
+      const [invRes, payRes] = await Promise.all([
+        fetch(`/api/khoshmin/customers/${customerId}/invoices`),
+        fetch(`/api/khoshmin/customers/${customerId}/payments`)
+      ]);
+      if (!invRes.ok) throw new Error('خطا در دریافت فاکتورها');
+      const data = await invRes.json();
       setInvoices(data);
+
+      if (payRes.ok) {
+        const payData = await payRes.json();
+        const freeSum = payData.filter((p: any) => !p.invoiceId).reduce((acc: number, p: any) => acc + (p.amount || 0), 0);
+        setUnallocatedAmount(freeSum);
+      }
     } catch (error) {
       showAlert('خطا در دریافت لیست فاکتورها', 'خطا', 'error');
     } finally {
@@ -381,7 +457,7 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
   const deleteInvoice = async (id: number) => {
     showConfirm({
       title: 'حذف فاکتور',
-      message: 'با حذف فاکتور تمام پرداختی‌های متصل آزاد می‌شوند. مطمئن هستید؟',
+      message: 'با حذف فاکتور تمام پرداختی‌های متصل آزاد می‌شوند و تراز مالی بروزرسانی می‌گردد. مطمئن هستید؟',
       type: 'warning',
       confirmText: 'بله، حذف شود',
       cancelText: 'انصراف',
@@ -394,7 +470,8 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
             onUpdate?.();
             showAlert('فاکتور با موفقیت حذف شد', 'موفقیت', 'success');
           } else {
-            showAlert('خطا در حذف فاکتور', 'خطا', 'error');
+            const err = await res.json();
+            showAlert(err.error || 'خطا در حذف فاکتور', 'خطا', 'error');
           }
         } catch {
           showAlert('خطا در ارتباط با سرور', 'خطا', 'error');
@@ -430,7 +507,11 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
 
   const handleEditSave = async (id: number) => {
     if (editForm.amount <= 0) {
-      showAlert('مبلغ باید بزرگتر از صفر باشد', 'خطا', 'error');
+      showAlert('مبلغ پایه فاکتور باید بزرگتر از صفر باشد', 'خطا', 'error');
+      return;
+    }
+    if (editForm.discount > editForm.amount) {
+      showAlert('مبلغ تخفیف نمی‌تواند از مبلغ پایه بیشتر باشد', 'خطا', 'error');
       return;
     }
     await updateInvoice(id, {
@@ -455,12 +536,69 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
     }
   };
 
+  const handlePrint = (url: string) => {
+    if (isImage(url)) {
+      const printWindow = window.open('', '_blank', 'width=800,height=600');
+      if (!printWindow) { showAlert('پاپ‌آپ مسدود شده است', 'خطا', 'error'); return; }
+      printWindow.document.write(`<html><head><title>چاپ تصویر سند</title></head><body style="margin:0;display:flex;justify-content:center;align-items:center;height:100vh;"><img src="${url}" style="max-width:100%;max-height:100%;" /></body></html>`);
+      printWindow.document.close();
+      printWindow.print();
+    } else if (isPdf(url)) {
+      window.open(url, '_blank');
+    } else {
+      showAlert('چاپ برای این نوع فایل پشتیبانی نمی‌شود', 'اطلاعات', 'info');
+    }
+  };
+
+  const handleDownload = async (url: string) => {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error();
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = url.split('/').pop() || 'invoice-document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch {
+      showAlert('دانلود فایل با مشکل مواجه شد', 'خطا', 'error');
+    }
+  };
+
+  const handleShare = async (url: string) => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'سند فاکتور', url });
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') showAlert('اشتراک‌گذاری لغو شد', 'خطا', 'error');
+      }
+    } else {
+      await navigator.clipboard.writeText(url);
+      showAlert('لینک فایل در کلیپ‌بورد کپی شد', 'موفق', 'success');
+    }
+  };
+
   if (loading) return <div className="text-center py-8 text-gray-700">در حال بارگذاری فاکتورها...</div>;
 
   return (
     <div className="space-y-4">
+      {/* بنر اطلاع‌رسانی در صورت وجود پرداختی‌های آزاد */}
+      {unallocatedAmount > 0 && (
+        <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-2xl p-4 flex items-center gap-3 text-sm text-emerald-800 animate-in fade-in duration-300">
+          <Banknote size={22} className="text-emerald-600 shrink-0" />
+          <div className="flex-1">
+            <span className="font-bold">مجموع پرداختی‌های آزاد (بدون فاکتور مشخص): </span>
+            <span className="font-black text-emerald-700">{unallocatedAmount.toLocaleString('fa-IR')} تومان</span>
+            <p className="text-xs text-emerald-600/90 mt-0.5">این وجوه در تراز کلی حساب مشتری لحاظ شده‌اند اما به فاکتور بخصوصی الصاق نشده‌اند.</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-end">
-        <button onClick={() => setShowCreateModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-lg shadow-blue-500/20 font-black">
+        <button onClick={() => setShowCreateModal(true)} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-sm font-black">
           <Plus size={20} /> ثبت فاکتور جدید
         </button>
       </div>
@@ -476,8 +614,9 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
         <div className="space-y-4">
           {invoices.map((inv) => {
             const documentUrls = parseUrls(inv.attachmentUrl);
+            const remainingDebt = inv.finalAmount - inv.paidAmount;
             return (
-              <div key={inv.id} className="border border-gray-100 rounded-3xl p-6 hover:shadow-xl transition-all duration-300 bg-white border-r-8 border-r-blue-500">
+              <div key={inv.id} className="border border-gray-100 rounded-3xl p-6 hover:shadow-lg transition-all duration-300 bg-white border-r-8 border-r-blue-500">
                 <div className="flex justify-between items-start gap-4 mb-4">
                   <div className="flex-1">
                     {editingId !== inv.id && (
@@ -492,9 +631,7 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
                   
                   <div className="flex gap-2">
                     {editingId !== inv.id && (
-                      <>
-                        <button onClick={() => handleEditStart(inv)} className="p-2.5 bg-gray-50 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition" title="ویرایش"><Edit size={18} /></button>
-                      </>
+                      <button onClick={() => handleEditStart(inv)} className="p-2.5 bg-gray-50 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition" title="ویرایش"><Edit size={18} /></button>
                     )}
                     <button onClick={() => deleteInvoice(inv.id)} className="p-2.5 bg-gray-50 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition" title="حذف"><Trash2 size={18} /></button>
                   </div>
@@ -515,39 +652,54 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
                         <p>تاریخ صدور: <strong className="text-gray-800 font-bold">{new Date(inv.issueDate).toLocaleDateString('fa-IR')}</strong></p>
                         {inv.dueDate && <p>سررسید پرداخت: <strong className={new Date(inv.dueDate) < new Date() && inv.status !== 'PAID' ? "text-red-500" : "text-gray-800"}>{new Date(inv.dueDate).toLocaleDateString('fa-IR')}</strong></p>}
                         <p>جمع پایه: <strong className="text-gray-800 font-bold">{inv.amount.toLocaleString('fa-IR')} تومان</strong></p>
+                        {inv.discount > 0 && <p>تخفیف: <strong className="text-rose-600 font-bold">{inv.discount.toLocaleString('fa-IR')} تومان</strong></p>}
+                        {inv.tax > 0 && <p>مالیات: <strong className="text-blue-600 font-bold">{inv.tax.toLocaleString('fa-IR')} تومان</strong></p>}
                         <p>پرداخت شده: <strong className="text-emerald-600 font-bold">{inv.paidAmount.toLocaleString('fa-IR')} تومان</strong></p>
                       </div>
                     </div>
 
                     <div className="bg-gray-50 p-4 rounded-2xl space-y-3 border border-gray-100">
                       <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">وضعیت تسویه و مستندات</p>
-                      <p className="text-sm flex justify-between"><span>باقیمانده بدهی:</span> <strong className={inv.finalAmount - inv.paidAmount > 0 ? "text-red-600 font-black text-lg" : "text-emerald-600 font-black"}>{(inv.finalAmount - inv.paidAmount).toLocaleString('fa-IR')} تومان</strong></p>
+                      <p className="text-sm flex justify-between items-center">
+                        <span>باقیمانده بدهی فاکتور:</span> 
+                        <strong className={remainingDebt > 0 ? "text-red-600 font-black text-lg" : "text-emerald-600 font-black text-base"}>
+                          {remainingDebt > 0 ? `${remainingDebt.toLocaleString('fa-IR')} تومان` : 'تسویه کامل'}
+                        </strong>
+                      </p>
                       
                       {documentUrls.length > 0 && (
                         <div className="space-y-2 mt-2">
-                          {documentUrls.map((url, i) => {
-                            const isImg = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
-                            return (
-                              <div key={i} className="flex items-center justify-between p-2 bg-white rounded-xl border">
-                                <div className="flex items-center gap-2">
-                                  {isImg ? <ImageIcon size={16} className="text-blue-500" /> : <Paperclip size={16} className="text-gray-500" />}
-                                  <a href="#" onClick={(e) => { e.preventDefault(); window.open(url, '_blank'); }} className="text-sm font-bold text-blue-600 hover:underline">مشاهده سند {i+1}</a>
+                          <label className="block text-xs font-bold text-gray-500 mb-1">اسناد و فاکتورهای پیوست:</label>
+                          <div className="flex flex-wrap gap-3">
+                            {documentUrls.map((url, i) => {
+                              const isImg = isImage(url);
+                              const isPdfDoc = isPdf(url);
+                              return (
+                                <div key={i} className="bg-white border border-gray-200 rounded-xl p-2 w-36">
+                                  <div className="flex flex-col items-center">
+                                    {isImg ? (
+                                      <div className="w-20 h-20 rounded-lg overflow-hidden cursor-pointer bg-gray-100 flex items-center justify-center" onClick={() => setPreviewImage(url)}>
+                                        <img src={url} alt="پیش‌نمایش سند" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                      </div>
+                                    ) : isPdfDoc ? (
+                                      <FileText size={40} className="text-red-500 my-2" />
+                                    ) : (
+                                      <FileText size={40} className="text-gray-500 my-2" />
+                                    )}
+                                    <div className="flex gap-1 mt-2">
+                                      <button onClick={() => handlePrint(url)} className="p-1 hover:bg-gray-100 rounded" title="چاپ"><Printer size={14} /></button>
+                                      <button onClick={() => handleDownload(url)} className="p-1 hover:bg-gray-100 rounded" title="دانلود"><Download size={14} /></button>
+                                      <button onClick={() => handleShare(url)} className="p-1 hover:bg-gray-100 rounded" title="اشتراک"><Share2 size={14} /></button>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex gap-1">
-                                  <button onClick={() => { 
-                                    if (isImg) { const w = window.open('', '_blank'); w?.document.write(`<body style="margin:0"><img src="${url}" style="max-width:100%"/></body>`); w?.print(); } 
-                                    else window.open(url, '_blank');
-                                  }} className="p-1 hover:bg-gray-100 rounded" title="چاپ"><Printer size={14} /></button>
-                                  <button onClick={async () => { const res = await fetch(url); const blob = await res.blob(); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = url.split('/').pop() || 'download'; link.click(); }} className="p-1 hover:bg-gray-100 rounded" title="دانلود"><Download size={14} /></button>
-                                  <button onClick={() => { if (navigator.share) navigator.share({ url }); else navigator.clipboard.writeText(url); }} className="p-1 hover:bg-gray-100 rounded" title="اشتراک"><Share2 size={14} /></button>
-                                </div>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                       
-                      {inv.description && <p className="text-xs text-gray-500 leading-relaxed italic mt-2">{inv.description}</p>}
+                      {inv.description && <p className="text-xs text-gray-500 leading-relaxed italic mt-2 bg-white p-2.5 rounded-xl border border-gray-100">{inv.description}</p>}
                     </div>
                   </div>
                 )}
@@ -555,9 +707,20 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
                 {editingId === inv.id && (
                   <div className="mt-4 space-y-4 border-t border-gray-100 pt-6 bg-gray-50/50 p-4 rounded-3xl">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div><label className="block text-xs font-bold text-gray-500 mb-1">مبلغ پایه (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
-                      <div><label className="block text-xs font-bold text-gray-500 mb-1">تخفیف (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.discount} onChange={(e) => setEditForm({ ...editForm, discount: parseFloat(e.target.value) })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
-                      <div><label className="block text-xs font-bold text-gray-500 mb-1">مالیات (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.tax} onChange={(e) => setEditForm({ ...editForm, tax: parseFloat(e.target.value) })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                      <div><label className="block text-xs font-bold text-gray-500 mb-1">مبلغ پایه (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.amount} onChange={(e) => setEditForm({ ...editForm, amount: parseFloat(e.target.value) || 0 })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                      <div><label className="block text-xs font-bold text-gray-500 mb-1">تخفیف (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.discount} onChange={(e) => setEditForm({ ...editForm, discount: parseFloat(e.target.value) || 0 })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                      <div><label className="block text-xs font-bold text-gray-500 mb-1">مالیات (تومان)</label><input type="number" min="0" onKeyDown={blockInvalidChars} value={editForm.tax} onChange={(e) => setEditForm({ ...editForm, tax: parseFloat(e.target.value) || 0 })} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500" /></div>
+                      
+                      {/* پیش‌نمایش زنده در حالت ویرایش */}
+                      <div className="sm:col-span-3 bg-white border border-slate-200 rounded-2xl p-3 text-xs space-y-1.5">
+                        <div className="flex justify-between items-center text-slate-600 flex-wrap gap-2">
+                          <span>مبلغ پایه: <strong className="text-slate-800 font-bold">{Number(editForm.amount || 0).toLocaleString('fa-IR')} تومان</strong></span>
+                          {Number(editForm.discount || 0) > 0 && <span className="text-rose-600 font-bold">تخفیف: -{Number(editForm.discount || 0).toLocaleString('fa-IR')} تومان</span>}
+                          {Number(editForm.tax || 0) > 0 && <span className="text-blue-600 font-bold">مالیات: +{Number(editForm.tax || 0).toLocaleString('fa-IR')} تومان</span>}
+                          <span className="font-black text-blue-700 text-sm">مبلغ نهایی: {Math.max(0, Number(editForm.amount || 0) - Number(editForm.discount || 0) + Number(editForm.tax || 0)).toLocaleString('fa-IR')} تومان</span>
+                        </div>
+                      </div>
+
                       <div dir="rtl">
                         <label className="block text-xs font-bold text-gray-500 mb-1">سررسید (شمسی)</label>
                         <DatePicker
@@ -599,7 +762,7 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
                       <div className="sm:col-span-3"><textarea value={editForm.description || ''} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={2} className="w-full p-3 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm" placeholder="توضیحات..." /></div>
                     </div>
                     <div className="flex gap-2 justify-end pt-2">
-                      <button onClick={() => handleEditSave(inv.id)} disabled={submitting} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-md shadow-green-500/20">
+                      <button onClick={() => handleEditSave(inv.id)} disabled={submitting} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-sm">
                         <Save size={16} /> ذخیره تغییرات
                       </button>
                       <button onClick={handleEditCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition">
@@ -611,6 +774,16 @@ export function CustomerInvoicesTab({ customerId, onUpdate }: CustomerInvoicesTa
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* مودال بزرگنمایی تصویر سند */}
+      {previewImage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setPreviewImage(null)}>
+          <div className="relative max-w-[90vw] max-h-[90vh] bg-white rounded-xl overflow-hidden">
+            <img src={previewImage} alt="پیش‌نمایش بزرگ" className="max-w-full max-h-[90vh] object-contain" />
+            <button onClick={() => setPreviewImage(null)} className="absolute top-2 right-2 bg-black/50 text-white p-2 rounded-full"><X size={20} /></button>
+          </div>
         </div>
       )}
     </div>

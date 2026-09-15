@@ -2,6 +2,7 @@
 
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-middleware';
 import { 
   extractUrlsFromJson, 
   extractImagesFromHtml, 
@@ -45,6 +46,9 @@ export async function PUT(
   { params }: { params: Promise<any> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const resolvedParams = await params;
     const identifier = resolvedParams.id || resolvedParams.slug || Object.values(resolvedParams)[0] as string;
     const id = parseInt(identifier);
@@ -99,6 +103,9 @@ export async function DELETE(
   { params }: { params: Promise<any> }
 ) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const resolvedParams = await params;
     const identifier = resolvedParams.id || resolvedParams.slug || Object.values(resolvedParams)[0] as string;
     const id = parseInt(identifier);

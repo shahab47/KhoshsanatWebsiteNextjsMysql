@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Props) {
-  const { showAlert } = useModal();
+  const { showAlert, showConfirm } = useModal();
   const [form, setForm] = useState({ description: '', amount: 0, discount: 0, tax: 0, dueDate: '', attachmentUrl: '' });
   const [isUploading, setIsUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -80,12 +80,19 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
     }
   };
 
-  const handleRemoveAttachment = async () => {
+  const handleRemoveAttachment = () => {
     if (!form.attachmentUrl) return;
-    const confirmed = window.confirm('آیا از حذف این فایل اطمینان دارید؟');
-    if (!confirmed) return;
-    await deleteFileFromCloud(form.attachmentUrl);
-    setForm(prev => ({ ...prev, attachmentUrl: '' }));
+    showConfirm({
+      title: 'حذف فایل ضمیمه',
+      message: 'آیا از حذف این فایل پیوست اطمینان دارید؟',
+      type: 'warning',
+      confirmText: 'بله، حذف شود',
+      cancelText: 'انصراف',
+      onConfirm: async () => {
+        await deleteFileFromCloud(form.attachmentUrl);
+        setForm(prev => ({ ...prev, attachmentUrl: '' }));
+      },
+    });
   };
 
   const isImage = (url: string) => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);

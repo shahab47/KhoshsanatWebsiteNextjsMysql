@@ -2,7 +2,7 @@
 import React from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import db from '@/lib/db';
 import ProductDetailInteractive from '@/components/products/ProductDetailInteractive';
@@ -10,8 +10,10 @@ import {
   SITE_CONFIG,
   generateProductSchema,
   generateBreadcrumbSchema,
+  generateFAQSchema,
   getCanonicalUrl,
   stripHtml,
+  sanitizeHtml,
 } from '@/lib/seo';
 import JsonLd from '@/components/seo/JsonLd';
 
@@ -98,10 +100,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function SingleProductPage({ params }: PageProps) {
   const resolvedParams = await params;
-  const product = await getProduct(resolvedParams.slug);
+  const rawParam = decodeURIComponent(resolvedParams.slug);
+  const product = await getProduct(rawParam);
 
   if (!product) {
     notFound();
+  }
+
+  // هدایت خودکار شناسه‌های عددی به اسلاگ استاندارد فارسی
+  if (rawParam !== product.slug) {
+    redirect(`/products/${encodeURIComponent(product.slug)}`);
   }
 
   // پردازش تصاویر گالری
@@ -131,10 +139,26 @@ export default async function SingleProductPage({ params }: PageProps) {
     category: product.subcategory?.category?.title || product.subcategory?.title || undefined,
   });
 
+  const faqSchema = generateFAQSchema([
+    {
+      question: `آیا امکان سفارشی‌سازی ابعاد و مشخصات فنی ${product.title} وجود دارد؟`,
+      answer: `بله، شرکت خوش‌صنعت پایدار امکان تولید سفارشی قطعات و سازه‌ها بر اساس نقشه‌های شاپ‌دراوینگ و مشخصات مهندسی پروژه شما را داراست.`,
+    },
+    {
+      question: `نحوه استعلام قیمت و دریافت کاتالوگ ${product.title} چگونه است؟`,
+      answer: `جهت دریافت پیش‌فاکتور رسمی و مشاوره مهندسی رایگان، می‌توانید از طریق صفحه تماس با ما، شماره‌های دفتر مرکزی یا دکمه دانلود کاتالوگ در همین صفحه اقدام فرمایید.`,
+    },
+    {
+      question: `استانداردهای کیفی و کنترل کیفیت (QC) در ساخت این قطعه چگونه اعمال می‌شود؟`,
+      answer: `کلیه محصولات با ماشین‌آلات پیشرفته برش لیزر CNC، خم برک و جوشکاری استاندارد تحت نظارت واحد کنترل کیفیت تولید و تست می‌گردند.`,
+    },
+  ]);
+
   return (
     <main className="min-h-screen bg-[#F9FAFB] pb-20 font-[Vazir,'vazirmatn',sans-serif] overflow-x-hidden" dir="rtl">
       <JsonLd id="product-breadcrumb-schema" data={breadcrumbSchema} />
       <JsonLd id="product-single-schema" data={productSchema} />
+      <JsonLd id="product-faq-schema" data={faqSchema} />
 
       {/* ۱. Breadcrumb (نوار مسیر) */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
@@ -193,7 +217,7 @@ export default async function SingleProductPage({ params }: PageProps) {
           </h2>
           <div
             className="text-gray-600 leading-loose text-justify [&_p]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_h2]:text-gray-800 [&_ul]:list-disc [&_ul]:pr-5 [&_li]:mb-2 [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-4"
-            dangerouslySetInnerHTML={{ __html: product.description || '' }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
           />
         </section>
       </article>

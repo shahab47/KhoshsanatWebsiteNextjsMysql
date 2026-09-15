@@ -81,38 +81,38 @@ export default async function ProjectsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#f1f5f9] pb-20" dir="rtl">
+    <main className="min-h-screen bg-ks-light-50 pb-20" dir="rtl">
       <JsonLd id="projects-breadcrumb-schema" data={breadcrumbSchema} />
       <JsonLd id="projects-collection-schema" data={collectionSchema} />
 
       {/* Breadcrumb - نوار مسیر */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
-          <Link href="/" className="hover:text-blue-600 transition">
+          <Link href="/" className="hover:text-ks-blue-500 transition-colors">
             خانه
           </Link>
           <ChevronRight size={16} />
-          <span className="text-gray-800 font-bold">پروژه‌ها</span>
+          <span className="text-gray-900 font-bold">پروژه‌ها</span>
         </div>
       </div>
 
       {/* هدر معرفی صفحه */}
       <header className="bg-white border-b border-gray-200 py-12 px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-3 text-blue-600 mb-4 font-bold">
+          <div className="flex items-center gap-3 text-ks-blue-500 mb-3 font-bold">
             <Building2 size={24} />
             <span>افتخارات و سوابق اجرایی خوش‌صنعت</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black mb-5 text-gray-900 tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 text-gray-900 tracking-tight">
             پروژه‌های برجسته و صنعتی
           </h1>
-          <p className="text-gray-600 text-lg md:text-xl max-w-2xl leading-relaxed">
+          <p className="text-gray-600 text-base md:text-lg max-w-2xl leading-relaxed">
             ما مفتخریم که در طراحی، تولید و تامین تجهیزات بزرگترین پروژه‌های صنعتی، عمرانی و پتروشیمی کشور نقشی کلیدی ایفا کرده‌ایم.
           </p>
         </div>
       </header>
 
-      {/* شبکه کاشی‌کاری پروژه‌ها (Bento Grid با SSR کامل) */}
+      {/* شبکه کاشی‌کاری پروژه‌ها */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 mt-12">
         {projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-[250px] md:auto-rows-[300px]">
@@ -120,7 +120,7 @@ export default async function ProjectsPage() {
               <Link
                 key={project.id}
                 href={`/projects/${encodeURIComponent(project.slug)}`}
-                className={`group relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:border-blue-400 block ${getGridSpan(
+                className={`group relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-all duration-300 hover:border-ks-blue-300 block focus:outline-none focus:ring-2 focus:ring-ks-blue-500 ${getGridSpan(
                   project.size
                 )}`}
               >
@@ -135,15 +135,15 @@ export default async function ProjectsPage() {
                 </div>
 
                 {/* لایه گرادیانت */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent transition-opacity duration-500"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent transition-opacity duration-500"></div>
 
                 {/* محتوای روی کارت */}
-                <div className="absolute inset-0 p-6 flex flex-col justify-end transition-transform duration-500 ease-out translate-y-4 group-hover:translate-y-0">
+                <div className="absolute inset-0 p-6 flex flex-col justify-end transition-transform duration-500 ease-out translate-y-2 group-hover:translate-y-0">
                   <div className="mb-auto flex justify-between items-start opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                    <span className="bg-blue-600/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                    <span className="bg-ks-blue-500/90 backdrop-blur-sm text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-sm">
                       {project.category || 'صنعتی'}
                     </span>
-                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 text-white hover:bg-blue-600 hover:border-blue-600 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/30 text-white hover:bg-ks-blue-500 hover:border-ks-blue-500 transition-colors">
                       <ArrowUpRight size={20} className="transform transition-transform group-hover:rotate-45" />
                     </div>
                   </div>
@@ -155,7 +155,7 @@ export default async function ProjectsPage() {
 
                     {project.location && (
                       <div className="flex items-center gap-1.5 text-gray-200 text-sm font-medium opacity-90 group-hover:opacity-100 transition-opacity">
-                        <MapPin size={14} className="text-blue-400" />
+                        <MapPin size={14} className="text-ks-blue-400" />
                         <span>{project.location}</span>
                       </div>
                     )}
@@ -176,7 +176,7 @@ export default async function ProjectsPage() {
         <div className="mt-16 text-center">
           <Link
             href="/contact"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 shadow-md hover:shadow-lg"
+            className="inline-flex items-center gap-2 bg-ks-blue-500 hover:bg-ks-blue-600 text-white font-bold px-8 py-4 rounded-2xl transition-all duration-300 shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50"
           >
             شما هم پروژه جدیدی دارید؟ تماس و مشاوره با ما
             <ArrowLeft size={20} />

@@ -12,7 +12,11 @@ export async function GET() {
   }
 }
 
+import { requireAuth } from '@/lib/auth-middleware';
+
 export async function POST(request: NextRequest) {
+  const user = await requireAuth();
+  if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
   try {
     const body = await request.json();
     const { title, slug, category, location, content, imageUrl, gallery, size, isActive } = body;

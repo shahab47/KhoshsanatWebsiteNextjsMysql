@@ -66,7 +66,11 @@ export async function GET(request: NextRequest) {
 // ======================================================
 // POST – ایجاد محصول جدید یا ذخیره کاتالوگ شرکت
 // ======================================================
+import { requireAuth } from '@/lib/auth-middleware';
+
 export async function POST(request: NextRequest) {
+  const user = await requireAuth();
+  if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
   try {
     const body = await request.json();
     const { action } = body;
@@ -125,6 +129,8 @@ export async function POST(request: NextRequest) {
 // DELETE – حذف رکوردهای مرتبط با کاتالوگ شرکت
 // ======================================================
 export async function DELETE(request: NextRequest) {
+  const user = await requireAuth();
+  if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
   try {
     const { searchParams } = new URL(request.url);
     const action = searchParams.get('action');

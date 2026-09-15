@@ -32,7 +32,7 @@ function MultiFileUpload({ urls, onChange, title = "مستندات و فایل�
     for (let i = 0; i < files.length; i++) {
       const fd = new FormData();
       fd.append('file', files[i]);
-      fd.append('type', 'general');
+      fd.append('type', 'payments');
 
       try {
         const res = await fetch('/api/upload', { method: 'POST', body: fd });
@@ -323,7 +323,7 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
           </div>
 
           <div className="pt-4 flex gap-3 sticky bottom-0 bg-white border-t border-gray-50 mt-4 pb-2">
-            <button type="submit" disabled={submitting} className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-lg shadow-emerald-500/30">
+            <button type="submit" disabled={submitting} className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 disabled:opacity-50 transition-colors shadow-sm">
               <CheckCircle2 size={20} /> ثبت پرداخت
             </button>
             <button type="button" onClick={handleClose} className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-50 transition-colors">انصراف</button>
@@ -577,7 +577,7 @@ export function CustomerPaymentsTab({ customerId, onUpdate }: CustomerPaymentsTa
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
-        <button onClick={() => setShowCreateModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-lg shadow-emerald-500/20 font-black">
+        <button onClick={() => setShowCreateModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition shadow-sm font-black">
           <Plus size={20} /> ثبت پرداخت جدید
         </button>
       </div>
@@ -675,7 +675,7 @@ export function CustomerPaymentsTab({ customerId, onUpdate }: CustomerPaymentsTa
                       <div className="sm:col-span-2"><textarea value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} rows={2} className="w-full p-2.5 border border-gray-300 rounded-xl bg-white outline-none focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="توضیحات..." /></div>
                     </div>
                     <div className="flex gap-2 justify-end pt-2">
-                      <button onClick={() => handleEditSave(p.id)} disabled={submitting} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-md shadow-green-500/20">
+                      <button onClick={() => handleEditSave(p.id)} disabled={submitting} className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition shadow-sm">
                         <Save size={16} /> ذخیره تغییرات
                       </button>
                       <button onClick={handleEditCancel} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition">

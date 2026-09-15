@@ -1,6 +1,7 @@
 // src/app/api/texts/route.ts
 import { NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 import { cleanupRemovedFiles, extractImagesFromHtml, isValidMinioUrl } from '@/lib/minio';
 
 // تبدیل تگ <font color="#..."> به <span style="color: ...">
@@ -21,6 +22,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const data = await request.json();
 
     for (const [key, value] of Object.entries(data)) {

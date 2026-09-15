@@ -29,7 +29,6 @@ services:
       args:
         NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
         NEXT_PUBLIC_ADMINER_URL: ${NEXT_PUBLIC_ADMINER_URL}
-        DATABASE_URL: ${DATABASE_URL}
     image: khoshsanatv8-app:latest
     container_name: ks_nextjs
     ports:
@@ -48,6 +47,10 @@ services:
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
       - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - SESSION_SALT=${SESSION_SALT}
+      - ADMIN_INITIAL_PASSWORD=${ADMIN_INITIAL_PASSWORD}
+      - ADMIN_INITIAL_EMAIL=${ADMIN_INITIAL_EMAIL}
       - NEXT_TELEMETRY_DISABLED=1
     depends_on:
       - imgproxy
@@ -59,7 +62,7 @@ services:
     image: adminer:latest
     container_name: ks_adminer
     ports:
-      - "8081:8080"   # باز شدن پورت کانتینر برای دسترسی عمومی با آی‌پی
+      - "127.0.0.1:8081:8080"   # فقط لوکال‌هاست – Nginx هاست از آن استفاده می‌کند (امنیت: دسترسی عمومی مسدود)
     environment:
       - ADMINER_DEFAULT_SERVER=${SERVER_IP}   # استفاده از متغیر داینامیک آی‌پی سرور
     networks:

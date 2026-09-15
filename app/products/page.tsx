@@ -83,27 +83,27 @@ export default async function ProductsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#F9FAFB] pb-20 font-[Vazir,'vazirmatn',sans-serif]" dir="rtl">
+    <main className="min-h-screen bg-ks-light-50 pb-20" dir="rtl">
       <JsonLd id="products-breadcrumb-schema" data={breadcrumbSchema} />
       <JsonLd id="products-itemlist-schema" data={itemListSchema} />
 
       {/* Breadcrumb نوار مسیر */}
       <div className="bg-white border-b border-gray-200 py-4 px-6">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
-          <Link href="/" className="hover:text-blue-600 transition">
+          <Link href="/" className="hover:text-ks-blue-500 transition-colors">
             خانه
           </Link>
           <ChevronLeft size={16} />
-          <span className="text-gray-800 font-bold">محصولات ما</span>
+          <span className="text-gray-900 font-bold">محصولات ما</span>
         </div>
       </div>
 
       {/* هدر صفحه */}
-      <header className="pt-16 pb-4 text-center px-4">
-        <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-4 tracking-tight">
+      <header className="pt-14 pb-6 text-center px-4">
+        <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
           محصولات و اتصالات مدرن صنعتی
         </h1>
-        <p className="text-lg text-gray-600 font-medium max-w-2xl mx-auto">
+        <p className="text-base md:text-lg text-gray-600 font-normal max-w-2xl mx-auto leading-relaxed">
           اتصالات مدرن، سازه‌های ماندگار؛ تجربه‌ای از کیفیت و دوام در تولیدات خوش‌صنعت پایدار
         </p>
       </header>

@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-middleware';
 import { 
   extractUrlsFromJson, 
   extractImagesFromHtml, 
@@ -25,6 +26,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { title, description, categoryId, order, isActive } = body;
     if (!title || !categoryId) {
@@ -48,6 +52,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { id, title, description, order, isActive } = body;
     const subId = parseInt(id);
@@ -66,6 +73,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const subId = parseInt(id || '');

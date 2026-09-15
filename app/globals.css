@@ -1,46 +1,97 @@
 @import "tailwindcss";
 
-/* ساده و تمیز: پس‌زمینه سفید، متن مشکی */
 :root {
-  --background: #ffffff;
-  --foreground: #111111;
+  /* Primary Blue */
+  --ks-blue-50: #eff6ff;
+  --ks-blue-100: #dbeafe;
+  --ks-blue-200: #bfdbfe;
+  --ks-blue-300: #93c5fd;
+  --ks-blue-400: #60a5fa;
+  --ks-blue-500: #2563eb;
+  --ks-blue-600: #1d4ed8;
+  --ks-blue-700: #1e40af;
+  --ks-blue-800: #1e3a8a;
+  --ks-blue-900: #172554;
+
+  /* Neutral Dark (Industrial) */
+  --ks-dark-950: #1a1d21;
+  --ks-dark-900: #24272c;
+  --ks-dark-800: #2D3644;
+  --ks-dark-700: #272727;
+  --ks-dark-600: #3a3a3a;
+  --ks-dark-500: #4a4a4a;
+  --ks-dark-400: #6b7280;
+  --ks-dark-300: #858990;
+
+  /* Neutral Light */
+  --ks-light-50: #f7f9fa;
+  --ks-light-100: #f1f1f1;
+  --ks-light-200: #e9e9e9;
+  --ks-light-300: #e2e8f0;
+  --ks-light-text: #111111;
+
+  /* Theme standard background/foreground */
+  --background: #1a1d21;
+  --foreground: #ffffff;
 }
 
 body {
-  background-color: var(--background) !important;
-  color: var(--foreground) !important;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-vazir), 'Vazir', system-ui, -apple-system, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
-/* اسکرول‌بار سفارشی با رنگ آبی */
+
+/* اسکرول‌بار سفارشی */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
+  background: #1a1d21;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2563EB; /* ← رنگ آبی دلخواه */
-  border-radius: 10px;
+  background: #2563EB;
+  border-radius: 8px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #1d4ed8; /* آبی تیره‌تر در حالت هاور */
+  background: #1d4ed8;
 }
 
-/* برای مرورگر فایرفاکس (اختیاری) */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2563EB #f1f1f1;
+  scrollbar-color: #2563EB #1a1d21;
 }
 
-/* اسکرول نرم و هایلایت متن معمولی */
 html {
   scroll-behavior: smooth;
 }
+
 ::selection {
-  background-color: #e2e8f0;
-  color: #111111;
+  background-color: #2563EB;
+  color: #ffffff;
 }
 
+/* کارت‌ها و سطوح شیشه‌ای استاندارد صنعتی */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
 
+.glass-panel-hover:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* قانون دسترسی‌پذیری کاهش حرکت (Reduced Motion) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

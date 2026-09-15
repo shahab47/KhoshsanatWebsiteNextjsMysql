@@ -2,7 +2,10 @@
 
 import { jwtVerify, SignJWT } from 'jose';
 
-const secretKey = process.env.JWT_SECRET || 'khoshsanat-secure-token-998877';
+const secretKey = process.env.JWT_SECRET;
+if (!secretKey) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required. Application cannot start without it.');
+}
 const key = new TextEncoder().encode(secretKey);
 
 export async function signToken(payload: any) {

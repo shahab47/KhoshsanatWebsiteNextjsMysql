@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const secretKey = process.env.JWT_SECRET || 'khoshsanat-secure-token-998877';
+const secretKey = process.env.JWT_SECRET;
+if (!secretKey) {
+  throw new Error('FATAL: JWT_SECRET environment variable is required.');
+}
 const key = new TextEncoder().encode(secretKey);
 
 async function verifyTokenEdge(token: string) {
@@ -30,7 +33,24 @@ export async function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // محافظت از تمام مسیرهای /khoshmin/*
+  // ۱. محافظت از تمام API های پنل ادمین (/api/khoshmin/*)
+  if (pathname.startsWith('/api/khoshmin')) {
+    const token = req.cookies.get('admin_token')?.value;
+    if (!token) {
+      return NextResponse.json({ error: 'دسترسی غیرمجاز. لطفاً وارد شوید.' }, { status: 401 });
+    }
+
+    const user = await verifyTokenEdge(token);
+    if (!user) {
+      const response = NextResponse.json({ error: 'توکن نامعتبر یا منقضی شده است.' }, { status: 401 });
+      response.cookies.delete('admin_token');
+      return response;
+    }
+
+    return NextResponse.next();
+  }
+
+  // ۲. محافظت از تمام مسیرهای صفحات پنل مدیریت (/khoshmin/*)
   if (pathname.startsWith('/khoshmin')) {
     const token = req.cookies.get('admin_token')?.value;
     if (!token) {
@@ -77,5 +97,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/khoshmin/:path*'],
+  matcher: ['/khoshmin/:path*', '/api/khoshmin/:path*'],
 };

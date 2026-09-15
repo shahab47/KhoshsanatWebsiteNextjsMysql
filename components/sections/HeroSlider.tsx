@@ -100,15 +100,15 @@ export default function HeroSlider({ slides, settings }: HeroSliderProps) {
         {(currentSlide.title || currentSlide.subtitle) && (
           <div
             key={currentSlideIndex}
-            className="absolute bottom-4 right-4 md:bottom-8 md:right-8 z-20 text-right max-w-lg animate-text"
+            className="absolute bottom-6 right-6 md:bottom-12 md:right-12 z-20 text-right max-w-xl animate-text px-4"
           >
             {currentSlide.title && (
               <h1
-                className="font-thin mb-2 leading-tight"
+                className="font-bold mb-3 leading-tight tracking-tight drop-shadow-lg"
                 style={{
                   color: currentSlide.titleColor || '#ffffff',
-                  fontSize: currentSlide.titleFontSize || '3rem',
-                  textShadow: '0 0 6px rgba(255,255,255,0.4)',
+                  fontSize: currentSlide.titleFontSize || 'clamp(1.75rem, 4vw, 3rem)',
+                  textShadow: '0 2px 10px rgba(0,0,0,0.7)',
                 }}
               >
                 {currentSlide.title}
@@ -116,11 +116,11 @@ export default function HeroSlider({ slides, settings }: HeroSliderProps) {
             )}
             {currentSlide.subtitle && (
               <p
-                className="font-extralight"
+                className="font-normal leading-relaxed drop-shadow-md text-gray-100"
                 style={{
-                  color: currentSlide.subtitleColor || '#ffffff',
-                  fontSize: currentSlide.subtitleFontSize || '1.25rem',
-                  textShadow: '0 0 4px rgba(255,255,255,0.3)',
+                  color: currentSlide.subtitleColor || '#f3f4f6',
+                  fontSize: currentSlide.subtitleFontSize || 'clamp(0.95rem, 2vw, 1.25rem)',
+                  textShadow: '0 1px 6px rgba(0,0,0,0.6)',
                 }}
               >
                 {currentSlide.subtitle}
@@ -129,13 +129,13 @@ export default function HeroSlider({ slides, settings }: HeroSliderProps) {
           </div>
         )}
 
-        <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-20">
+        <div className="absolute bottom-6 left-6 md:bottom-12 md:left-12 z-20">
           <Link
             href="/products"
-            className="flex items-center justify-center gap-1 bg-transparent border border-white text-white rounded-full px-3 py-1.5 md:px-4 md:py-2 font-medium text-sm md:text-base transition-all hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50 group"
+            className="flex items-center justify-center gap-2 bg-ks-blue-500/90 hover:bg-ks-blue-600 text-white rounded-xl px-4 py-2.5 md:px-6 md:py-3 font-bold text-sm md:text-base transition-all shadow-lg backdrop-blur-sm border border-white/20 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 group"
           >
-            مشاهده کاتالوگ محصولات
-            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            مشاهده محصولات و خدمات
+            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
           </Link>
         </div>
       </section>

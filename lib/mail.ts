@@ -111,7 +111,7 @@ export function createTransporter(config: SmtpConfig) {
       pass: config.pass,
     } : undefined,
     tls: {
-      rejectUnauthorized: false, // جلوگیری از خطای گواهی‌های خودامضا در هاست‌های داخلی
+      rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED === 'false' ? false : true,
     },
     connectionTimeout: 10000,
     greetingTimeout: 10000,

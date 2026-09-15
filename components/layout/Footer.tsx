@@ -1,10 +1,10 @@
-// src/components/layout/Footer.tsx
 import React from 'react';
 import Link from 'next/link';
 import { Phone, Mail, MapPin } from 'lucide-react';
 import db from '@/lib/db';
 import { SocialIcon } from '@/components/icons/SocialIcons';
 import ImageWithFallback from '@/components/ui/ImageWithFallback'; // اضافه شد
+import { sanitizeHtml } from '@/lib/seo';
 
 // لیست پلتفرم‌های پشتیبانی شده
 const SOCIAL_PLATFORMS = [
@@ -98,7 +98,7 @@ export default async function Footer() {
           />
           <div 
             className="text-sm leading-relaxed mb-6 whitespace-pre-line"
-            dangerouslySetInnerHTML={{ __html: defaults.aboutText }}
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(defaults.aboutText) }}
           />
           {activeSocials.length > 0 && (
             <div className="flex gap-2 flex-wrap">
@@ -123,12 +123,12 @@ export default async function Footer() {
 
         {/* ستون دوم */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-6" dangerouslySetInnerHTML={{ __html: defaults.col1Title }} />
+          <h4 className="text-white font-bold text-lg mb-6" dangerouslySetInnerHTML={{ __html: sanitizeHtml(defaults.col1Title) }} />
           <ul className="space-y-3 text-sm">
             {col1Links.map((link: any) => (
               <li key={link.id}>
                 <Link href={link.url || '#'} className="hover:text-blue-500 transition-colors">
-                  <span dangerouslySetInnerHTML={{ __html: link.text }} />
+                  <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(link.text) }} />
                 </Link>
               </li>
             ))}
@@ -137,12 +137,12 @@ export default async function Footer() {
 
         {/* ستون سوم */}
         <div>
-          <h4 className="text-white font-bold text-lg mb-6" dangerouslySetInnerHTML={{ __html: defaults.col2Title }} />
+          <h4 className="text-white font-bold text-lg mb-6" dangerouslySetInnerHTML={{ __html: sanitizeHtml(defaults.col2Title) }} />
           <ul className="space-y-3 text-sm">
             {col2Links.map((link: any) => (
               <li key={link.id}>
                 <Link href={link.url || '#'} className="hover:text-blue-500 transition-colors">
-                  <span dangerouslySetInnerHTML={{ __html: link.text }} />
+                  <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(link.text) }} />
                 </Link>
               </li>
             ))}
@@ -155,15 +155,15 @@ export default async function Footer() {
           <ul className="space-y-4 text-sm">
             <li className="flex items-start gap-3">
               <MapPin size={18} className="text-blue-500 shrink-0 mt-0.5" />
-              <span className="leading-relaxed" dangerouslySetInnerHTML={{ __html: defaults.address }} />
+              <span className="leading-relaxed" dangerouslySetInnerHTML={{ __html: sanitizeHtml(defaults.address) }} />
             </li>
             <li className="flex items-center gap-3">
               <Phone size={18} className="text-blue-500 shrink-0" />
-              <span dir="ltr" dangerouslySetInnerHTML={{ __html: defaults.phone }} />
+              <span dir="ltr" dangerouslySetInnerHTML={{ __html: sanitizeHtml(defaults.phone) }} />
             </li>
             <li className="flex items-center gap-3">
               <Mail size={18} className="text-blue-500 shrink-0" />
-              <span dangerouslySetInnerHTML={{ __html: defaults.email }} />
+              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(defaults.email) }} />
             </li>
           </ul>
         </div>

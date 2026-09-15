@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { requireAuth } from '@/lib/auth-middleware';
 
 // GET: دریافت تنظیمات اسلایدر (اگر وجود نداشت، یک رکورد پیش‌فرض ایجاد می‌کند)
 export async function GET() {
@@ -34,6 +35,9 @@ export async function GET() {
 // PUT: به‌روزرسانی تنظیمات اسلایدر
 export async function PUT(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { heightDesktop, heightMobile, overlayColor, overlayOpacity } = body;
 

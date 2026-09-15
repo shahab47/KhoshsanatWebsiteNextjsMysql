@@ -45,7 +45,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
+import { requireAuth } from '@/lib/auth-middleware';
+
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await requireAuth();
+  if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
   try {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);
@@ -98,6 +102,8 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 }
 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const user = await requireAuth();
+  if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
   try {
     const resolvedParams = await params;
     const id = parseInt(resolvedParams.id);

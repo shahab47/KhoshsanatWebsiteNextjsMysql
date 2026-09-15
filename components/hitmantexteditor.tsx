@@ -5,6 +5,7 @@ import { useEditor, EditorContent, } from '@tiptap/react';
 import {  BubbleMenu, FloatingMenu } from '@tiptap/react/menus';
 import { Extension } from '@tiptap/core';
 import { Gapcursor } from '@tiptap/extensions';
+import { useModal } from '@/app/contexts/ModalContext';
 
 
 // Tiptap Official Extensions
@@ -175,15 +176,6 @@ const handleImageUpload = async (file: File, view: EditorView, pos: number) => {
     console.error('Image upload error:', error);
   }
 };
-/*
-onst addImage = useCallback(() => {
-  const url = window.prompt('URL')
-
-  if (url) {
-    editor.chain().focus().setImage({ src: url }).run()
-  }
-},[editor])
-*/
 // ─────────────────────────────────────────────
 // Popovers Components
 // ─────────────────────────────────────────────
@@ -245,6 +237,7 @@ const Sep: React.FC = () => <div className="h-5 w-px bg-gray-200 dark:bg-gray-70
 // Toolbar Component
 // ─────────────────────────────────────────────
 const Toolbar: React.FC<{ editor: any }> = ({ editor }) => {
+  const { prompt } = useModal();
   const [textColorOpen, setTextColorOpen] = useState(false);
   const [bgColorOpen, setBgColorOpen] = useState(false);
   const [lineHeightOpen, setLineHeightOpen] = useState(false);
@@ -264,15 +257,24 @@ const Toolbar: React.FC<{ editor: any }> = ({ editor }) => {
   const btn = 'p-1.5 rounded transition-colors text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 flex-shrink-0';
   const btnOn = 'bg-gray-200 dark:bg-gray-600 shadow ring-1 ring-black/5 dark:ring-white/10';
 
-  const setLink = () => {
+  const setLink = async () => {
     const prev = editor.getAttributes('link').href ?? '';
-    let url = window.prompt('آدرس لینک:', prev);
+    const url = await prompt({
+      title: 'درج / ویرایش پیوند',
+      message: 'آدرس اینترنتی (URL) مورد نظر را وارد نمایید:',
+      defaultValue: prev,
+      placeholder: 'https://example.com',
+      confirmText: 'ثبت پیوند',
+      cancelText: 'انصراف',
+      type: 'info',
+    });
     if (url === null) return;
-    if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
-    if (!/^https?:\/\//i.test(url) && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
-      url = `https://${url}`;
+    if (url.trim() === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
+    let formattedUrl = url.trim();
+    if (!/^https?:\/\//i.test(formattedUrl) && !formattedUrl.startsWith('mailto:') && !formattedUrl.startsWith('tel:') && !formattedUrl.startsWith('#') && !formattedUrl.startsWith('/')) {
+      formattedUrl = `https://${formattedUrl}`;
     }
-    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    editor.chain().focus().extendMarkRange('link').setLink({ href: formattedUrl }).run();
   };
 
   return (
@@ -386,6 +388,7 @@ export default function AdvancedRichEditor({
   onChange,
   placeholder = 'برای نوشتن کلیک کنید یا شروع به تایپ کنید...',
 }: AdvancedRichEditorProps) {
+  const { prompt } = useModal();
   const [searchTerm, setSearchTerm] = useState('');
 
   const menuItems = useMemo(() => [
@@ -499,14 +502,24 @@ export default function AdvancedRichEditor({
   if (!editor) {
     return null
   }
-  const setBubbleLink = () => {
-    let url = window.prompt('آدرس لینک:');
+  const setBubbleLink = async () => {
+    const prev = editor.getAttributes('link').href ?? '';
+    const url = await prompt({
+      title: 'درج / ویرایش پیوند',
+      message: 'آدرس اینترنتی (URL) مورد نظر را وارد نمایید:',
+      defaultValue: prev,
+      placeholder: 'https://example.com',
+      confirmText: 'ثبت پیوند',
+      cancelText: 'انصراف',
+      type: 'info',
+    });
     if (url === null) return;
-    if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
-    if (!/^https?:\/\//i.test(url) && !url.startsWith('mailto:') && !url.startsWith('tel:')) {
-      url = `https://${url}`;
+    if (url.trim() === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
+    let formattedUrl = url.trim();
+    if (!/^https?:\/\//i.test(formattedUrl) && !formattedUrl.startsWith('mailto:') && !formattedUrl.startsWith('tel:') && !formattedUrl.startsWith('#') && !formattedUrl.startsWith('/')) {
+      formattedUrl = `https://${formattedUrl}`;
     }
-    editor.chain().focus().setLink({ href: url }).run();
+    editor.chain().focus().setLink({ href: formattedUrl }).run();
   };
 
   return (

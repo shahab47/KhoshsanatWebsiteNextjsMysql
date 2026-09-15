@@ -64,17 +64,78 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  // دریافت اسلایدهای فعال و با نوع MAIN
-  const activeSlides = await db.slide.findMany({
-    where: {
-      isActive: true,
-      type: 'MAIN', // فقط اسلایدهای MAIN
-    },
-    orderBy: { order: 'asc' },
-  });
+  // واکشی موازی داده‌های بخش‌های مختلف صفحه اصلی در سرور
+  const [
+    activeSlides,
+    sliderSettingsDb,
+    products,
+    articlesDb,
+    projectsDb,
+    categories,
+  ] = await Promise.all([
+    db.slide.findMany({
+      where: {
+        isActive: true,
+        type: 'MAIN',
+      },
+      orderBy: { order: 'asc' },
+    }),
+    db.sliderSettings.findUnique({ where: { id: 1 } }),
+    db.product.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        imageUrl: true,
+        isActive: true,
+      },
+      orderBy: { order: 'asc' },
+    }),
+    db.article.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        category: true,
+        author: true,
+        readTime: true,
+        imageUrl: true,
+        isActive: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+    }),
+    db.project.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        category: true,
+        location: true,
+        content: true,
+        imageUrl: true,
+        isActive: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 12,
+    }),
+    db.category.findMany({
+      where: { isActive: true },
+      include: {
+        subcategories: {
+          where: { isActive: true },
+          orderBy: { order: 'asc' },
+        },
+      },
+      orderBy: { order: 'asc' },
+    }),
+  ]);
 
-  // دریافت تنظیمات اسلایدر
-  let sliderSettings = await db.sliderSettings.findUnique({ where: { id: 1 } });
+  let sliderSettings = sliderSettingsDb;
   if (!sliderSettings) {
     sliderSettings = await db.sliderSettings.create({
       data: {
@@ -94,16 +155,30 @@ export default async function Home() {
     overlayOpacity: sliderSettings.overlayOpacity ?? 0.7,
   };
 
+  const safeArticles = articlesDb.map((a) => ({
+    ...a,
+    excerpt: a.excerpt || undefined,
+    category: a.category || undefined,
+    author: a.author || undefined,
+    readTime: a.readTime || undefined,
+  }));
+
+  const safeProjects = projectsDb.map((p) => ({
+    ...p,
+    category: p.category || undefined,
+    location: p.location || undefined,
+  }));
+
   const websiteSchema = generateWebSiteSchema();
 
   return (
     <main className="min-h-screen bg-ks-dark text-white flex flex-col">
       <JsonLd id="website-schema" data={websiteSchema} />
       <HeroSlider slides={activeSlides} settings={safeSliderSettings} />
-      <MYRailProduct />
-      <EducationSlider />
-      <ProjectSlider />
-      <Categories />
+      <MYRailProduct initialProducts={products} />
+      <EducationSlider initialArticles={safeArticles} />
+      <ProjectSlider initialProjects={safeProjects} />
+      <Categories initialCategories={categories} />
       <WhyUs />
       <Footer />
     </main>

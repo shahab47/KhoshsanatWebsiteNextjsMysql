@@ -183,9 +183,10 @@ export function extractGeoLocation(headers: Headers, ip: string): GeoLocation {
  * ایجاد هش امن برای سشن روزانه کاربر
  */
 export function createSessionHash(ip: string, userAgent: string, dateStr: string): string {
+  const salt = process.env.SESSION_SALT || process.env.JWT_SECRET || 'ks-session-salt';
   return crypto
     .createHash('sha256')
-    .update(`${ip}-${userAgent}-${dateStr}-ks-secret`)
+    .update(`${ip}-${userAgent}-${dateStr}-${salt}`)
     .digest('hex')
     .substring(0, 24);
 }

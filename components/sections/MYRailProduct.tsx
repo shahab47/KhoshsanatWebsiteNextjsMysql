@@ -39,29 +39,38 @@ const bentoClasses = [
   "col-span-1 row-span-1", // 1x1: کاشی کوچک
 ];
 
-export default function ProductsMarquee() {
-  const [selectedProducts, setSelectedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface ProductsMarqueeProps {
+  initialProducts?: Product[];
+}
+
+function prepare18Products(products: Product[]): Product[] {
+  let active = products.filter((p) => p.isActive !== false);
+  if (active.length === 0) return [];
+  while (active.length < 18) {
+    active = [...active, ...active];
+  }
+  return active.slice(0, 18);
+}
+
+export default function ProductsMarquee({ initialProducts }: ProductsMarqueeProps = {}) {
+  const [selectedProducts, setSelectedProducts] = useState<Product[]>(() =>
+    initialProducts && initialProducts.length > 0 ? prepare18Products(initialProducts) : []
+  );
+  const [loading, setLoading] = useState<boolean>(() => !initialProducts || initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) return;
+
     fetch('/api/products')
       .then((res) => res.json())
       .then((data: any[]) => {
         if ((data as any).error) throw new Error((data as any).error);
-        
-        let activeProducts = data.filter((p) => p.isActive);
-        
-        // اطمینان از اینکه دقیقاً ۱۸ محصول داریم تا الگوی پازل کاملاً کیپ شود
-        while (activeProducts.length > 0 && activeProducts.length < 18) {
-          activeProducts = [...activeProducts, ...activeProducts];
-        }
-        
-        setSelectedProducts(activeProducts.slice(0, 18));
+        setSelectedProducts(prepare18Products(data));
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [initialProducts]);
 
   if (loading) return <p className="text-center py-20 text-gray-500 animate-pulse">در حال چینش پازل محصولات...</p>;
   if (error) return <p className="text-center text-red-500 py-20">خطا: {error}</p>;
@@ -131,36 +140,38 @@ export default function ProductsMarquee() {
         }
       `}} />
 
-      {/* هدر بخش: قرینه‌سازی لوگو/متن با دکمه */}
-      <div className="container mx-auto px-4 mb-10" dir="rtl">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      {/* هدر بخش */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-10" dir="rtl">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           
           {/* سمت راست: لوگو و تیتر */}
           <div className="flex items-center gap-4 w-full md:w-auto">
-            <div className="flex-shrink-0 bg-white/50 p-2 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex-shrink-0 bg-white/5 p-2 rounded-2xl border border-white/10 shadow-sm">
               <img 
                 src="/Logo.svg" 
                 alt="لوگو خوش صنعت پایدار" 
                 className="w-12 h-12 md:w-14 md:h-14 object-contain"
+                style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
             <div className="flex flex-col">
-              <h2 className="text-xl md:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
-                گالری تولیدات <span className="text-blue-600">خوش صنعت پایدار</span>
+              <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                گالری تولیدات <span className="text-ks-blue-400">خوش صنعت پایدار</span>
               </h2>
-              <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mt-1 font-medium">
+              <p className="text-sm md:text-base text-gray-400 mt-1 font-medium">
                 آرشیوی از قطعات و تجهیزات صنعتی با بالاترین استانداردهای کیفیت
               </p>
             </div>
           </div>
 
           {/* سمت چپ: دکمه آرشیو */}
-          <div className="flex-shrink-0 w-full md:w-auto flex justify-end">
+          <div className="flex-shrink-0 w-full md:w-auto flex justify-start md:justify-end">
             <Link 
               href="/products" 
-className="group inline-flex items-center justify-center gap-2 px-6 py-3 text-sm font-semibold text-[#2D3644] bg-transparent border border-[#2D3644] rounded-2xl hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all duration-300 shadow-sm"            >
+              className="group inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-white/5 border border-white/10 rounded-xl hover:bg-ks-blue-500 hover:border-ks-blue-500 transition-all duration-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50"
+            >
               مشاهده کامل محصولات
-              <svg className="w-5 h-5 rtl:rotate-180 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 rtl:rotate-180 transform group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </Link>

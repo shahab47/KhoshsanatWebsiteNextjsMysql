@@ -3,6 +3,8 @@
 
 import React, { useState } from 'react';
 import { Download, FileText, Loader2 } from 'lucide-react';
+import { sanitizeHtml } from '@/lib/seo';
+import { useModal } from '@/app/contexts/ModalContext';
 
 interface ProductDetailInteractiveProps {
   product: {
@@ -21,6 +23,7 @@ export default function ProductDetailInteractive({
   product,
   galleryImages,
 }: ProductDetailInteractiveProps) {
+  const { showAlert } = useModal();
   const [mainImage, setMainImage] = useState<string>(product.imageUrl);
   const [pdfLoading, setPdfLoading] = useState<boolean>(false);
 
@@ -62,7 +65,7 @@ export default function ProductDetailInteractive({
       pdf.save(`مشخصات-${product.title.replace(/\s+/g, '-')}.pdf`);
     } catch (error) {
       console.error('خطا در تولید PDF:', error);
-      alert('خطا در تولید برگه مشخصات محصول. لطفاً مجدداً تلاش کنید.');
+      showAlert('خطا در تولید برگه مشخصات محصول. لطفاً مجدداً تلاش کنید.', 'خطا', 'error');
       const container = document.getElementById('pdf-hidden-container');
       if (container) {
         container.style.width = '0px';
@@ -166,9 +169,9 @@ export default function ProductDetailInteractive({
               crossOrigin="anonymous"
             />
             <div className="flex-1 pt-2">
-              <h1 className="text-3xl font-black mb-4 leading-tight" style={{ color: '#111827' }}>
+              <div className="text-3xl font-black mb-4 leading-tight" style={{ color: '#111827' }}>
                 {product.title}
-              </h1>
+              </div>
               <p className="text-lg leading-relaxed text-justify" style={{ color: '#4b5563' }}>
                 {product.shortDesc}
               </p>
@@ -176,13 +179,13 @@ export default function ProductDetailInteractive({
           </div>
 
           <div className="mb-12">
-            <h2 className="text-2xl font-bold mb-4 pb-2 inline-block" style={{ color: '#1f2937', borderBottom: '2px solid #f3f4f6' }}>
+            <div className="text-2xl font-bold mb-4 pb-2 inline-block" style={{ color: '#1f2937', borderBottom: '2px solid #f3f4f6' }}>
               مشخصات کامل
-            </h2>
+            </div>
             <div
               className="pdf-desc-content leading-loose text-justify [&_p]:mb-4 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mb-3 [&_ul]:list-disc [&_ul]:pr-5 [&_li]:mb-2"
               style={{ color: '#374151' }}
-              dangerouslySetInnerHTML={{ __html: product.description || '' }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }}
             />
           </div>
 

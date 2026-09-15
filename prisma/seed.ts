@@ -1,7 +1,32 @@
 import { PrismaClient } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 const prisma = new PrismaClient()
 
 async function main() {
+  // 🟢 ساخت / بروزرسانی ادمین اصلی پیش‌فرض
+  const adminPassword = process.env.ADMIN_INITIAL_PASSWORD;
+  const adminEmail = process.env.ADMIN_INITIAL_EMAIL || 'admin@khoshsanat.ir';
+  if (!adminPassword) {
+    console.error('❌ متغیر محیطی ADMIN_INITIAL_PASSWORD تنظیم نشده است. ساخت ادمین نادیده گرفته شد.');
+    return;
+  }
+  const adminPasswordHash = await bcrypt.hash(adminPassword, 12)
+  await prisma.user.upsert({
+    where: { email: adminEmail },
+    update: {
+      password: adminPasswordHash,
+      role: 'MAIN_ADMIN',
+      status: 'APPROVED',
+    },
+    create: {
+      name: 'مدیر سیستم',
+      email: adminEmail,
+      password: adminPasswordHash,
+      role: 'MAIN_ADMIN',
+      status: 'APPROVED',
+    },
+  })
+
   // categories
   const categories = [
     { title: 'ساختمانی', slug: 'construction', icon: 'Building2', order: 1 },

@@ -1,5 +1,6 @@
 import db from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth-middleware';
 import { 
   extractUrlsFromJson, 
   extractImagesFromHtml, 
@@ -21,6 +22,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { title, slug, icon, imageUrl, imageSize, order, isActive, gallery, catalogUrl } = body;
     if (!title || !slug) {
@@ -48,6 +52,9 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const body = await request.json();
     const { id, title, slug, icon, imageUrl, imageSize, order, isActive, gallery, catalogUrl } = body;
     const catId = parseInt(id);
@@ -92,6 +99,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await requireAuth();
+    if (!user) return NextResponse.json({ error: 'دسترسی غیرمجاز' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
     const catId = parseInt(id || '');

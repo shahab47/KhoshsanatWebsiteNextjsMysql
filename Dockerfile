@@ -22,15 +22,14 @@ COPY . .
 
 # =============================================
 # دریافت مقادیر از docker-compose در زمان Build
+# (فقط متغیرهای NEXT_PUBLIC — اسرار حساس نباید در build باشند)
 # =============================================
 ARG NEXT_PUBLIC_SITE_URL
 ARG NEXT_PUBLIC_ADMINER_URL
-ARG DATABASE_URL
 
 # تبدیل مقادیر دریافت شده به متغیرهای محیطی برای Next.js
 ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 ENV NEXT_PUBLIC_ADMINER_URL=$NEXT_PUBLIC_ADMINER_URL
-ENV DATABASE_URL=$DATABASE_URL
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 

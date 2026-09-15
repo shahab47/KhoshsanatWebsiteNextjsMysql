@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Trash2, UploadCloud, Loader2, FileText, File as FileIcon, Copy, CheckCheck, Star, Crop, X, Book, Edit2 } from 'lucide-react';
+import { useModal } from '@/app/contexts/ModalContext';
 
 export interface GalleryItem {
   id: number | string;
@@ -82,6 +83,7 @@ export default function GalleryManager({
   acceptedTypes = "image/*,application/pdf,text/plain,.zip,.rar",
   multiple = true
 }: GalleryManagerProps) {
+  const { showToast, showAlert } = useModal();
   const [optimize, setOptimize] = useState(true);
   const [copiedId, setCopiedId] = useState<string | number | null>(null);
   const [cropModal, setCropModal] = useState<{ item: GalleryItem; img: HTMLImageElement; imgWidth: number; imgHeight: number; scale: number } | null>(null);
@@ -133,9 +135,10 @@ export default function GalleryManager({
     navigator.clipboard.writeText(fullUrl)
       .then(() => {
         setCopiedId(id);
+        showToast('لینک فایل با موفقیت کپی شد.', 'success');
         setTimeout(() => setCopiedId(null), 2000);
       })
-      .catch(() => alert('خطا در کپی لینک'));
+      .catch(() => showAlert('امکان کپی خودکار لینک وجود ندارد.', 'خطا', 'error'));
   };
 
   // حذف بدون کانفرم – والد خودش تصمیم می‌گیرد

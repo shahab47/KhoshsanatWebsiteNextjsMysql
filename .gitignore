@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 .env.local
+*.bak
+*.backup
+*.old
 # vercel
 .vercel
 
@@ -41,3 +44,20 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+
+# Hermes Agent Directory Tracking
+.hermes/.env
+.hermes/*.db
+.hermes/*.db-shm
+.hermes/*.db-wal
+.hermes/*.db.backup-*
+.hermes/*.lock
+.hermes/*.json
+.hermes/logs/
+.hermes/cache/
+.hermes/sessions/
+.hermes/audio_cache/
+.hermes/image_cache/
+.hermes/pairing/
+.hermes/memories/
+.hermes/decision_log.jsonl

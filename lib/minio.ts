@@ -230,39 +230,75 @@ export async function uploadToMinio(fileBuffer: Buffer, fileName: string, folder
 }
 
 // ================================================================
-// ۹. حذف تکی فایل از MinIO با قابلیت هندل انواع آدرس
+// ۱.۱. ابزار کمکی استخراج تمام کلیدها حتی از رشته‌های آرایه‌ای JSON
 // ================================================================
-export async function deleteFromMinio(fileUrl?: string | null) {
+export function extractKeys(input?: (string | null | undefined)[] | string | null): string[] {
+  if (!input) return [];
+  const keys: string[] = [];
+
+  const processSingle = (val: string) => {
+    const trimmed = val.trim();
+    if (!trimmed) return;
+    if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(item => {
+            if (typeof item === 'string') processSingle(item);
+          });
+          return;
+        }
+      } catch {}
+    }
+    const key = extractKeyFromUrl(trimmed);
+    if (key && !keys.includes(key)) {
+      keys.push(key);
+    }
+  };
+
+  if (Array.isArray(input)) {
+    input.forEach(item => {
+      if (typeof item === 'string') processSingle(item);
+    });
+  } else if (typeof input === 'string') {
+    processSingle(input);
+  }
+
+  return keys;
+}
+
+// ================================================================
+// ۹. حذف تکی یا چندگانه فایل از MinIO با قابلیت هندل JSON، آرایه و URL
+// ================================================================
+export async function deleteFromMinio(fileUrl?: (string | null | undefined)[] | string | null) {
   if (!fileUrl) return;
 
   try {
-    const fileKey = extractKeyFromUrl(fileUrl);
-    if (!fileKey) return;
+    const keys = extractKeys(fileUrl);
+    if (keys.length === 0) return;
 
-    const command = new DeleteObjectCommand({
-      Bucket: bucketName,
-      Key: fileKey,
-    });
-
-    await s3Client.send(command);
-    console.log(`✅ [DELETE_FUNC_SUCCESS]: فایل "${fileKey}" از MinIO حذف شد.`);
+    if (keys.length === 1) {
+      const command = new DeleteObjectCommand({
+        Bucket: bucketName,
+        Key: keys[0],
+      });
+      await s3Client.send(command);
+      console.log(`✅ [DELETE_FUNC_SUCCESS]: فایل "${keys[0]}" از MinIO حذف شد.`);
+    } else {
+      await deleteFilesFromMinio(keys);
+    }
   } catch (error: any) {
-    console.error(`❌ [DELETE_FUNC_ERROR] خطا در حذف فایل "${fileUrl}":`, error.message);
+    console.error(`❌ [DELETE_FUNC_ERROR] خطا در حذف فایل "${JSON.stringify(fileUrl)}":`, error.message);
   }
 }
 
 // ================================================================
 // ۱۰. حذف گروهی و بهینه فایل‌ها از MinIO (Batch Delete)
 // ================================================================
-export async function deleteFilesFromMinio(urlsOrKeys: (string | null | undefined)[]) {
-  if (!urlsOrKeys || urlsOrKeys.length === 0) return;
+export async function deleteFilesFromMinio(urlsOrKeys: (string | null | undefined)[] | string | null | undefined) {
+  if (!urlsOrKeys) return;
 
-  const validKeys = Array.from(new Set(
-    urlsOrKeys
-      .map(u => extractKeyFromUrl(u))
-      .filter((k): k is string => k !== null && k.length > 0)
-  ));
-
+  const validKeys = Array.from(new Set(extractKeys(urlsOrKeys)));
   if (validKeys.length === 0) return;
 
   // حذف در دسته‌های ۱۰۰۰ تایی بر اساس استاندارد S3
@@ -295,11 +331,11 @@ export async function deleteFilesFromMinio(urlsOrKeys: (string | null | undefine
 // ۱۱. پاکسازی تفاضلی فایل‌های حذف شده یا تغییر یافته (Diff Cleanup)
 // ================================================================
 export async function cleanupRemovedFiles(
-  oldUrls: (string | null | undefined)[], 
-  newUrls: (string | null | undefined)[]
+  oldUrls: (string | null | undefined)[] | string | null | undefined, 
+  newUrls: (string | null | undefined)[] | string | null | undefined
 ) {
-  const oldKeys = oldUrls.map(u => extractKeyFromUrl(u)).filter((k): k is string => k !== null);
-  const newKeys = new Set(newUrls.map(u => extractKeyFromUrl(u)).filter((k): k is string => k !== null));
+  const oldKeys = extractKeys(oldUrls);
+  const newKeys = new Set(extractKeys(newUrls));
 
   const removedKeys = oldKeys.filter(k => !newKeys.has(k));
   if (removedKeys.length > 0) {

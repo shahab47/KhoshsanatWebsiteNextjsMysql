@@ -3,31 +3,31 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Building2, Zap, TreePine, Factory, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 // ======================== types ========================
-type SubcategoryFromAPI = {
+export type SubcategoryFromAPI = {
   id: number;
   title: string;
   description: string | null;
   categoryId: number;
   order: number;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
 };
 
-type CategoryFromAPI = {
+export type CategoryFromAPI = {
   id: number;
   title: string;
   slug: string;
-  icon: 'Building2' | 'Zap' | 'TreePine' | 'Factory';
-  imageUrl: string;
-  imageSize: number;
+  icon?: string | null;
+  imageUrl?: string | null;
+  imageSize?: number | null;
   order: number;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
   subcategories: SubcategoryFromAPI[];
 };
 
@@ -54,7 +54,8 @@ const iconMap = {
   Factory: Factory,
 };
 
-function getIconComponent(iconName: string, size = 24) {
+function getIconComponent(iconName?: string | null, size = 24) {
+  if (!iconName) return <Building2 size={size} />;
   const Icon = iconMap[iconName as keyof typeof iconMap];
   if (!Icon) return <Building2 size={size} />;
   return <Icon size={size} />;
@@ -62,7 +63,7 @@ function getIconComponent(iconName: string, size = 24) {
 
 // ======================== transform API data ========================
 function transformCategory(raw: CategoryFromAPI): Category {
-  const subcategories = raw.subcategories.map((sub) => ({
+  const subcategories = (raw.subcategories || []).map((sub) => ({
     id: sub.id,
     title: sub.title,
     displayText: sub.description ? `${sub.title} (${sub.description})` : sub.title,
@@ -74,7 +75,7 @@ function transformCategory(raw: CategoryFromAPI): Category {
     slug: raw.slug,
     icon: getIconComponent(raw.icon, 24),
     subcategories,
-    image: raw.imageUrl,
+    image: raw.imageUrl || '/placeholder.jpg',
   };
 }
 
@@ -97,15 +98,24 @@ function SmallCard({ category }: { category: Category }) {
   );
 }
 
+interface CategoryGridProps {
+  initialCategories?: CategoryFromAPI[];
+}
+
 // ======================== Main Component ========================
-export default function CategoryGrid() {
-  const router = useRouter();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function CategoryGrid({ initialCategories }: CategoryGridProps = {}) {
+  const [categories, setCategories] = useState<Category[]>(() =>
+    initialCategories && initialCategories.length > 0
+      ? initialCategories.filter((c) => c.isActive !== false).map(transformCategory)
+      : []
+  );
+  const [loading, setLoading] = useState<boolean>(() => !initialCategories || initialCategories.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [largeIndex, setLargeIndex] = useState(0); // شاخص دسته بزرگ
 
   useEffect(() => {
+    if (initialCategories && initialCategories.length > 0) return;
+
     const fetchCategories = async () => {
       try {
         setLoading(true);
@@ -124,22 +134,14 @@ export default function CategoryGrid() {
       }
     };
     fetchCategories();
-  }, []);
-
-  const navigateToCategory = (slug: string) => {
-    router.push(`/products?category=${slug}`);
-  };
-
-  const navigateToSubcategory = (categorySlug: string, subcategoryId: number) => {
-    router.push(`/products?category=${categorySlug}&subcategory=${subcategoryId}`);
-  };
+  }, [initialCategories]);
 
   if (loading) {
     return (
-      <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <section className="py-16 px-4 md:px-8 bg-ks-dark">
         <div className="max-w-7xl mx-auto text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-300">در حال بارگذاری دسته‌بندی‌ها...</p>
+          <Loader2 className="w-12 h-12 animate-spin text-ks-blue-500 mx-auto mb-4" />
+          <p className="text-gray-400">در حال بارگذاری دسته‌بندی‌ها...</p>
         </div>
       </section>
     );
@@ -147,9 +149,9 @@ export default function CategoryGrid() {
 
   if (error) {
     return (
-      <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <section className="py-16 px-4 md:px-8 bg-ks-dark">
         <div className="max-w-7xl mx-auto text-center">
-          <div className="bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 p-4 rounded-xl">
+          <div className="bg-red-950/40 border border-red-800 text-red-300 p-4 rounded-xl max-w-md mx-auto">
             {error}
           </div>
         </div>
@@ -159,21 +161,21 @@ export default function CategoryGrid() {
 
   if (categories.length === 0) {
     return (
-      <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <section className="py-16 px-4 md:px-8 bg-ks-dark">
         <div className="max-w-7xl mx-auto text-center">
-          <p className="text-gray-600 dark:text-gray-300">هیچ دسته‌بندی فعالی یافت نشد.</p>
+          <p className="text-gray-400">هیچ دسته‌بندی فعالی یافت نشد.</p>
         </div>
       </section>
     );
   }
 
-  const largeCategory = categories[largeIndex];
+  const largeCategory = categories[largeIndex] || categories[0];
   const smallCategories = categories.filter((_, i) => i !== largeIndex);
 
   return (
-    <section className="py-16 px-4 md:px-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <section className="py-16 px-4 md:px-8 bg-ks-dark" dir="rtl">
       <div className="max-w-7xl mx-auto">
-        <div className="relative rounded-2xl shadow-2xl overflow-hidden">
+        <div className="relative rounded-2xl shadow-xl overflow-hidden border border-white/10">
           <AnimatePresence mode="wait">
             <motion.div
               key={largeIndex}
@@ -186,57 +188,59 @@ export default function CategoryGrid() {
             />
           </AnimatePresence>
 
-          <div className="absolute inset-0 bg-black/40" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-xs" />
 
-          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-0 min-h-[550px]">
-            {/* ستون سمت چپ - دسته بزرگ */}
+          <div className="relative grid grid-cols-1 md:grid-cols-3 gap-0 min-h-[520px]">
+            {/* ستون سمت راست - دسته بزرگ */}
             <div className="md:col-span-2 flex items-end p-6 md:p-8 text-white">
               <motion.div
                 key={largeIndex}
-                initial={{ x: -30, opacity: 0 }}
+                initial={{ x: -20, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="bg-blue-600/80 p-2 rounded-full">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="bg-ks-blue-500 p-2.5 rounded-xl shadow-md">
                     {largeCategory.icon}
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-bold">{largeCategory.title}</h3>
+                  <h3 className="text-2xl md:text-3xl font-bold text-white">{largeCategory.title}</h3>
                 </div>
 
-                <div className="mt-4">
-                  <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    زیرمجموعه‌ها
+                <div className="mt-6">
+                  <h4 className="text-base font-semibold text-gray-200 mb-3 flex items-center gap-2">
+                    زیرمجموعه‌ها و قطعات
                   </h4>
-                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm md:text-base">
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-sm md:text-base">
                     {largeCategory.subcategories.map((sub) => (
                       <motion.li
                         key={sub.id}
-                        whileHover={{ x: 5, color: "#93c5fd" }}
+                        whileHover={{ x: -4, color: "#60a5fa" }}
                         transition={{ type: "spring", stiffness: 400 }}
-                        className="flex items-start gap-2 cursor-pointer"
-                        onClick={() => navigateToSubcategory(largeCategory.slug, sub.id)}
                       >
-                        <span className="text-blue-400">•</span>
-                        <span>{sub.displayText}</span>
+                        <Link
+                          href={`/products?category=${encodeURIComponent(largeCategory.slug)}&subcategory=${sub.id}`}
+                          className="flex items-start gap-2 text-gray-200 hover:text-ks-blue-400 transition-colors"
+                        >
+                          <span className="text-ks-blue-400">•</span>
+                          <span>{sub.displayText}</span>
+                        </Link>
                       </motion.li>
                     ))}
                   </ul>
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => navigateToCategory(largeCategory.slug)}
-                  className="mt-6 text-blue-300 hover:text-white text-sm font-medium transition"
+                <Link
+                  href={`/products?category=${encodeURIComponent(largeCategory.slug)}`}
+                  className="inline-flex items-center gap-2 mt-8 text-ks-blue-300 hover:text-white text-sm font-bold bg-white/10 hover:bg-ks-blue-500 px-4 py-2 rounded-xl transition-all border border-white/10"
                 >
-                  مشاهده همه محصولات این دسته →
-                </motion.button>
+                  مشاهده همه محصولات این دسته
+                  <span>←</span>
+                </Link>
               </motion.div>
             </div>
 
-            {/* ستون سمت راست - سایر دسته‌ها (قابل کلیک برای بزرگ شدن) */}
-            <div className="md:col-span-1 bg-black/30 backdrop-blur-md border-l border-white/20 p-4 flex flex-col gap-4">
+            {/* ستون کناری - سایر دسته‌ها */}
+            <div className="md:col-span-1 bg-ks-dark-950/70 backdrop-blur-md border-r border-white/10 p-4 flex flex-col gap-3">
               {smallCategories.length > 0 ? (
                 smallCategories.map((cat) => (
                   <motion.div
@@ -250,7 +254,7 @@ export default function CategoryGrid() {
                   </motion.div>
                 ))
               ) : (
-                <div className="text-white/60 text-center py-8 text-sm">
+                <div className="text-gray-400 text-center py-8 text-sm">
                   دسته‌بندی دیگری وجود ندارد
                 </div>
               )}

@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import { UploadCloud, Loader2, FileText, Trash2 } from 'lucide-react';
+import { useModal } from '@/app/contexts/ModalContext';
 
 interface MultiFileUploadProps {
   urls: string[];
@@ -11,6 +12,7 @@ interface MultiFileUploadProps {
 }
 
 export default function MultiFileUpload({ urls, onChange, title = "مستندات و فایل‌های ضمیمه" }: MultiFileUploadProps) {
+  const { showAlert } = useModal();
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -31,10 +33,10 @@ export default function MultiFileUpload({ urls, onChange, title = "مستندا�
           const data = await res.json();
           newUrls.push(data.url);
         } else {
-          alert(`خطا در آپلود فایل ${files[i].name}`);
+          showAlert(`خطا در آپلود فایل ${files[i].name}`, 'خطا', 'error');
         }
       } catch (err) {
-        alert('خطا در ارتباط با سرور هنگام آپلود');
+        showAlert('خطا در ارتباط با سرور هنگام آپلود فایل', 'خطای شبکه', 'error');
       }
     }
 
