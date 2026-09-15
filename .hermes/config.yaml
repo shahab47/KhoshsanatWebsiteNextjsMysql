@@ -30,7 +30,7 @@ terminal:
 file_read_max_chars: 100000
 telegram:
   reactions: false
-  allowed_chats: ''
+  allowed_chats: '96431023'
   require_mention: false
   allow_bots: all
   group_policy: open
@@ -42,3 +42,16 @@ approvals:
 security:
   allow_private_urls: true
   redact_secrets: true
+platform_toolsets:
+  cli:
+    - hermes-cli
+  telegram:
+    - hermes-telegram
+platforms:
+  telegram:
+    enabled: true
+    home_channel:
+      platform: telegram
+      chat_id: '96431023'
+      name: Admin
+      user_id: '96431023'
