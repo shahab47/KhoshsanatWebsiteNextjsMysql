@@ -222,11 +222,11 @@ export default async function Home() {
       {/* 01: Hero سینمایی با اتصالات کرتین‌وال و نمای معماری */}
       <HeroCinematic slides={activeSlides} settings={safeSliderSettings} />
       
-      {/* 02: سفر روایی سینمایی — ۸ صحنه از جزئی‌ترین اتصال تا چشم‌نوازترین نما */}
-      <CinematicJourney />
-      
-      {/* 03: کاتالوگ قطعات مهندسی و براکت‌های کرتین‌وال */}
+      {/* 02: کاتالوگ قطعات مهندسی و براکت‌های کرتین‌وال (دومین المنت اصلی سایت) */}
       <CinematicProducts initialProducts={products} />
+
+      {/* 03: سفر روایی سینمایی — ۸ صحنه از جزئی‌ترین اتصال تا چشم‌نوازترین نما */}
+      <CinematicJourney />
       
       {/* 04: ویترین معماری پروژه‌ها با جزئیات شاپ‌دراوینگ */}
       <CinematicProjects initialProjects={safeProjects} />

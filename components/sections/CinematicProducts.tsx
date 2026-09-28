@@ -52,7 +52,7 @@ export default function CinematicProducts({ initialProducts }: CinematicProducts
   if (products.length === 0) return null;
 
   return (
-    <section className="py-20 md:py-28 bg-white border-t border-gray-200" dir="rtl">
+    <section id="products-section" className="py-20 md:py-28 bg-white border-t border-gray-200" dir="rtl">
       <div className="max-w-7xl mx-auto px-6">
         
         {/* سربرگ بخش کاتالوگ مهندسی */}

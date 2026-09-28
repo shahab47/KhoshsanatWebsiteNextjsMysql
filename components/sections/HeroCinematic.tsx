@@ -15,37 +15,34 @@ interface HeroCinematicProps {
 export default function HeroCinematic({ slides, settings }: HeroCinematicProps) {
   const shouldReduceMotion = useReducedMotion();
 
-  // در صورت وجود اسلاید فعال از CMS از اولین اسلاید استفاده می‌کنیم، در غیر این‌صورت از تصویر سینمایی معماری هیرو
-  const activeSlideImage = slides && slides.length > 0 && slides[0]?.imageUrl
-    ? slides[0].imageUrl
-    : '/images/cinematic/scene-00-hero.jpg';
+  // تصویر سینمایی معماری نمای کرتین‌وال هیرو
+  const heroImageSrc = '/images/cinematic/scene-00-hero.jpg';
 
   const scrollToNextSection = () => {
-    const nextElem = document.getElementById('narrative-journey');
+    const nextElem = document.getElementById('products-section');
     if (nextElem) {
       nextElem.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <section className="relative w-full h-[100dvh] min-h-[640px] flex items-center justify-center overflow-hidden bg-[#11151B]" dir="rtl">
-      {/* لایه پس‌زمینه تصویر معماری هیرو */}
+    <section className="relative w-full h-[100dvh] min-h-[660px] flex items-center justify-center overflow-hidden bg-[#11151B]" dir="rtl">
+      {/* لایه پس‌زمینه تصویر معماری هیرو — تضمین شفافیت و دیده‌شدن کامل نما */}
       <div className="absolute inset-0 z-0 select-none">
         <Image
-          src={activeSlideImage}
+          src={heroImageSrc}
           alt="نمای مدرن کرتین‌وال و مهندسی اتصالات خوش‌صنعت پایدار"
           fill
           priority
+          unoptimized
           sizes="100vw"
-          className="object-cover object-center scale-105 transition-transform duration-1000 ease-out will-change-transform"
+          className="object-cover object-center scale-100 transition-transform duration-1000 ease-out will-change-transform"
         />
 
-        {/* گرادیان‌های نوری تک‌رنگ و ملایم صنعتی */}
-        <div className="absolute inset-0 bg-gradient-to-t from-[#11151B] via-[#11151B]/40 to-black/30 z-10" />
-        <div className="absolute inset-0 bg-radial from-transparent via-[#11151B]/30 to-[#11151B]/80 z-10" />
-        
-        {/* گرید فنی بسیار ظریف روی هیرو */}
-        <div className="absolute inset-0 engineering-grid-dark opacity-40 z-10 pointer-events-none" />
+        {/* فیلتر گرادیان سینمایی ظریف — صرفاً جهت وضوح خوانایی تیترها، بدون تیره کردن کامل نما */}
+        <div className="absolute inset-0 bg-black/40 z-10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#11151B]/90 via-black/20 to-black/40 z-10" />
+        <div className="absolute inset-0 engineering-grid-dark opacity-20 z-10 pointer-events-none" />
       </div>
 
       {/* خطوط و نشانگرهای فنی مهندسی (Technical Annotations) روی نما */}
