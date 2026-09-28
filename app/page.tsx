@@ -1,14 +1,18 @@
 import type { Metadata } from 'next';
 import db from '@/lib/db';
-import HeroSlider from '@/components/sections/HeroSlider';
+import HeroCinematic from '@/components/sections/HeroCinematic';
+import CinematicJourney from '@/components/sections/CinematicJourney';
+import CinematicProjects from '@/components/sections/CinematicProjects';
+import CinematicProducts from '@/components/sections/CinematicProducts';
+import TechnicalCapabilities from '@/components/sections/TechnicalCapabilities';
 import Categories, { CategoryFromAPI } from '@/components/sections/Categories';
 import EducationSlider from '@/components/sections/EducationSlider';
-import ProjectSlider from '@/components/sections/ProjectSlider';
 import WhyUs from '@/components/sections/WhyUs';
+import FinalCta from '@/components/sections/FinalCta';
 import Footer from '@/components/layout/Footer';
-import MYRailProduct from '@/components/sections/MYRailProduct';
 import { SITE_CONFIG, generateWebSiteSchema } from '@/lib/seo';
 import JsonLd from '@/components/seo/JsonLd';
+
 
 export const revalidate = 60; // ISR هر ۶۰ ثانیه
 
@@ -212,14 +216,37 @@ export default async function Home() {
   const websiteSchema = generateWebSiteSchema();
 
   return (
-    <main className="min-h-screen bg-ks-dark text-white flex flex-col">
+    <main className="min-h-screen bg-[#F5F7FA] text-[#2D3644] flex flex-col selection:bg-[#2563EB] selection:text-white" dir="rtl">
       <JsonLd id="website-schema" data={websiteSchema} />
-      <HeroSlider slides={activeSlides} settings={safeSliderSettings} />
-      <MYRailProduct initialProducts={products} />
-      <EducationSlider initialArticles={safeArticles} />
-      <ProjectSlider initialProjects={safeProjects} />
+      
+      {/* 01: Hero سینمایی با اتصالات کرتین‌وال و نمای معماری */}
+      <HeroCinematic slides={activeSlides} settings={safeSliderSettings} />
+      
+      {/* 02: سفر روایی سینمایی — ۸ صحنه از جزئی‌ترین اتصال تا چشم‌نوازترین نما */}
+      <CinematicJourney />
+      
+      {/* 03: کاتالوگ قطعات مهندسی و براکت‌های کرتین‌وال */}
+      <CinematicProducts initialProducts={products} />
+      
+      {/* 04: ویترین معماری پروژه‌ها با جزئیات شاپ‌دراوینگ */}
+      <CinematicProjects initialProjects={safeProjects} />
+      
+      {/* 05: توانمندی‌های مهندسی و ساخت کارخانه‌ای */}
+      <TechnicalCapabilities />
+      
+      {/* 06: دسته‌بندی قطعات صنعتی و ساختمانی */}
       <Categories initialCategories={categories} />
+      
+      {/* 07: پایگاه دانش و آموزش‌های فنی */}
+      <EducationSlider initialArticles={safeArticles} />
+      
+      {/* 08: چرا دقت اهمیت دارد — هویت مهندسی خوش‌صنعت */}
       <WhyUs />
+      
+      {/* 09: فراخوان نهایی بازگشت به تم روز */}
+      <FinalCta />
+      
+      {/* 10: فوتر گرافیت #2D3644 با حفظ داده‌های پویا */}
       <Footer />
     </main>
   );

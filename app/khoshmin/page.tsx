@@ -4,7 +4,8 @@
 import React, { useEffect, useState } from 'react';
 import {
   Image as ImageIcon, Type, Briefcase, Package, Users, ArrowLeft,
-  Building2, GraduationCap, Bell, UserPlus, HardDrive, TrendingUp, Activity, Mail
+  Building2, GraduationCap, Bell, UserPlus, HardDrive, TrendingUp, Activity, Mail,
+  Landmark, ShoppingCart, Factory, FileSpreadsheet, ShieldCheck
 } from 'lucide-react';
 
 interface CustomerStats {
@@ -47,8 +48,60 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  // تمام کارت‌های پیش‌فرض
+  // تمام کارت‌های پیش‌فرض داشبورد
   const allCards = [
+    {
+      href: '/khoshmin/treasury',
+      title: 'خزانه‌داری، چک و بانک‌ها',
+      desc: 'مدیریت حساب‌های بانکی، ثبت و استعلام چک‌های صیادی، صندوق نقدی و مغایرت‌گیری',
+      icon: <Landmark size={32} />,
+      color: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400',
+      hover: 'hover:border-emerald-300 dark:hover:border-emerald-600',
+    },
+    {
+      href: '/khoshmin/procurement',
+      title: 'خرید، تدارکات و باسکول',
+      desc: 'سفارشات خرید (PO)، قبض ورود بار و توزین باسکول دیجیتال، فاکتورهای خرید و ظهرنویسی',
+      icon: <ShoppingCart size={32} />,
+      color: 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',
+      hover: 'hover:border-amber-300 dark:hover:border-amber-600',
+    },
+    {
+      href: '/khoshmin/production',
+      title: 'مهندسی تولید و سفارش کار',
+      desc: 'فرمول ساخت (BOM)، رهگیری کالای در جریان ساخت (WIP)، تسهیم سربار و محاسبه COGM',
+      icon: <Factory size={32} />,
+      color: 'bg-cyan-100 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',
+      hover: 'hover:border-cyan-300 dark:hover:border-cyan-600',
+    },
+    {
+      href: '/khoshmin/payroll',
+      title: 'حقوق و دستمزد پرسنل',
+      desc: 'محاسبه حقوق ماهانه قانون کار، بیمه تامین اجتماعی ۳۰٪، مالیات ماده ۸۶ و دیسکت پایا',
+      icon: <Users size={32} />,
+      color: 'bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400',
+      hover: 'hover:border-emerald-300 dark:hover:border-emerald-600',
+    },
+    {
+      href: '/khoshmin/reports',
+      title: 'گزارش‌های مالی و سامانه مودیان',
+      desc: 'تراز آزمایشی ۴ و ۸ ستونی، دفتر روزنامه، ترازنامه، سود و زیان و خروجی رسمی مودیان',
+      icon: <FileSpreadsheet size={32} />,
+      color: 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
+      hover: 'hover:border-blue-300 dark:hover:border-blue-600',
+    },
+    {
+      href: '/khoshmin/customers',
+      title: 'مدیریت مشتریان و حساب‌ها',
+      desc: 'لیست مشتریان، تراز بدهکاری/بستانکاری، پیام‌های جدید و مدیریت سفارشات',
+      icon: <UserPlus size={32} />,
+      color: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+      hover: 'hover:border-indigo-300 dark:hover:border-indigo-600',
+      badge: customerStats && (customerStats.unreadMessages > 0 || customerStats.newCustomers > 0) ? {
+        count: (customerStats.unreadMessages + customerStats.newCustomers),
+        text: `${customerStats.unreadMessages} پیام جدید • ${customerStats.newCustomers} مشتری جدید`
+      } : null
+    },
     {
       href: '/khoshmin/analytics',
       title: 'آمار و تحلیل هوشمند بازدید',
@@ -56,8 +109,8 @@ export default function AdminDashboard() {
         ? `امروز: ${analyticsStats.todayVisits.toLocaleString('fa-IR')} بازدید (${analyticsStats.uniqueVisitors.toLocaleString('fa-IR')} مشتری یکتا)`
         : 'مشاهده شهرها، منابع ورودی (گوگل، اینستاگرام) و صفحات پربازدید',
       icon: <TrendingUp size={32} />,
-      color: 'bg-blue-100 text-blue-600',
-      hover: 'hover:bg-blue-50 hover:border-blue-300',
+      color: 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
+      hover: 'hover:border-blue-300 dark:hover:border-blue-600',
       badge: analyticsStats && analyticsStats.todayVisits > 0 ? {
         count: analyticsStats.todayVisits,
         text: `امروز: ${analyticsStats.todayVisits.toLocaleString('fa-IR')} بازدید`
@@ -67,85 +120,73 @@ export default function AdminDashboard() {
       href: '/khoshmin/users',
       title: user?.role === 'MAIN_ADMIN' ? 'مدیریت کاربران' : 'پروفایل من',
       desc: user?.role === 'MAIN_ADMIN' ? 'تنظیمات مدیران و سطح دسترسی' : 'تغییر رمز عبور شخصی',
-      icon: <Users size={32} />,
-      color: 'bg-indigo-100 text-indigo-600',
-      hover: 'hover:bg-indigo-50 hover:border-indigo-300'
-    },
-    {
-      href: '/khoshmin/customers',
-      title: 'مدیریت مشتریان',
-      desc: 'لیست مشتریان، پیام‌های جدید و مدیریت سفارشات',
-      icon: <UserPlus size={32} />,
-      color: 'bg-emerald-100 text-emerald-600',
-      hover: 'hover:bg-emerald-50 hover:border-emerald-300',
-      badge: customerStats && (customerStats.unreadMessages > 0 || customerStats.newCustomers > 0) ? {
-        count: (customerStats.unreadMessages + customerStats.newCustomers),
-        text: `${customerStats.unreadMessages} پیام جدید • ${customerStats.newCustomers} مشتری جدید`
-      } : null
+      icon: <ShieldCheck size={32} />,
+      color: 'bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400',
+      hover: 'hover:border-purple-300 dark:hover:border-purple-600'
     },
     {
       href: '/khoshmin/emails',
       title: 'سیستم ایمیل سازمانی',
       desc: 'ارسال ایمیل رسمی با دامنه khoshsanat.ir، تاریخچه و تنظیمات SMTP',
       icon: <Mail size={32} />,
-      color: 'bg-blue-100 text-blue-600',
-      hover: 'hover:bg-blue-50 hover:border-blue-300'
+      color: 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
+      hover: 'hover:border-blue-300 dark:hover:border-blue-600'
     },
     {
       href: '/khoshmin/projects',
       title: 'مدیریت پروژه‌ها',
-      desc: 'ثبت و ویرایش پروژه‌های انجام شده',
+      desc: 'ثبت و ویرایش پروژه‌های انجام شده کارخانه',
       icon: <Building2 size={32} />,
-      color: 'bg-amber-100 text-amber-600',
-      hover: 'hover:bg-amber-50 hover:border-amber-300'
+      color: 'bg-amber-100 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',
+      hover: 'hover:border-amber-300 dark:hover:border-amber-600'
     },
     {
       href: '/khoshmin/education',
       title: 'مدیریت آکادمی',
-      desc: 'مقالات آموزشی و اخبار سایت',
+      desc: 'مقالات آموزشی، مقالات مهندسی و اخبار سایت',
       icon: <GraduationCap size={32} />,
-      color: 'bg-rose-100 text-rose-600',
-      hover: 'hover:bg-rose-50 hover:border-rose-300'
+      color: 'bg-rose-100 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400',
+      hover: 'hover:border-rose-300 dark:hover:border-rose-600'
     },
     {
       href: '/khoshmin/products',
-      title: 'مدیریت محصولات',
-      desc: 'دسته‌بندی، زیرمجموعه و محصولات',
+      title: 'کاتالوگ محصولات',
+      desc: 'دسته‌بندی، مقاطع فولادی و تجهیزات صنعتی',
       icon: <Package size={32} />,
-      color: 'bg-orange-100 text-orange-600',
-      hover: 'hover:bg-orange-50 hover:border-orange-300'
+      color: 'bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400',
+      hover: 'hover:border-orange-300 dark:hover:border-orange-600'
     },
     {
       href: '/khoshmin/media',
       title: 'فایل منیجر',
-      desc: 'مدیریت فضای ابری و پاکسازی فایل‌های اضافه',
+      desc: 'مدیریت فضای ابری و فایل‌های رسانه',
       icon: <HardDrive size={32} />,
-      color: 'bg-teal-100 text-teal-600',
-      hover: 'hover:bg-teal-50 hover:border-teal-300'
+      color: 'bg-teal-100 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400',
+      hover: 'hover:border-teal-300 dark:hover:border-teal-600'
     },
     {
       href: '/khoshmin/slider',
       title: 'مدیریت اسلایدر',
-      desc: 'آپلود و حذف تصاویر صفحه اصلی',
+      desc: 'تصاویر و بنرهای هیرو صفحه اصلی',
       icon: <ImageIcon size={32} />,
-      color: 'bg-sky-100 text-sky-600',
-      hover: 'hover:bg-sky-50 hover:border-sky-300'
+      color: 'bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400',
+      hover: 'hover:border-sky-300 dark:hover:border-sky-600'
     },
     {
       href: '/khoshmin/logo',
-      title: 'مدیریت لوگو',
-      desc: 'تغییر هویت بصری سایت',
+      title: 'مدیریت لوگو و برند',
+      desc: 'تغییر هویت بصری و نشان تجاری',
       icon: <Briefcase size={32} />,
-      color: 'bg-purple-100 text-purple-600',
-      hover: 'hover:bg-purple-50 hover:border-purple-300'
+      color: 'bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400',
+      hover: 'hover:border-purple-300 dark:hover:border-purple-600'
     },
     {
       href: '/khoshmin/texts',
       title: 'مدیریت متن‌ها',
-      desc: 'ویرایش تیترها و توضیحات',
+      desc: 'ویرایش تیترها و متون عمومی بخش‌های سایت',
       icon: <Type size={32} />,
-      color: 'bg-cyan-100 text-cyan-600',
-      hover: 'hover:bg-cyan-50 hover:border-cyan-300'
+      color: 'bg-cyan-100 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',
+      hover: 'hover:border-cyan-300 dark:hover:border-cyan-600'
     },
   ];
 
@@ -176,26 +217,30 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 font-[Vazir,'vazirmatn',sans-serif]">
-      <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 mb-8 flex items-center justify-between flex-wrap gap-4">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 font-vazir">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700/60 p-8 mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-gray-800 mb-2">
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-slate-100 mb-2">
             {user?.name ? `${user.name} عزیز، خوش‌ آمدید 👋` : 'خوش آمدید 👋'}
           </h2>
-          <p className="text-gray-500 text-base leading-relaxed">
-            به پنل مدیریت سایت خوش‌صنعت پایدار خوش آمدید. از این بخش می‌توانید به سرعت به آمار و تمام ابزارها دسترسی داشته باشید.
+          <p className="text-slate-500 dark:text-slate-400 text-base leading-relaxed">
+            به پنل یکپارچه مهندسی و مدیریت صنعتی خوش‌صنعت پایدار خوش آمدید. ماژول‌های حسابداری دوبل، خزانه‌داری، زنجیره تامین و خط تولید آماده استفاده هستند.
           </p>
         </div>
         {user?.role && (
-          <div className={`px-4 py-2 rounded-xl text-sm font-bold border ${user.role === 'MAIN_ADMIN' ? 'bg-purple-50 text-purple-700 border-purple-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
-            دسترسی: {user.role === 'MAIN_ADMIN' ? 'مدیر ارشد' : 'ویرایشگر'}
+          <div className={`px-4 py-2 rounded-xl text-sm font-bold border ${user.role === 'MAIN_ADMIN' ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-800' : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600'}`}>
+            دسترسی: {user.role === 'MAIN_ADMIN' ? 'مدیر ارشد کارخانه' : 'کارشناس سیستم'}
           </div>
         )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {visibleCards.map((card) => (
-          <a key={card.href} href={card.href} className={`flex flex-col p-6 bg-white border border-gray-100 rounded-3xl transition-all group ${card.hover} shadow-sm hover:shadow-xl relative`}>
+          <a
+            key={card.href}
+            href={card.href}
+            className={`flex flex-col p-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl transition-all group ${card.hover} shadow-sm hover:shadow-lg relative hover:bg-slate-50/50 dark:hover:bg-slate-750/50`}
+          >
             {card.badge && (
               <div className="absolute -top-3 -right-3 bg-blue-600 text-white text-xs rounded-full px-3 py-1.5 shadow-lg flex items-center gap-1 z-10 font-bold">
                 <Activity size={12} />
@@ -203,15 +248,15 @@ export default function AdminDashboard() {
               </div>
             )}
 
-            <div className={`w-16 h-16 ${card.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner relative`}>
+            <div className={`w-16 h-16 ${card.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-105 transition-transform duration-300 shadow-inner relative`}>
               {card.icon}
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">{card.title}</h3>
-              <p className="text-sm text-gray-500 mb-6 line-clamp-2">{card.desc}</p>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-2">{card.title}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 line-clamp-2 leading-relaxed">{card.desc}</p>
             </div>
-            <div className="mt-auto flex items-center gap-2 text-sm font-black text-blue-600 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-              ورود به بخش <ArrowLeft size={16} />
+            <div className="mt-auto flex items-center gap-2 text-xs font-black text-blue-600 dark:text-blue-400 opacity-80 group-hover:opacity-100 transition-all transform translate-x-1 group-hover:translate-x-0">
+              ورود به بخش <ArrowLeft size={14} />
             </div>
           </a>
         ))}

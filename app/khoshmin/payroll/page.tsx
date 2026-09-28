@@ -294,15 +294,15 @@ export default function PayrollPage() {
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto" dir="rtl">
       {/* هدر صفحه */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/80 p-6 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm backdrop-blur-md">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+            <div className="p-3 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl border border-emerald-500/20">
               <Users size={28} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white">مدیریت پرسنل و حقوق و دستمزد</h1>
-              <p className="text-sm text-slate-400 mt-1">
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white">مدیریت پرسنل و حقوق و دستمزد</h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 محاسبه حقوق قانون کار، بیمه تامین اجتماعی ۳۰٪، مالیات ماده ۸۶ و صدور دیسکت پرداخت گروهی پایا
               </p>
             </div>
@@ -312,21 +312,21 @@ export default function PayrollPage() {
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={() => setNewRunModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-950/40 text-sm cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition shadow-lg shadow-emerald-950/20 text-sm cursor-pointer"
           >
             <Calculator size={18} />
             محاسبه حقوق ماه جدید
           </button>
           <button
             onClick={() => setNewEmployeeModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold rounded-xl transition border border-slate-700 text-sm cursor-pointer"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-bold rounded-xl transition border border-slate-200 dark:border-slate-600 text-sm cursor-pointer"
           >
             <UserPlus size={18} />
             استخدام پرسنل جدید
           </button>
           <button
             onClick={fetchData}
-            className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-slate-700 transition cursor-pointer"
+            className="p-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl border border-slate-200 dark:border-slate-600 transition cursor-pointer"
             title="به‌روزرسانی"
           >
             <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -336,63 +336,63 @@ export default function PayrollPage() {
 
       {/* کارتهای KPI خلاصه وضعیت */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between text-slate-400 text-sm">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-sm">
             <span>تعداد پرسنل فعال</span>
-            <Users size={18} className="text-emerald-400" />
+            <Users size={18} className="text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-3xl font-black text-white">{formatNum(activeEmpCount)}</span>
-            <span className="text-xs text-slate-400">نفر شاغل در کارخانه</span>
+            <span className="text-3xl font-black text-slate-900 dark:text-white">{formatNum(activeEmpCount)}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">نفر شاغل در کارخانه</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between text-slate-400 text-sm">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-sm">
             <span>حقوق ناخالص آخرین دوره</span>
-            <Calculator size={18} className="text-blue-400" />
+            <Calculator size={18} className="text-blue-600 dark:text-blue-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-white">{formatNum(latestRun ? latestRun.totalGross : 0)}</span>
-            <span className="text-xs text-slate-400">ریال</span>
+            <span className="text-2xl font-black text-slate-900 dark:text-white">{formatNum(latestRun ? latestRun.totalGross : 0)}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">ریال</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between text-slate-400 text-sm">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-sm">
             <span>بیمه تامین اجتماعی ۳۰٪</span>
-            <ShieldCheck size={18} className="text-amber-400" />
+            <ShieldCheck size={18} className="text-amber-600 dark:text-amber-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-white">
+            <span className="text-2xl font-black text-slate-900 dark:text-white">
               {formatNum(
                 latestRun ? Number(latestRun.totalWorkerIns) + Number(latestRun.totalEmployerIns) : 0
               )}
             </span>
-            <span className="text-xs text-slate-400">ریال (۷٪+۲۳٪)</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">ریال (۷٪+۲۳٪)</span>
           </div>
         </div>
 
-        <div className="bg-slate-900/60 p-5 rounded-2xl border border-slate-800 shadow-md">
-          <div className="flex items-center justify-between text-slate-400 text-sm">
+        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
+          <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 text-sm">
             <span>مجموع واریزهای پایا</span>
-            <Landmark size={18} className="text-emerald-400" />
+            <Landmark size={18} className="text-emerald-600 dark:text-emerald-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-black text-emerald-400">{formatNum(totalDisbursedAll)}</span>
-            <span className="text-xs text-slate-400">ریال</span>
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{formatNum(totalDisbursedAll)}</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">ریال</span>
           </div>
         </div>
       </div>
 
       {/* تب‌های اصلی */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
         <button
           onClick={() => setActiveTab('runs')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
             activeTab === 'runs'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
           }`}
         >
           <Calculator size={18} />
@@ -402,8 +402,8 @@ export default function PayrollPage() {
           onClick={() => setActiveTab('employees')}
           className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
             activeTab === 'employees'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/40'
           }`}
         >
           <Users size={18} />
@@ -416,14 +416,14 @@ export default function PayrollPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* لیست دوره‌ها در ستون کناری */}
-            <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-4 space-y-3">
-              <h2 className="text-base font-bold text-slate-200 flex items-center justify-between pb-2 border-b border-slate-800">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-4 space-y-3 shadow-sm">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
                 <span>دوره‌های حقوق کارخانه</span>
-                <span className="text-xs text-slate-400 font-normal">{payrollRuns.length} دوره ثبت شده</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">{payrollRuns.length} دوره ثبت شده</span>
               </h2>
 
               {payrollRuns.length === 0 ? (
-                <div className="text-center py-10 text-slate-500 text-sm">
+                <div className="text-center py-10 text-slate-400 text-sm">
                   هنوز هیچ دوره حقوقی محاسبه نشده است.
                 </div>
               ) : (
@@ -434,33 +434,33 @@ export default function PayrollPage() {
                       onClick={() => loadRunDetails(run.id)}
                       className={`p-3.5 rounded-xl border transition cursor-pointer ${
                         selectedRun?.id === run.id
-                          ? 'bg-slate-800 border-emerald-500/50 shadow-md'
-                          : 'bg-slate-950/40 border-slate-800 hover:bg-slate-850 hover:border-slate-700'
+                          ? 'bg-emerald-50 dark:bg-slate-700 border-emerald-500/50 shadow-sm'
+                          : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750'
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm text-slate-200">{run.title}</span>
+                        <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{run.title}</span>
                         <span
                           className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
                             run.status === 'PAID'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                               : run.status === 'APPROVED'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                           }`}
                         >
                           {run.status === 'PAID' ? 'تسویه شده' : run.status === 'APPROVED' ? 'تایید سند' : 'پیش‌نویس'}
                         </span>
                       </div>
 
-                      <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
+                      <div className="mt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                         <span>شماره: {run.runNumber}</span>
                         <span>{run.totalEmployees} پرسنل</span>
                       </div>
 
-                      <div className="mt-1 flex items-center justify-between text-xs font-semibold text-slate-300">
+                      <div className="mt-1 flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                         <span>خالص پرداختنی:</span>
-                        <span className="text-emerald-400">{formatNum(run.totalNet)} ریال</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">{formatNum(run.totalNet)} ریال</span>
                       </div>
                     </div>
                   ))}
@@ -471,25 +471,25 @@ export default function PayrollPage() {
             {/* جزییات دوره انتخاب شده و فیش‌های آن */}
             <div className="lg:col-span-2 space-y-4">
               {selectedRun ? (
-                <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-6 space-y-6">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-6 space-y-6 shadow-sm">
                   {/* سربرگ دوره */}
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-800">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-700">
                     <div>
                       <div className="flex items-center gap-3">
-                        <h2 className="text-xl font-bold text-white">{selectedRun.title}</h2>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{selectedRun.title}</h2>
                         <span
                           className={`text-xs px-3 py-1 rounded-full font-bold ${
                             selectedRun.status === 'PAID'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                               : selectedRun.status === 'APPROVED'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                              : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                           }`}
                         >
                           وضعیت: {selectedRun.status === 'PAID' ? 'پرداخت شده' : selectedRun.status === 'APPROVED' ? 'تاییدشده' : 'پیش‌نویس'}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-1">شماره سریال: {selectedRun.runNumber}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">شماره سریال: {selectedRun.runNumber}</p>
                     </div>
 
                     {/* دکمه‌های عملیاتی */}
@@ -518,7 +518,7 @@ export default function PayrollPage() {
                       <a
                         href={`/api/khoshmin/payroll/runs/${selectedRun.id}/paya-diskette`}
                         download
-                        className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700"
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-200 dark:border-slate-600"
                         title="دانلود دیسکت پرداخت گروهی شبا (پایا)"
                       >
                         <Download size={14} />
@@ -529,7 +529,7 @@ export default function PayrollPage() {
                       <a
                         href={`/api/khoshmin/payroll/runs/${selectedRun.id}/insurance-export`}
                         download
-                        className="flex items-center gap-2 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition border border-slate-700"
+                        className="flex items-center gap-2 px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition border border-slate-200 dark:border-slate-600"
                         title="دانلود خروجی تامین اجتماعی"
                       >
                         <Download size={14} />
@@ -539,28 +539,28 @@ export default function PayrollPage() {
                   </div>
 
                   {/* ارقام سرجمع دوره */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-950/50 p-4 rounded-xl border border-slate-800">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                     <div>
-                      <span className="text-xs text-slate-400 block">جمع ناخالص حقوق:</span>
-                      <span className="text-sm font-bold text-slate-200 mt-1 block">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block">جمع ناخالص حقوق:</span>
+                      <span className="text-sm font-bold text-slate-900 dark:text-slate-200 mt-1 block">
                         {formatNum(selectedRun.totalGross)} ریال
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-400 block">بیمه کارگر (۷٪):</span>
-                      <span className="text-sm font-bold text-amber-400 mt-1 block">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block">بیمه کارگر (۷٪):</span>
+                      <span className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-1 block">
                         {formatNum(selectedRun.totalWorkerIns)} ریال
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-400 block">مالیات ماده ۸۶:</span>
-                      <span className="text-sm font-bold text-red-400 mt-1 block">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block">مالیات ماده ۸۶:</span>
+                      <span className="text-sm font-bold text-rose-600 dark:text-rose-400 mt-1 block">
                         {formatNum(selectedRun.totalTax)} ریال
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-400 block">خالص پرداختی پرسنل:</span>
-                      <span className="text-sm font-black text-emerald-400 mt-1 block">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block">خالص پرداختی پرسنل:</span>
+                      <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-1 block">
                         {formatNum(selectedRun.totalNet)} ریال
                       </span>
                     </div>
@@ -568,10 +568,10 @@ export default function PayrollPage() {
 
                   {/* جدول فیش‌های پرسنل */}
                   <div>
-                    <h3 className="text-sm font-bold text-slate-300 mb-3">فیش‌های حقوقی پرسنل در این دوره</h3>
-                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">فیش‌های حقوقی پرسنل در این دوره</h3>
+                    <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
                       <table className="w-full text-right text-xs">
-                        <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                        <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
                           <tr>
                             <th className="p-3">کد</th>
                             <th className="p-3">نام و نام خانوادگی</th>
@@ -584,26 +584,26 @@ export default function PayrollPage() {
                             <th className="p-3 text-center">عملیات</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-850">
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                           {selectedRun.slips?.map((slip) => (
-                            <tr key={slip.id} className="hover:bg-slate-800/40 transition">
-                              <td className="p-3 font-mono text-slate-400">{slip.employee?.personnelCode}</td>
-                              <td className="p-3 font-bold text-slate-100">
+                            <tr key={slip.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                              <td className="p-3 font-mono text-slate-500 dark:text-slate-400">{slip.employee?.personnelCode}</td>
+                              <td className="p-3 font-bold text-slate-900 dark:text-slate-100">
                                 {slip.employee?.firstName} {slip.employee?.lastName}
                               </td>
-                              <td className="p-3 text-slate-400">{slip.employee?.jobTitle}</td>
-                              <td className="p-3 text-center font-bold text-slate-200">{slip.workedDays} روز</td>
-                              <td className="p-3 text-slate-300">{formatNum(slip.grossSalary)}</td>
-                              <td className="p-3 text-amber-400">{formatNum(slip.insuranceWorker)}</td>
-                              <td className="p-3 text-red-400">{formatNum(slip.incomeTax)}</td>
-                              <td className="p-3 font-black text-emerald-400">{formatNum(slip.netSalary)}</td>
+                              <td className="p-3 text-slate-500 dark:text-slate-400">{slip.employee?.jobTitle}</td>
+                              <td className="p-3 text-center font-bold text-slate-700 dark:text-slate-200">{slip.workedDays} روز</td>
+                              <td className="p-3 text-slate-700 dark:text-slate-300">{formatNum(slip.grossSalary)}</td>
+                              <td className="p-3 text-amber-600 dark:text-amber-400">{formatNum(slip.insuranceWorker)}</td>
+                              <td className="p-3 text-rose-600 dark:text-rose-400">{formatNum(slip.incomeTax)}</td>
+                              <td className="p-3 font-black text-emerald-600 dark:text-emerald-400">{formatNum(slip.netSalary)}</td>
                               <td className="p-3 text-center">
                                 <button
                                   onClick={() => {
                                     setSelectedSlip(slip);
                                     setPayslipModalOpen(true);
                                   }}
-                                  className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition cursor-pointer"
+                                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-bold transition border border-slate-200 dark:border-slate-600 cursor-pointer"
                                 >
                                   مشاهده فیش
                                 </button>
@@ -616,7 +616,7 @@ export default function PayrollPage() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-12 text-center text-slate-500">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 p-12 text-center text-slate-400 shadow-sm">
                   یک دوره حقوق را برای مشاهده جزییات انتخاب کنید.
                 </div>
               )}
@@ -628,26 +628,26 @@ export default function PayrollPage() {
       {/* تب ۲: فهرست و پرونده پرسنل */}
       {activeTab === 'employees' && (
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/60 shadow-sm">
             <div className="relative w-full md:w-96">
-              <Search size={18} className="absolute right-3.5 top-3 text-slate-500" />
+              <Search size={18} className="absolute right-3.5 top-3 text-slate-400" />
               <input
                 type="text"
                 placeholder="جستجو بر اساس نام، کد پرسنلی یا کد ملی..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-emerald-500"
               />
             </div>
-            <div className="text-xs text-slate-400">
-              مجموع پرسنل کارخانه: <span className="font-bold text-white">{employees.length} نفر</span>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              مجموع پرسنل کارخانه: <span className="font-bold text-slate-900 dark:text-white">{employees.length} نفر</span>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700/60 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
-                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-3.5">کد پرسنلی</th>
                     <th className="p-3.5">نام و نام خانوادگی</th>
@@ -659,7 +659,7 @@ export default function PayrollPage() {
                     <th className="p-3.5 text-center">وضعیت</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
                   {employees
                     .filter((e) => {
                       if (!searchQuery) return true;
@@ -672,24 +672,24 @@ export default function PayrollPage() {
                       );
                     })
                     .map((emp) => (
-                      <tr key={emp.id} className="hover:bg-slate-800/40 transition">
-                        <td className="p-3.5 font-mono font-bold text-emerald-400">{emp.personnelCode}</td>
-                        <td className="p-3.5 font-bold text-slate-100">
+                      <tr key={emp.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                        <td className="p-3.5 font-mono font-bold text-emerald-600 dark:text-emerald-400">{emp.personnelCode}</td>
+                        <td className="p-3.5 font-bold text-slate-900 dark:text-slate-100">
                           {emp.firstName} {emp.lastName}
                         </td>
-                        <td className="p-3.5 font-mono text-slate-300">{emp.nationalCode}</td>
-                        <td className="p-3.5 text-slate-300">{emp.jobTitle}</td>
-                        <td className="p-3.5 text-slate-400">{emp.department}</td>
-                        <td className="p-3.5 font-bold text-slate-200">{formatNum(emp.baseDailyWage)} ریال</td>
-                        <td className="p-3.5 font-mono text-xs text-slate-400" dir="ltr">
+                        <td className="p-3.5 font-mono text-slate-700 dark:text-slate-300">{emp.nationalCode}</td>
+                        <td className="p-3.5 text-slate-700 dark:text-slate-300">{emp.jobTitle}</td>
+                        <td className="p-3.5 text-slate-500 dark:text-slate-400">{emp.department}</td>
+                        <td className="p-3.5 font-bold text-slate-700 dark:text-slate-200">{formatNum(emp.baseDailyWage)} ریال</td>
+                        <td className="p-3.5 font-mono text-xs text-slate-500 dark:text-slate-400" dir="ltr">
                           {emp.bankIban || 'ثبت نشده'}
                         </td>
                         <td className="p-3.5 text-center">
                           <span
                             className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
                               emp.isActive
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                                : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                             }`}
                           >
                             {emp.isActive ? 'شاغل' : 'غیرفعال'}
@@ -706,16 +706,16 @@ export default function PayrollPage() {
 
       {/* مدال استخدام پرسنل جدید */}
       {newEmployeeModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <UserPlus size={20} className="text-emerald-400" />
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <UserPlus size={20} className="text-emerald-600 dark:text-emerald-400" />
                 ثبت و استخدام پرسنل جدید
               </h2>
               <button
                 onClick={() => setNewEmployeeModalOpen(false)}
-                className="text-slate-400 hover:text-white transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -724,62 +724,62 @@ export default function PayrollPage() {
             <form onSubmit={handleCreateEmployee} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">نام *</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">نام *</label>
                   <input
                     type="text"
                     required
                     value={employeeForm.firstName}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, firstName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">نام خانوادگی *</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">نام خانوادگی *</label>
                   <input
                     type="text"
                     required
                     value={employeeForm.lastName}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, lastName: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">کد ملی (۱۰ رقم) *</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">کد ملی (۱۰ رقم) *</label>
                   <input
                     type="text"
                     required
                     maxLength={10}
                     value={employeeForm.nationalCode}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, nationalCode: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">شماره تماس</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">شماره تماس</label>
                   <input
                     type="text"
                     value={employeeForm.phone}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, phone: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">عنوان شغلی *</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">عنوان شغلی *</label>
                   <input
                     type="text"
                     required
                     placeholder="مثال: اپراتور CNC، جوشکار CO2، کارشناس کنترل کیفی"
                     value={employeeForm.jobTitle}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, jobTitle: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">واحد سازمانی</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">واحد سازمانی</label>
                   <select
                     value={employeeForm.department}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, department: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                   >
                     <option value="PRODUCTION">خط تولید و مونتاژ سازه</option>
                     <option value="LOGISTICS">لجستیک، باسکول و انبار</option>
@@ -789,42 +789,42 @@ export default function PayrollPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">مزد روزانه پایه (ریال) *</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">مزد روزانه پایه (ریال) *</label>
                   <input
                     type="number"
                     required
                     value={employeeForm.baseDailyWage}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, baseDailyWage: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 font-mono"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-slate-400 block mb-1">شماره بیمه تامین اجتماعی</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">شماره بیمه تامین اجتماعی</label>
                   <input
                     type="text"
                     value={employeeForm.insuranceNo}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, insuranceNo: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 font-mono"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-xs text-slate-400 block mb-1">شماره شبا بانکی (جهت دیسکت پایا)</label>
+                  <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">شماره شبا بانکی (جهت دیسکت پایا)</label>
                   <input
                     type="text"
                     placeholder="IR123456789012345678901234"
                     value={employeeForm.bankIban}
                     onChange={(e) => setEmployeeForm({ ...employeeForm, bankIban: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 font-mono"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 font-mono"
                     dir="ltr"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewEmployeeModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm cursor-pointer"
                 >
                   انصراف
                 </button>
@@ -842,16 +842,16 @@ export default function PayrollPage() {
 
       {/* مدال ایجاد دوره حقوق جدید */}
       {newRunModalOpen && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Calculator size={20} className="text-emerald-400" />
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Calculator size={20} className="text-emerald-600 dark:text-emerald-400" />
                 محاسبه خودکار حقوق ماه
               </h2>
               <button
                 onClick={() => setNewRunModalOpen(false)}
-                className="text-slate-400 hover:text-white transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
               >
                 <X size={20} />
               </button>
@@ -859,22 +859,22 @@ export default function PayrollPage() {
 
             <form onSubmit={handleCreateRun} className="space-y-4">
               <div>
-                <label className="text-xs text-slate-400 block mb-1">سال خورشیدی</label>
+                <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">سال خورشیدی</label>
                 <input
                   type="number"
                   required
                   value={runForm.year}
                   onChange={(e) => setRunForm({ ...runForm, year: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 font-mono"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100 font-mono"
                 />
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 block mb-1">ماه</label>
+                <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">ماه</label>
                 <select
                   value={runForm.month}
                   onChange={(e) => setRunForm({ ...runForm, month: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                 >
                   <option value={1}>فروردین (۳۱ روز)</option>
                   <option value={2}>اردیبهشت (۳۱ روز)</option>
@@ -891,15 +891,15 @@ export default function PayrollPage() {
                 </select>
               </div>
 
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-xs text-emerald-800 dark:text-emerald-300">
                 سیستم به صورت خودکار برای کلیه {activeEmpCount} پرسنل فعال، حقوق پایه، حق مسکن، بن خواربار، بیمه ۷٪ کارگر، بیمه ۲۳٪ کارفرما و مالیات ماده ۸۶ را محاسبه می‌نماید.
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewRunModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm cursor-pointer"
                 >
                   انصراف
                 </button>
@@ -917,7 +917,7 @@ export default function PayrollPage() {
 
       {/* مدال مشاهده و چاپ فیش حقوقی رسمی */}
       {payslipModalOpen && selectedSlip && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white text-slate-900 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto print:p-0 print:border-none print:shadow-none">
             {/* سربرگ فیش */}
             <div className="flex items-center justify-between border-b pb-4 border-slate-200">
@@ -1007,17 +1007,17 @@ export default function PayrollPage() {
                 <div className="divide-y divide-slate-100 p-2 space-y-1.5">
                   <div className="flex justify-between py-1">
                     <span className="text-slate-600">بیمه تامین اجتماعی سهم کارگر (۷٪):</span>
-                    <span className="font-bold text-red-600">{formatNum(selectedSlip.insuranceWorker)}</span>
+                    <span className="font-bold text-rose-600">{formatNum(selectedSlip.insuranceWorker)}</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-600">مالیات بر درآمد حقوق (ماده ۸۶):</span>
-                    <span className="font-bold text-red-600">{formatNum(selectedSlip.incomeTax)}</span>
+                    <span className="font-bold text-rose-600">{formatNum(selectedSlip.incomeTax)}</span>
                   </div>
                   <div className="flex justify-between py-1">
                     <span className="text-slate-600">سایر کسورات / مساعده:</span>
                     <span className="font-bold">{formatNum(selectedSlip.otherDeductions)}</span>
                   </div>
-                  <div className="flex justify-between py-1.5 font-bold text-red-700 border-t border-slate-200 bg-red-50 px-1 rounded">
+                  <div className="flex justify-between py-1.5 font-bold text-rose-700 border-t border-slate-200 bg-rose-50 px-1 rounded">
                     <span>جمع کل کسورات:</span>
                     <span>
                       {formatNum(
@@ -1061,53 +1061,53 @@ export default function PayrollPage() {
 
       {/* مدال تسویه بانکی و ثبت واریز پایا */}
       {disburseModalOpen && selectedRun && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <Landmark size={20} className="text-emerald-400" />
+        <div className="fixed inset-0 bg-slate-950/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Landmark size={20} className="text-emerald-600 dark:text-emerald-400" />
                 ثبت پرداخت بانکی گروهی حقوق
               </h2>
               <button
                 onClick={() => setDisburseModalOpen(false)}
-                className="text-slate-400 hover:text-white transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
               >
                 <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleDisburseRun} className="space-y-4">
-              <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-xs space-y-1">
-                <div className="flex justify-between text-slate-400">
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs space-y-1">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
                   <span>دوره:</span>
-                  <span className="text-white font-bold">{selectedRun.title}</span>
+                  <span className="text-slate-900 dark:text-white font-bold">{selectedRun.title}</span>
                 </div>
-                <div className="flex justify-between text-slate-400">
+                <div className="flex justify-between text-slate-500 dark:text-slate-400">
                   <span>مجموع مبلغ واریز:</span>
-                  <span className="text-emerald-400 font-bold">{formatNum(selectedRun.totalNet)} ریال</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">{formatNum(selectedRun.totalNet)} ریال</span>
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-400 block mb-1">شرح سند تسویه</label>
+                <label className="text-xs text-slate-700 dark:text-slate-300 font-medium block mb-1">شرح سند تسویه</label>
                 <input
                   type="text"
                   placeholder="واریز گروهی حقوق پرسنل از طریق پایا"
                   value={disburseForm.description}
                   onChange={(e) => setDisburseForm({ ...disburseForm, description: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-slate-100"
                 />
               </div>
 
-              <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl text-xs text-blue-300">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-500/20 rounded-xl text-xs text-blue-800 dark:text-blue-300">
                 پس از ثبت، سند حسابداری تسویه حقوق (بدهکار ۲۱۰۳۰۱ و بستانکار ۱۱۰۱۰۱) در سیستم صادر شده و وضعیت دوره به «پرداخت شده» تغییر می‌یابد.
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setDisburseModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-sm cursor-pointer"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-xl text-sm cursor-pointer"
                 >
                   انصراف
                 </button>

@@ -454,19 +454,19 @@ export default function ProcurementPage() {
   };
 
   return (
-    <div dir="rtl" className="space-y-6 font-vazir pb-12">
+    <div dir="rtl" className="space-y-6 font-vazir pb-12 transition-colors duration-200">
       {/* هدر صفحه تدارکات */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-6 rounded-3xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-6 rounded-3xl shadow-sm transition-colors">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 text-amber-600 dark:text-amber-400 rounded-2xl">
               <Truck size={24} />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black text-slate-100">
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100">
                 مدیریت تدارکات، زنجیره تامین و ورود مواد اولیه
               </h1>
-              <p className="text-xs md:text-sm text-slate-400 mt-1">
+              <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 توزین باسکول ورودی، انطباق سه‌طرفه (3-Way Matching)، کاردکس مواد اولیه و اسناد دوبل خرید
               </p>
             </div>
@@ -476,28 +476,28 @@ export default function ProcurementPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setNewSupplierModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
-            <Plus size={16} className="text-amber-400" />
+            <Plus size={16} className="text-amber-500 dark:text-amber-400" />
             تامین‌کننده جدید
           </button>
           <button
             onClick={() => setNewOrderModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-bold transition shadow-sm cursor-pointer"
           >
-            <ShoppingCart size={16} className="text-blue-400" />
+            <ShoppingCart size={16} className="text-blue-500 dark:text-blue-400" />
             سفارش خرید (PO)
           </button>
           <button
             onClick={() => setNewReceiptModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-black rounded-xl text-xs transition shadow-sm cursor-pointer"
           >
             <Scale size={16} />
             قبض باسکول و ورود بار
           </button>
           <button
             onClick={() => setNewPaymentModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs transition shadow-sm cursor-pointer"
           >
             <CreditCard size={16} />
             پرداخت به تامین‌کننده
@@ -508,156 +508,156 @@ export default function ProcurementPage() {
       {/* شاخص‌های کلیدی عملکرد (KPI Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* مانده بدهی به تامین‌کنندگان */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 rounded-2xl relative overflow-hidden shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">بدهی دفتری به تامین‌کنندگان (AP)</span>
-            <div className="p-2 bg-red-500/10 text-red-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">بدهی دفتری به تامین‌کنندگان (AP)</span>
+            <div className="p-2 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 rounded-xl">
               <Building2 size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-slate-100">
+            <span className="text-2xl font-black text-slate-900 dark:text-slate-100 font-mono">
               {totalPayableDebt.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">تومان</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 mr-1.5 font-bold">تومان</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
-            <ShieldCheck size={12} className="text-emerald-400" />
+          <div className="mt-2 text-[11px] text-slate-400 dark:text-slate-500 flex items-center gap-1 font-medium">
+            <ShieldCheck size={12} className="text-emerald-500 dark:text-emerald-400" />
             معین ۲۱۰۱۰۱ - حساب‌های پرداختنی
           </div>
         </div>
 
         {/* سفارشات خرید فعال */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 rounded-2xl relative overflow-hidden shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">سفارشات در انتظار تحویل</span>
-            <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">سفارشات در انتظار تحویل</span>
+            <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
               <ShoppingCart size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-blue-400">
+            <span className="text-2xl font-black text-blue-700 dark:text-blue-400 font-mono">
               {activeOrdersCount.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">سفارش تایید شده</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 mr-1.5 font-bold">سفارش تایید شده</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
             شامل اقلام مقاطع و ورق‌های در راه
           </div>
         </div>
 
         {/* مجموع تناژ باسکول ورودی */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 rounded-2xl relative overflow-hidden shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">ورود خالص باسکول کارخانه</span>
-            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">ورود خالص باسکول کارخانه</span>
+            <div className="p-2 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 rounded-xl">
               <Scale size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-amber-400">
+            <span className="text-2xl font-black text-amber-700 dark:text-amber-400 font-mono">
               {totalNetScaleTonnage.toFixed(2).toLocaleString()}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">تُن مقاطع فولادی</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 mr-1.5 font-bold">تُن مقاطع فولادی</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
             توزین دیجیتال منبع حقیقت انبار مواد اولیه
           </div>
         </div>
 
         {/* فاکتورهای منتظر پرداخت */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 rounded-2xl relative overflow-hidden shadow-sm transition-colors">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">فاکتورهای منتظر تسویه</span>
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">فاکتورهای منتظر تسویه</span>
+            <div className="p-2 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <FileText size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-emerald-400">
+            <span className="text-2xl font-black text-emerald-700 dark:text-emerald-400 font-mono">
               {pendingInvoicesAmount.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">تومان</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500 mr-1.5 font-bold">تومان</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
             انطباق یافته با قبض انبار و بارنامه
           </div>
         </div>
       </div>
 
       {/* تب‌های مدیریت تدارکات */}
-      <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTab('suppliers')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'suppliers'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-amber-600 dark:border-amber-400 text-amber-700 dark:text-amber-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <Building2 size={16} />
           تامین‌کنندگان و مانده حساب
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
             {suppliers.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'orders'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-amber-600 dark:border-amber-400 text-amber-700 dark:text-amber-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <ShoppingCart size={16} />
           سفارشات خرید (PO)
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
             {orders.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('receipts')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'receipts'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-amber-600 dark:border-amber-400 text-amber-700 dark:text-amber-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <Scale size={16} />
           قبوض رسید انبار و باسکول (GRN)
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
             {receipts.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('invoices')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'invoices'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-amber-600 dark:border-amber-400 text-amber-700 dark:text-amber-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <FileText size={16} />
           فاکتورهای خرید و اعتبار مالیاتی
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
             {invoices.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('payments')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'payments'
-              ? 'border-amber-500 text-amber-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-amber-600 dark:border-amber-400 text-amber-700 dark:text-amber-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <CreditCard size={16} />
           پرداخت‌ها و ظهرنویسی چک
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-mono">
             {payments.length}
           </span>
         </button>
@@ -665,21 +665,21 @@ export default function ProcurementPage() {
 
       {/* ۱. تب تامین‌کنندگان */}
       {activeTab === 'suppliers' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between gap-4">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="جستجو بر اساس نام، شناسه ملی، یا شماره تلفن تامین‌کننده..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+                className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-amber-500"
               />
             </div>
             <button
               onClick={loadData}
-              className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-xl transition"
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition"
               title="تازه‌سازی"
             >
               <RefreshCw size={16} />
@@ -687,8 +687,8 @@ export default function ProcurementPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">کد تامین‌کننده</th>
                   <th className="py-3.5 px-4">نام شرکت / تامین‌کننده</th>
@@ -699,37 +699,37 @@ export default function ProcurementPage() {
                   <th className="py-3.5 px-4 text-center">رتبه</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {suppliers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
                       هیچ تامین‌کننده‌ای یافت نشد.
                     </td>
                   </tr>
                 ) : (
                   suppliers.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-amber-400">{s.code}</td>
+                    <tr key={s.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-amber-600 dark:text-amber-400">{s.code}</td>
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-100">{s.name}</div>
-                        {s.companyName && <div className="text-[11px] text-slate-400">{s.companyName}</div>}
+                        <div className="font-bold text-slate-900 dark:text-slate-100">{s.name}</div>
+                        {s.companyName && <div className="text-[11px] text-slate-500 dark:text-slate-400">{s.companyName}</div>}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-400">{s.nationalId || '-'}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{s.nationalId || '-'}</td>
                       <td className="py-3.5 px-4">
                         <div>{s.phone || s.mobile || '-'}</div>
-                        {s.contactPerson && <div className="text-[11px] text-slate-400">{s.contactPerson}</div>}
+                        {s.contactPerson && <div className="text-[11px] text-slate-500 dark:text-slate-400">{s.contactPerson}</div>}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="text-slate-300">{s.bankName || '-'}</div>
-                        {s.bankAccount && <div className="font-mono text-[11px] text-slate-400">{s.bankAccount}</div>}
+                        <div className="text-slate-700 dark:text-slate-300">{s.bankName || '-'}</div>
+                        {s.bankAccount && <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{s.bankAccount}</div>}
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className={`font-bold ${Number(s.totalPayable) > 0 ? 'text-red-400' : 'text-slate-400'}`}>
+                        <span className={`font-bold ${Number(s.totalPayable) > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400'}`}>
                           {Number(s.totalPayable).toLocaleString('fa-IR')} تومان
                         </span>
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                           گرید {s.rating}
                         </span>
                       </td>
@@ -744,10 +744,10 @@ export default function ProcurementPage() {
 
       {/* ۲. تب سفارشات خرید (PO) */}
       {activeTab === 'orders' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">شماره سفارش</th>
                   <th className="py-3.5 px-4">تامین‌کننده</th>
@@ -758,25 +758,25 @@ export default function ProcurementPage() {
                   <th className="py-3.5 px-4 text-center">عملیات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {orders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
                       هیچ سفارش خریدی ثبت نشده است.
                     </td>
                   </tr>
                 ) : (
                   orders.map((po) => (
-                    <tr key={po.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-blue-400">{po.orderNo}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">{po.supplier?.name}</td>
+                    <tr key={po.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{po.orderNo}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{po.supplier?.name}</td>
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col gap-1">
                           {po.items?.map((it) => (
-                            <span key={it.id} className="text-[11px] text-slate-300">
+                            <span key={it.id} className="text-[11px] text-slate-600 dark:text-slate-300">
                               {it.product?.title}: {Number(it.orderedQty).toLocaleString('fa-IR')} {it.uom}
                               {Number(it.receivedQty) > 0 && (
-                                <span className="text-emerald-400 mr-1">
+                                <span className="text-emerald-600 dark:text-emerald-400 mr-1">
                                   (تحویل: {Number(it.receivedQty).toLocaleString('fa-IR')})
                                 </span>
                               )}
@@ -784,22 +784,22 @@ export default function ProcurementPage() {
                           ))}
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         {Number(po.totalAmount).toLocaleString('fa-IR')} تومان
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
                         {new Date(po.orderDate).toLocaleDateString('fa-IR')}
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                             po.status === 'COMPLETED'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                               : po.status === 'PARTIALLY_RECEIVED'
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                               : po.status === 'APPROVED'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              : 'bg-slate-800 text-slate-400'
+                              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}
                         >
                           {po.status === 'COMPLETED'
@@ -834,10 +834,10 @@ export default function ProcurementPage() {
 
       {/* ۳. تب قبوض رسید انبار و باسکول (GRN) */}
       {activeTab === 'receipts' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">قبض رسید انبار</th>
                   <th className="py-3.5 px-4">تامین‌کننده / سفارش</th>
@@ -848,27 +848,27 @@ export default function ProcurementPage() {
                   <th className="py-3.5 px-4 text-center">انبار مقصد</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {receipts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
                       هیچ قبض رسیدی در سیستم ثبت نشده است.
                     </td>
                   </tr>
                 ) : (
                   receipts.map((grn) => (
-                    <tr key={grn.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-amber-400">{grn.receiptNo}</td>
+                    <tr key={grn.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-amber-600 dark:text-amber-400">{grn.receiptNo}</td>
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-100">{grn.supplier?.name}</div>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">{grn.supplier?.name}</div>
                         {grn.purchaseOrder && (
-                          <div className="text-[11px] font-mono text-blue-400">
+                          <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400">
                             {grn.purchaseOrder.orderNo}
                           </div>
                         )}
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-emerald-400">
+                        <div className="font-bold text-emerald-600 dark:text-emerald-400">
                           خالص: {Number(grn.scaleNetKg).toLocaleString('fa-IR')} کیلوگرم
                         </div>
                         {grn.scaleGrossKg && grn.scaleTareKg && (
@@ -879,14 +879,14 @@ export default function ProcurementPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         <div>پلاک: {grn.truckPlate || '-'}</div>
-                        {grn.waybillNo && <div className="text-[11px] text-slate-400">بارنامه: {grn.waybillNo}</div>}
+                        {grn.waybillNo && <div className="text-[11px] text-slate-500 dark:text-slate-400">بارنامه: {grn.waybillNo}</div>}
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-slate-400">{grn.heatNumber || '-'}</td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">{grn.heatNumber || '-'}</td>
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
                         {new Date(grn.receiptDate).toLocaleDateString('fa-IR')}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                           {grn.warehouse?.code || 'WH-RAW-01'}
                         </span>
                       </td>
@@ -901,10 +901,10 @@ export default function ProcurementPage() {
 
       {/* ۴. تب فاکتورهای خرید (Supplier Invoices) */}
       {activeTab === 'invoices' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">شماره فاکتور اعلامی</th>
                   <th className="py-3.5 px-4">شناسه سیستمی</th>
@@ -916,37 +916,37 @@ export default function ProcurementPage() {
                   <th className="py-3.5 px-4 text-center">وضعیت تسویه</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {invoices.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-slate-500">
+                    <td colSpan={8} className="py-8 text-center text-slate-400">
                       هیچ فاکتور خریدی ثبت نشده است.
                     </td>
                   </tr>
                 ) : (
                   invoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-bold text-slate-100">{inv.invoiceNo}</td>
-                      <td className="py-3.5 px-4 font-mono text-blue-400">{inv.systemNo}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">{inv.supplier?.name}</td>
+                    <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{inv.invoiceNo}</td>
+                      <td className="py-3.5 px-4 font-mono text-blue-600 dark:text-blue-400">{inv.systemNo}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{inv.supplier?.name}</td>
                       <td className="py-3.5 px-4">{Number(inv.amount).toLocaleString('fa-IR')} تومان</td>
-                      <td className="py-3.5 px-4 text-emerald-400">
+                      <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-400">
                         {Number(inv.taxAmount).toLocaleString('fa-IR')} تومان
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         {Number(inv.finalAmount).toLocaleString('fa-IR')} تومان
                       </td>
-                      <td className="py-3.5 px-4 text-slate-300">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300">
                         {Number(inv.paidAmount).toLocaleString('fa-IR')} تومان
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <span
                           className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                             inv.status === 'PAID'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                               : inv.status === 'PARTIALLY_PAID'
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                              : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
                           }`}
                         >
                           {inv.status === 'PAID'
@@ -967,10 +967,10 @@ export default function ProcurementPage() {
 
       {/* ۵. تب پرداخت‌ها و ظهرنویسی چک */}
       {activeTab === 'payments' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">شماره سند پرداخت</th>
                   <th className="py-3.5 px-4">تامین‌کننده</th>
@@ -981,23 +981,23 @@ export default function ProcurementPage() {
                   <th className="py-3.5 px-4 text-center">سند دوبل</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {payments.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
                       هیچ سابقه پرداختی ثبت نشده است.
                     </td>
                   </tr>
                 ) : (
                   payments.map((p) => (
-                    <tr key={p.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">{p.paymentNo}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">{p.supplier?.name}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">
+                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-600 dark:text-emerald-400">{p.paymentNo}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{p.supplier?.name}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">
                         {Number(p.amount).toLocaleString('fa-IR')} تومان
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-300">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
                           {p.paymentMethod === 'BANK_TRANSFER'
                             ? 'حواله بانکی پایا/ساتنا'
                             : p.paymentMethod === 'CHEQUE_ENDORSED'
@@ -1009,21 +1009,21 @@ export default function ProcurementPage() {
                       </td>
                       <td className="py-3.5 px-4">
                         {p.bankAccount && (
-                          <div className="text-[11px] text-slate-300">
+                          <div className="text-[11px] text-slate-700 dark:text-slate-300">
                             {p.bankAccount.bankName} - {p.bankAccount.accountNumber}
                           </div>
                         )}
                         {p.cheque && (
-                          <div className="text-[11px] text-amber-400 font-mono">
+                          <div className="text-[11px] text-amber-600 dark:text-amber-400 font-mono">
                             صیاد: {p.cheque.sayadId} ({p.cheque.bankName})
                           </div>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
                         {new Date(p.paymentDate).toLocaleDateString('fa-IR')}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-mono">
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
                           <Check size={12} /> صادر شده
                         </span>
                       </td>
@@ -1038,16 +1038,16 @@ export default function ProcurementPage() {
 
       {/* مدال تعریف تامین‌کننده جدید */}
       {newSupplierModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Building2 size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-2xl rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Building2 size={18} className="text-amber-600 dark:text-amber-400" />
                 تعریف تامین‌کننده جدید مواد اولیه و مقاطع فولادی
               </h2>
               <button
                 onClick={() => setNewSupplierModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -1056,104 +1056,104 @@ export default function ProcurementPage() {
             <form onSubmit={handleCreateSupplier} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">نام تجاری یا شخص *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">نام تجاری یا شخص *</label>
                   <input
                     type="text"
                     required
                     value={supplierForm.name}
                     onChange={(e) => setSupplierForm({ ...supplierForm, name: e.target.value })}
                     placeholder="مثال: فولاد مبارکه اصفهان / بازرگانی شادآباد"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">نام رسمی حقوقی شرکت</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">نام رسمی حقوقی شرکت</label>
                   <input
                     type="text"
                     value={supplierForm.companyName}
                     onChange={(e) => setSupplierForm({ ...supplierForm, companyName: e.target.value })}
                     placeholder="شرکت سهامی عام..."
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">شناسه ملی یا کد ملی</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">شناسه ملی یا کد ملی</label>
                   <input
                     type="text"
                     value={supplierForm.nationalId}
                     onChange={(e) => setSupplierForm({ ...supplierForm, nationalId: e.target.value })}
                     placeholder="۱۰ یا ۱۱ رقم"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">کد اقتصادی ۱۲ رقمی مودیان</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">کد اقتصادی ۱۲ رقمی مودیان</label>
                   <input
                     type="text"
                     value={supplierForm.economicCode}
                     onChange={(e) => setSupplierForm({ ...supplierForm, economicCode: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">تلفن دفتر فروش</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">تلفن دفتر فروش</label>
                   <input
                     type="text"
                     value={supplierForm.phone}
                     onChange={(e) => setSupplierForm({ ...supplierForm, phone: e.target.value })}
                     placeholder="۰۲۱..."
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">مسئول فروش یا کارشناس</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">مسئول فروش یا کارشناس</label>
                   <input
                     type="text"
                     value={supplierForm.contactPerson}
                     onChange={(e) => setSupplierForm({ ...supplierForm, contactPerson: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">بانک عامل تامین‌کننده</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">بانک عامل تامین‌کننده</label>
                   <input
                     type="text"
                     value={supplierForm.bankName}
                     onChange={(e) => setSupplierForm({ ...supplierForm, bankName: e.target.value })}
                     placeholder="مثال: بانک ملت / صادرات"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">شماره شبا (IBAN)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">شماره شبا (IBAN)</label>
                   <input
                     type="text"
                     value={supplierForm.bankIban}
                     onChange={(e) => setSupplierForm({ ...supplierForm, bankIban: e.target.value })}
                     placeholder="IR..."
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewSupplierModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+                  className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-black rounded-xl text-xs transition shadow-md"
                 >
                   ثبت تامین‌کننده
                 </button>
@@ -1165,16 +1165,16 @@ export default function ProcurementPage() {
 
       {/* مدال ثبت سفارش خرید جدید */}
       {newOrderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <ShoppingCart size={18} className="text-blue-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <ShoppingCart size={18} className="text-blue-600 dark:text-blue-400" />
                 ثبت سفارش خرید مقاطع فلزی (Industrial PO)
               </h2>
               <button
                 onClick={() => setNewOrderModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -1183,12 +1183,12 @@ export default function ProcurementPage() {
             <form onSubmit={handleCreateOrder} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">انتخاب تامین‌کننده *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">انتخاب تامین‌کننده *</label>
                   <select
                     required
                     value={orderForm.supplierId}
                     onChange={(e) => setOrderForm({ ...orderForm, supplierId: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
                   >
                     <option value="">-- انتخاب کنید --</option>
                     {suppliers.map((s) => (
@@ -1200,24 +1200,24 @@ export default function ProcurementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">کرایه حمل برآوردی (تومان)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">کرایه حمل برآوردی (تومان)</label>
                   <input
                     type="number"
                     value={orderForm.freightCost}
                     onChange={(e) => setOrderForm({ ...orderForm, freightCost: e.target.value })}
                     placeholder="۰"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-blue-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
                   />
                 </div>
               </div>
 
               {/* ردیف‌های اقلام کالا */}
               <div className="space-y-3">
-                <label className="block text-slate-300 font-bold text-xs">اقلام مقاطع فلزی سفارشی:</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold text-xs">اقلام مقاطع فلزی سفارشی:</label>
                 {orderForm.items.map((it, idx) => (
-                  <div key={idx} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-2xl grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
                     <div className="sm:col-span-2">
-                      <label className="block text-slate-500 text-[10px] mb-1">کالا / مقطع فولادی</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">کالا / مقطع فولادی</label>
                       <select
                         required
                         value={it.productId}
@@ -1226,7 +1226,7 @@ export default function ProcurementPage() {
                           updated[idx].productId = Number(e.target.value);
                           setOrderForm({ ...orderForm, items: updated });
                         }}
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       >
                         <option value={0}>-- انتخاب کالا --</option>
                         {products.map((p) => (
@@ -1238,7 +1238,7 @@ export default function ProcurementPage() {
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">وزن / تعداد سفارش (کیلوگرم)</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">وزن / تعداد سفارش (کیلوگرم)</label>
                       <input
                         type="number"
                         required
@@ -1249,12 +1249,12 @@ export default function ProcurementPage() {
                           setOrderForm({ ...orderForm, items: updated });
                         }}
                         placeholder="وزن کیلوگرم"
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">نرخ واحد هر کیلو (تومان)</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">نرخ واحد هر کیلو (تومان)</label>
                       <input
                         type="number"
                         required
@@ -1265,18 +1265,18 @@ export default function ProcurementPage() {
                           setOrderForm({ ...orderForm, items: updated });
                         }}
                         placeholder="قیمت هر کیلو"
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       />
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewOrderModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
@@ -1294,16 +1294,16 @@ export default function ProcurementPage() {
 
       {/* مدال قبض ورود و توزین باسکول (Scale GRN) */}
       {newReceiptModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Scale size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Scale size={18} className="text-amber-600 dark:text-amber-400" />
                 ثبت قبض ورود بار و توزین باسکول دیجیتال کارخانه
               </h2>
               <button
                 onClick={() => setNewReceiptModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -1312,12 +1312,12 @@ export default function ProcurementPage() {
             <form onSubmit={handleCreateReceipt} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">تامین‌کننده بار *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">تامین‌کننده بار *</label>
                   <select
                     required
                     value={receiptForm.supplierId}
                     onChange={(e) => setReceiptForm({ ...receiptForm, supplierId: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   >
                     <option value="">-- انتخاب تامین‌کننده --</option>
                     {suppliers.map((s) => (
@@ -1329,11 +1329,11 @@ export default function ProcurementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">سفارش خرید مرتبط (PO)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">سفارش خرید مرتبط (PO)</label>
                   <select
                     value={receiptForm.purchaseOrderId}
                     onChange={(e) => setReceiptForm({ ...receiptForm, purchaseOrderId: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   >
                     <option value="">-- بدون ارتباط مستقیم --</option>
                     {orders
@@ -1347,44 +1347,44 @@ export default function ProcurementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">شماره قبض باسکول</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">شماره قبض باسکول</label>
                   <input
                     type="text"
                     value={receiptForm.scaleTicketNo}
                     onChange={(e) => setReceiptForm({ ...receiptForm, scaleTicketNo: e.target.value })}
                     placeholder="مثال: TK-9842"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   />
                 </div>
               </div>
 
               {/* بلوک محاسباتی باسکول */}
-              <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              <div className="p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-500/20 rounded-2xl grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div>
-                  <label className="block text-amber-300 font-bold mb-1">وزن ناخالص (پر) باسکول (Kg)</label>
+                  <label className="block text-amber-800 dark:text-amber-300 font-bold mb-1">وزن ناخالص (پر) باسکول (Kg)</label>
                   <input
                     type="number"
                     value={receiptForm.scaleGrossKg}
                     onChange={(e) => setReceiptForm({ ...receiptForm, scaleGrossKg: e.target.value })}
                     placeholder="مثال: ۲۴۵۰۰"
-                    className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-amber-400 font-mono font-bold"
+                    className="w-full p-2 bg-white dark:bg-slate-900 border border-amber-300 dark:border-slate-700 rounded-xl text-amber-700 dark:text-amber-400 font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-amber-300 font-bold mb-1">وزن تار (خالی) کامیون (Kg)</label>
+                  <label className="block text-amber-800 dark:text-amber-300 font-bold mb-1">وزن تار (خالی) کامیون (Kg)</label>
                   <input
                     type="number"
                     value={receiptForm.scaleTareKg}
                     onChange={(e) => setReceiptForm({ ...receiptForm, scaleTareKg: e.target.value })}
                     placeholder="مثال: ۸۲۰۰"
-                    className="w-full p-2 bg-slate-950 border border-slate-800 rounded-xl text-amber-400 font-mono font-bold"
+                    className="w-full p-2 bg-white dark:bg-slate-900 border border-amber-300 dark:border-slate-700 rounded-xl text-amber-700 dark:text-amber-400 font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-emerald-400 font-bold mb-1">وزن خالص ورودی به انبار</label>
-                  <div className="p-2 bg-slate-950 border border-emerald-500/30 rounded-xl text-emerald-400 font-mono font-black text-sm text-center">
+                  <label className="block text-emerald-700 dark:text-emerald-400 font-bold mb-1">وزن خالص ورودی به انبار</label>
+                  <div className="p-2 bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-500/30 rounded-xl text-emerald-600 dark:text-emerald-400 font-mono font-black text-sm text-center">
                     {receiptForm.scaleGrossKg && receiptForm.scaleTareKg
                       ? (
                           parseFloat(receiptForm.scaleGrossKg) - parseFloat(receiptForm.scaleTareKg)
@@ -1397,44 +1397,44 @@ export default function ProcurementPage() {
               {/* مشخصات ناوگان و راننده */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                 <div>
-                  <label className="block text-slate-400 mb-1">پلاک کامیون</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">پلاک کامیون</label>
                   <input
                     type="text"
                     value={receiptForm.truckPlate}
                     onChange={(e) => setReceiptForm({ ...receiptForm, truckPlate: e.target.value })}
                     placeholder="مثال: ایران ۷۷ - ۱۲۳ ج ۴۵"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">نام راننده</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">نام راننده</label>
                   <input
                     type="text"
                     value={receiptForm.driverName}
                     onChange={(e) => setReceiptForm({ ...receiptForm, driverName: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">شماره بارنامه جاده‌ای</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">شماره بارنامه جاده‌ای</label>
                   <input
                     type="text"
                     value={receiptForm.waybillNo}
                     onChange={(e) => setReceiptForm({ ...receiptForm, waybillNo: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
 
               {/* اقلام تحویلی به انبار */}
               <div className="space-y-3">
-                <label className="block text-slate-300 font-bold text-xs">کالای ورودی به انبار مواد اولیه (WH-RAW-01):</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold text-xs">کالای ورودی به انبار مواد اولیه (WH-RAW-01):</label>
                 {receiptForm.items.map((it, idx) => (
-                  <div key={idx} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">کالا / مقطع فولادی</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">کالا / مقطع فولادی</label>
                       <select
                         required
                         value={it.productId}
@@ -1443,7 +1443,7 @@ export default function ProcurementPage() {
                           updated[idx].productId = Number(e.target.value);
                           setReceiptForm({ ...receiptForm, items: updated });
                         }}
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       >
                         <option value={0}>-- انتخاب کالا --</option>
                         {products.map((p) => (
@@ -1455,7 +1455,7 @@ export default function ProcurementPage() {
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">نرخ بهای واحد خرید (تومان/کیلو)</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">نرخ بهای واحد خرید (تومان/کیلو)</label>
                       <input
                         type="number"
                         required
@@ -1466,12 +1466,12 @@ export default function ProcurementPage() {
                           setReceiptForm({ ...receiptForm, items: updated });
                         }}
                         placeholder="برای کاردکس میانگین موزون"
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">گرید فولاد / شماره ذوب</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">گرید فولاد / شماره ذوب</label>
                       <input
                         type="text"
                         value={it.steelGrade || ''}
@@ -1481,24 +1481,24 @@ export default function ProcurementPage() {
                           setReceiptForm({ ...receiptForm, items: updated });
                         }}
                         placeholder="مثال: ST37 / ذوب ۴۸۱"
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       />
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewReceiptModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+                  className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition shadow-md"
                 >
                   ثبت قبض انبار و انتقال به کاردکس
                 </button>
@@ -1510,16 +1510,16 @@ export default function ProcurementPage() {
 
       {/* مدال ثبت پرداخت به تامین‌کننده */}
       {newPaymentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <CreditCard size={18} className="text-emerald-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <CreditCard size={18} className="text-emerald-600 dark:text-emerald-400" />
                 ثبت پرداخت وجه یا خرج چک صیادی به تامین‌کننده
               </h2>
               <button
                 onClick={() => setNewPaymentModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -1527,12 +1527,12 @@ export default function ProcurementPage() {
 
             <form onSubmit={handleCreatePayment} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-bold">تامین‌کننده دریافت‌کننده وجه *</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">تامین‌کننده دریافت‌کننده وجه *</label>
                 <select
                   required
                   value={paymentForm.supplierId}
                   onChange={(e) => setPaymentForm({ ...paymentForm, supplierId: e.target.value })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- انتخاب تامین‌کننده --</option>
                   {suppliers.map((s) => (
@@ -1544,11 +1544,11 @@ export default function ProcurementPage() {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1">تسویه فاکتور خرید مشخص (اختیاری)</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">تسویه فاکتور خرید مشخص (اختیاری)</label>
                 <select
                   value={paymentForm.supplierInvoiceId}
                   onChange={(e) => setPaymentForm({ ...paymentForm, supplierInvoiceId: e.target.value })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                 >
                   <option value="">-- پرداخت کلی روی حساب (Ali-al-Hesab) --</option>
                   {invoices
@@ -1563,11 +1563,11 @@ export default function ProcurementPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">روش پرداخت *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">روش پرداخت *</label>
                   <select
                     value={paymentForm.paymentMethod}
                     onChange={(e) => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                   >
                     <option value="BANK_TRANSFER">حواله بانکی پایا / ساتنا</option>
                     <option value="CHEQUE_ENDORSED">ظهرنویسی و خرج چک صیادی مشتری</option>
@@ -1577,14 +1577,14 @@ export default function ProcurementPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">مبلغ پرداختی (تومان) *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">مبلغ پرداختی (تومان) *</label>
                   <input
                     type="number"
                     required
                     value={paymentForm.amount}
                     onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
                     placeholder="مبلغ به تومان"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold focus:outline-none focus:border-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 font-mono font-bold focus:outline-none focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -1592,12 +1592,12 @@ export default function ProcurementPage() {
               {/* فیلد اختصاصی حساب بانکی در صورت حواله */}
               {paymentForm.paymentMethod === 'BANK_TRANSFER' && (
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">حساب بانکی مبدا کارخانه *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">حساب بانکی مبدا کارخانه *</label>
                   <select
                     required
                     value={paymentForm.bankAccountId}
                     onChange={(e) => setPaymentForm({ ...paymentForm, bankAccountId: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-emerald-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-emerald-500"
                   >
                     <option value="">-- انتخاب حساب بانکی --</option>
                     {banks.map((b) => (
@@ -1612,7 +1612,7 @@ export default function ProcurementPage() {
               {/* فیلد اختصاصی چک در صورت ظهرنویسی */}
               {paymentForm.paymentMethod === 'CHEQUE_ENDORSED' && (
                 <div>
-                  <label className="block text-amber-400 mb-1 font-bold">انتخاب چک صیادی موجود در صندوق *</label>
+                  <label className="block text-amber-700 dark:text-amber-400 mb-1 font-bold">انتخاب چک صیادی موجود در صندوق *</label>
                   <select
                     required
                     value={paymentForm.chequeId}
@@ -1624,7 +1624,7 @@ export default function ProcurementPage() {
                         amount: selected ? selected.amount.toString() : paymentForm.amount,
                       });
                     }}
-                    className="w-full p-2.5 bg-slate-950 border border-amber-500/40 rounded-xl text-slate-100 focus:outline-none focus:border-amber-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-amber-300 dark:border-amber-500/40 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-amber-500"
                   >
                     <option value="">-- انتخاب چک صیادی --</option>
                     {portfolioCheques.map((c) => (
@@ -1637,21 +1637,21 @@ export default function ProcurementPage() {
               )}
 
               <div>
-                <label className="block text-slate-400 mb-1">شماره پیگیری / عطف تراکنش</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">شماره پیگیری / عطف تراکنش</label>
                 <input
                   type="text"
                   value={paymentForm.receiptNo}
                   onChange={(e) => setPaymentForm({ ...paymentForm, receiptNo: e.target.value })}
                   placeholder="مثال: حواله پایا شماره ۷۴۸۲۹"
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewPaymentModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>

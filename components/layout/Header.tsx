@@ -80,21 +80,21 @@ export default function Header({ logoUrl }: HeaderProps) {
 
   let headerClasses = 'w-full z-40 transition-all duration-300 ';
   if (isHomePage) {
-    headerClasses += `fixed top-0 ${scrolled ? 'bg-white py-2 md:py-3 shadow-sm' : 'bg-transparent py-4 md:py-5'}`;
+    headerClasses += `fixed top-0 ${scrolled ? 'bg-[#F5F7FA]/92 backdrop-blur-md py-3 border-b border-[#2D3644]/10 shadow-xs' : 'bg-transparent py-4 md:py-6'}`;
   } else {
-    headerClasses += `sticky top-0 bg-[#2D3644] py-2 md:py-3 shadow-md`;
+    headerClasses += `sticky top-0 bg-[#2D3644] py-3 border-b border-white/10 shadow-sm`;
   }
 
-  let defaultTextColor = 'text-white';
-  let hoverTextColor = 'hover:text-gray-300';
-  let activeTextColor = 'text-white';
-  let buttonClasses = 'bg-blue-600 hover:bg-blue-500 text-white';
+  let defaultTextColor = 'text-white/90';
+  let hoverTextColor = 'hover:text-white';
+  let activeTextColor = 'text-white font-bold';
+  let buttonClasses = 'bg-[#2563EB] hover:bg-[#1d4ed8] text-white shadow-xs';
 
   if (isHomePage && scrolled) {
-    defaultTextColor = 'text-gray-800';
-    hoverTextColor = 'hover:text-gray-600';
-    activeTextColor = 'text-gray-900';
-    buttonClasses = 'bg-blue-600 hover:bg-blue-700 text-white';
+    defaultTextColor = 'text-[#2D3644]/80';
+    hoverTextColor = 'hover:text-[#2D3644]';
+    activeTextColor = 'text-[#2D3644] font-bold';
+    buttonClasses = 'bg-[#2563EB] hover:bg-[#1d4ed8] text-white shadow-xs';
   }
 
   return (
@@ -105,16 +105,16 @@ export default function Header({ logoUrl }: HeaderProps) {
             <button
               onClick={() => setIsMobileMenuOpen(true)}
               aria-label="باز کردن منوی ناوبری"
-              className={`p-2 -mr-2 ${defaultTextColor} transition-colors focus:outline-none focus:ring-2 focus:ring-ks-blue-500 rounded-lg`}
+              className={`p-2 -mr-2 ${defaultTextColor} transition-colors focus:outline-none focus:ring-2 focus:ring-[#2563EB] rounded-lg`}
             >
-              <Menu size={28} />
+              <Menu size={26} />
             </button>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-ks-blue-500 rounded-lg"
+              className="flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[#2563EB] rounded-lg flex items-center gap-3"
               onClick={(e) => {
                 if (currentPath === '/') {
                   e.preventDefault();
@@ -125,39 +125,50 @@ export default function Header({ logoUrl }: HeaderProps) {
               <img 
                 src={logoSrc}
                 alt="خوش‌صنعت پایدار" 
-                className="h-10 md:h-12 w-auto object-contain transition-all duration-300"
+                className="h-9 md:h-11 w-auto object-contain transition-all duration-300"
                 style={{ filter: logoFilter }}
                 onError={handleImageError}
               />
+              <span className={`hidden lg:block text-xs font-semibold tracking-wider transition-colors ${isHomePage && scrolled ? 'text-[#6C6C6E]' : 'text-gray-300'}`}>
+                KHOSHSANAT
+              </span>
             </Link>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-bold" aria-label="ناوبری اصلی">
+          <nav className="hidden md:flex items-center gap-7 text-sm font-medium" aria-label="ناوبری اصلی">
             {navLinks.map((link) => {
               const isActive = link.href === '/' ? currentPath === '/' : currentPath.startsWith(link.href);
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`relative group py-2 ${defaultTextColor} ${hoverTextColor} transition-colors focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50 rounded-lg px-2 ${isActive ? activeTextColor : ''}`}
+                  className={`relative py-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-[#2563EB]/50 rounded-md px-1.5 ${isActive ? activeTextColor : defaultTextColor} ${hoverTextColor}`}
                 >
                   {link.name}
-                  <span className={`absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-ks-blue-500 transition-all duration-300 ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
+                  <span className={`absolute bottom-0 left-0 right-0 h-0.5 bg-[#2563EB] transition-all duration-300 ${isActive ? 'w-full' : 'w-0 hover:w-full'}`}></span>
                 </Link>
               );
             })}
           </nav>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="hidden lg:block">
+              <Link
+                href="/contact"
+                className={`text-xs font-semibold px-3 py-2 rounded-lg transition-colors ${isHomePage && scrolled ? 'text-[#2D3644] hover:text-[#2563EB]' : 'text-gray-300 hover:text-white'}`}
+              >
+                تماس با ما
+              </Link>
+            </div>
             <div className="hidden md:block">
               <Link
                 href="/contact"
-                className={`${buttonClasses} px-6 py-2.5 rounded-xl text-sm font-bold transition-all border border-ks-blue-500/50 inline-block focus:outline-none focus:ring-2 focus:ring-ks-blue-500/50`}
+                className={`${buttonClasses} px-5 py-2.5 rounded-xl text-xs md:text-sm font-bold transition-all border border-[#2563EB]/40 inline-flex items-center gap-2 focus:outline-none focus:ring-2 focus:ring-[#2563EB]/50`}
               >
-                درخواست استعلام
+                <span>درخواست استعلام</span>
               </Link>
             </div>
-            <div className="md:hidden w-10"></div>
+            <div className="md:hidden w-8"></div>
           </div>
         </div>
       </header>

@@ -358,17 +358,17 @@ export default function ProductionPage() {
   return (
     <div dir="rtl" className="space-y-6 font-vazir pb-12">
       {/* هدر صفحه مهندسی تولید */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/80 border border-slate-800 p-6 rounded-3xl backdrop-blur-md">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 p-6 rounded-3xl shadow-sm backdrop-blur-md">
         <div>
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-2xl">
+            <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 rounded-2xl">
               <Factory size={24} />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-black text-slate-100">
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 dark:text-slate-100">
                 مهندسی تولید، فرمول ساخت (BOM) و سفارشات کارگاهی
               </h1>
-              <p className="text-xs md:text-sm text-slate-400 mt-1">
+              <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">
                 رهگیری کالای در جریان ساخت (WIP)، حواله مصرف متریال، تسهیم دستمزد و سربار و بهای تمام‌شده ساخت (COGM)
               </p>
             </div>
@@ -378,14 +378,14 @@ export default function ProductionPage() {
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setNewBomModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 rounded-xl text-xs font-bold transition shadow-sm"
           >
-            <Cog size={16} className="text-cyan-400" />
+            <Cog size={16} className="text-cyan-600 dark:text-cyan-400" />
             فرمول ساخت جدید (BOM)
           </button>
           <button
             onClick={() => setNewOrderModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition shadow-md"
           >
             <Plus size={16} />
             صدور دستور کار (WO)
@@ -396,111 +396,111 @@ export default function ProductionPage() {
       {/* شاخص‌های کلیدی عملکرد تولید (KPI Cards) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* ارزش کالای در جریان ساخت */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 p-5 rounded-2xl relative overflow-hidden shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">مانده کالای در جریان ساخت (WIP)</span>
-            <div className="p-2 bg-amber-500/10 text-amber-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">مانده کالای در جریان ساخت (WIP)</span>
+            <div className="p-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl">
               <Layers size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-amber-400">
+            <span className="text-2xl font-black text-amber-600 dark:text-amber-400">
               {totalWipMaterialCost.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">تومان</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1.5">تومان</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500 flex items-center gap-1">
-            <ShieldCheck size={12} className="text-emerald-400" />
+          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+            <ShieldCheck size={12} className="text-emerald-600 dark:text-emerald-400" />
             معین ۱۱۰۵۰۲ - متریال و سربار پای خط
           </div>
         </div>
 
         {/* دستور کارهای در حال ساخت */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 p-5 rounded-2xl relative overflow-hidden shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">دستور کارهای فعال پای خط</span>
-            <div className="p-2 bg-cyan-500/10 text-cyan-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">دستور کارهای فعال پای خط</span>
+            <div className="p-2 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 rounded-xl">
               <Hammer size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-cyan-400">
+            <span className="text-2xl font-black text-cyan-600 dark:text-cyan-400">
               {activeOrdersCount.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">سفارش در جریان</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1.5">سفارش در جریان</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
             برشکاری، مونتاژ، سوراخکاری و جوشکاری
           </div>
         </div>
 
         {/* تیراژ محصول نهایی تکمیل شده */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 p-5 rounded-2xl relative overflow-hidden shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">قطعات تکمیل شده (ماه جاری)</span>
-            <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">قطعات تکمیل شده (ماه جاری)</span>
+            <div className="p-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl">
               <PackageCheck size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-emerald-400">
+            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
               {totalCompletedUnits.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">واحد / قطعه</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1.5">واحد / قطعه</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
             انتقال یافته به انبار محصول نهایی (WH-FG-01)
           </div>
         </div>
 
         {/* سفارشات نهایی شده */}
-        <div className="bg-slate-900/60 border border-slate-800/80 p-5 rounded-2xl relative overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 p-5 rounded-2xl relative overflow-hidden shadow-sm">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-400">دستور کارهای خاتمه‌یافته</span>
-            <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl">
+            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">دستور کارهای خاتمه‌یافته</span>
+            <div className="p-2 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl">
               <CheckCircle2 size={18} />
             </div>
           </div>
           <div className="mt-4">
-            <span className="text-2xl font-black text-blue-400">
+            <span className="text-2xl font-black text-blue-600 dark:text-blue-400">
               {completedOrdersCount.toLocaleString('fa-IR')}
             </span>
-            <span className="text-xs text-slate-400 mr-1.5">سفارش خاتمه‌یافته</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400 mr-1.5">سفارش خاتمه‌یافته</span>
           </div>
-          <div className="mt-2 text-[11px] text-slate-500">
+          <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">
             با صدور سند قطعی بهای تمام‌شده (COGM)
           </div>
         </div>
       </div>
 
       {/* تب‌های مدیریت مهندسی تولید */}
-      <div className="flex items-center gap-2 border-b border-slate-800 overflow-x-auto pb-1">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 overflow-x-auto pb-1">
         <button
           onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'orders'
-              ? 'border-cyan-500 text-cyan-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-cyan-600 dark:border-cyan-400 text-cyan-600 dark:text-cyan-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <Hammer size={16} />
           دستور کارهای ساخت (Work Orders)
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
             {workOrders.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('boms')}
-          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap ${
+          className={`flex items-center gap-2 px-5 py-3 text-xs md:text-sm font-bold border-b-2 transition whitespace-nowrap cursor-pointer ${
             activeTab === 'boms'
-              ? 'border-cyan-500 text-cyan-400'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'border-cyan-600 dark:border-cyan-400 text-cyan-600 dark:text-cyan-400'
+              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
           }`}
         >
           <Cog size={16} />
           فرمول‌های ساخت و درخت محصول (BOM)
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-800 text-slate-300">
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
             {boms.length}
           </span>
         </button>
@@ -508,21 +508,21 @@ export default function ProductionPage() {
 
       {/* ۱. تب دستور کارهای ساخت */}
       {activeTab === 'orders' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between gap-4">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700/60 flex items-center justify-between gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+              <Search size={16} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder="جستجو با شماره دستور کار، نام مشتری یا نام قطعه..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 focus:outline-none focus:border-cyan-500"
+                className="w-full pl-4 pr-10 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-cyan-500"
               />
             </div>
             <button
               onClick={loadData}
-              className="p-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-xl transition"
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition"
               title="تازه‌سازی"
             >
               <RefreshCw size={16} />
@@ -530,8 +530,8 @@ export default function ProductionPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">شماره دستور کار</th>
                   <th className="py-3.5 px-4">مشتری</th>
@@ -542,33 +542,33 @@ export default function ProductionPage() {
                   <th className="py-3.5 px-4 text-center">عملیات کارگاهی</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {workOrders.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
                       هیچ دستور کاری در سیستم ثبت نشده است.
                     </td>
                   </tr>
                 ) : (
                   workOrders.map((wo) => (
-                    <tr key={wo.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-cyan-400">{wo.orderNumber}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">{wo.customer?.name}</td>
+                    <tr key={wo.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-cyan-600 dark:text-cyan-400">{wo.orderNumber}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{wo.customer?.name}</td>
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-100">{wo.bom?.product?.title}</div>
-                        <div className="text-[11px] text-slate-400">{wo.bom?.title}</div>
+                        <div className="font-bold text-slate-900 dark:text-slate-100">{wo.bom?.product?.title}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">{wo.bom?.title}</div>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-slate-100">
+                        <span className="font-bold text-slate-900 dark:text-slate-100">
                           {Number(wo.actualQuantity).toLocaleString('fa-IR')} / {Number(wo.targetQuantity).toLocaleString('fa-IR')}
                         </span>
                       </td>
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-amber-400">
+                        <span className="font-bold text-amber-600 dark:text-amber-400">
                           {Number(wo.actualMaterialCost).toLocaleString('fa-IR')} ت
                         </span>
                         {Number(wo.finalCostPerUnit) > 0 && (
-                          <div className="text-[10px] text-emerald-400">
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400">
                             واحد: {Number(wo.finalCostPerUnit).toLocaleString('fa-IR')} ت
                           </div>
                         )}
@@ -577,10 +577,10 @@ export default function ProductionPage() {
                         <span
                           className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
                             wo.status === 'COMPLETED'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                               : wo.status === 'IN_PRODUCTION'
-                              ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                              : 'bg-slate-800 text-slate-300'
+                              ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
                           }`}
                         >
                           {wo.status === 'COMPLETED'
@@ -599,7 +599,7 @@ export default function ProductionPage() {
                                   setActiveOrder(wo);
                                   setIssueModalOpen(true);
                                 }}
-                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-400 rounded-lg text-[11px] font-bold transition border border-slate-700"
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-cyan-600 dark:text-cyan-400 rounded-lg text-[11px] font-bold transition border border-slate-200 dark:border-slate-600"
                                 title="حواله مصرف متریال به پای کار"
                               >
                                 حواله متریال
@@ -609,7 +609,7 @@ export default function ProductionPage() {
                                   setActiveOrder(wo);
                                   setScrapModalOpen(true);
                                 }}
-                                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-lg text-[11px] font-bold transition border border-slate-700"
+                                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-amber-600 dark:text-amber-400 rounded-lg text-[11px] font-bold transition border border-slate-200 dark:border-slate-600"
                                 title="ثبت ضایعات و قراضه برشکاری"
                               >
                                 ضایعات
@@ -644,10 +644,10 @@ export default function ProductionPage() {
 
       {/* ۲. تب فرمول‌های ساخت (BOM) */}
       {activeTab === 'boms' && (
-        <div className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden shadow-lg">
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 rounded-3xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs text-slate-300">
-              <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+            <table className="w-full text-right text-xs text-slate-700 dark:text-slate-300">
+              <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                 <tr>
                   <th className="py-3.5 px-4">کد BOM</th>
                   <th className="py-3.5 px-4">عنوان فرمول ساخت</th>
@@ -657,35 +657,35 @@ export default function ProductionPage() {
                   <th className="py-3.5 px-4 text-center">ماشین حساب بهای استاندارد</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60 font-medium">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 font-medium">
                 {boms.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
                       هیچ فرمول ساختی ثبت نشده است.
                     </td>
                   </tr>
                 ) : (
                   boms.map((bom) => (
-                    <tr key={bom.id} className="hover:bg-slate-800/30 transition">
-                      <td className="py-3.5 px-4 font-mono font-bold text-cyan-400">{bom.code}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-100">{bom.title}</td>
-                      <td className="py-3.5 px-4 font-bold text-slate-200">{bom.product?.title}</td>
+                    <tr key={bom.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="py-3.5 px-4 font-mono font-bold text-cyan-600 dark:text-cyan-400">{bom.code}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900 dark:text-slate-100">{bom.title}</td>
+                      <td className="py-3.5 px-4 font-bold text-slate-700 dark:text-slate-300">{bom.product?.title}</td>
                       <td className="py-3.5 px-4">
                         <div className="flex flex-col gap-1">
                           {bom.items?.map((it) => (
-                            <span key={it.id} className="text-[11px] text-slate-300">
+                            <span key={it.id} className="text-[11px] text-slate-600 dark:text-slate-300">
                               {it.rawMaterial?.title}: {Number(it.quantity).toLocaleString('fa-IR')} واحد (پرت: {Number(it.wastePercent)}٪)
                             </span>
                           ))}
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 text-slate-400">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400">
                         {Number(bom.laborHours).toLocaleString('fa-IR')} ساعت
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => handleViewStandardCost(bom.id)}
-                          className="flex items-center gap-1.5 px-3 py-1 bg-cyan-600/10 text-cyan-400 border border-cyan-500/20 hover:bg-cyan-600/20 rounded-lg text-xs font-bold transition mx-auto"
+                          className="flex items-center gap-1.5 px-3 py-1 bg-cyan-600/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 hover:bg-cyan-600/20 rounded-lg text-xs font-bold transition mx-auto"
                         >
                           <Calculator size={14} />
                           برآورد بهای استاندارد
@@ -702,16 +702,16 @@ export default function ProductionPage() {
 
       {/* مدال تعریف فرمول ساخت جدید (BOM) */}
       {newBomModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Cog size={18} className="text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-3xl rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Cog size={18} className="text-cyan-600 dark:text-cyan-400" />
                 تعریف فرمول ساخت مهندسی و درخت محصول (BOM)
               </h2>
               <button
                 onClick={() => setNewBomModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -720,24 +720,24 @@ export default function ProductionPage() {
             <form onSubmit={handleCreateBOM} className="space-y-4 text-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">عنوان فرمول ساخت *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">عنوان فرمول ساخت *</label>
                   <input
                     type="text"
                     required
                     value={bomForm.title}
                     onChange={(e) => setBomForm({ ...bomForm, title: e.target.value })}
                     placeholder="مثال: ساخت ستون باکس تیرورق پروژه پتروشیمی"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">محصول ساخته‌شده خروجی *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">محصول ساخته‌شده خروجی *</label>
                   <select
                     required
                     value={bomForm.productId}
                     onChange={(e) => setBomForm({ ...bomForm, productId: Number(e.target.value) })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500"
                   >
                     <option value={0}>-- انتخاب محصول نهایی --</option>
                     {products.map((p) => (
@@ -749,35 +749,35 @@ export default function ProductionPage() {
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">ساعات کار استاندارد مستقیم</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">ساعات کار استاندارد مستقیم</label>
                   <input
                     type="number"
                     value={bomForm.laborHours}
                     onChange={(e) => setBomForm({ ...bomForm, laborHours: e.target.value })}
                     placeholder="ساعت به ازای یک واحد"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">نرخ سربار ساخت (تومان/ساعت)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">نرخ سربار ساخت (تومان/ساعت)</label>
                   <input
                     type="number"
                     value={bomForm.overheadRate}
                     onChange={(e) => setBomForm({ ...bomForm, overheadRate: e.target.value })}
                     placeholder="مثال: ۵۰۰۰۰"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
 
               {/* اقلام مواد اولیه مصرفی */}
               <div className="space-y-3 pt-2">
-                <label className="block text-slate-300 font-bold">مواد اولیه مصرفی در هر واحد محصول:</label>
+                <label className="block text-slate-700 dark:text-slate-300 font-bold">مواد اولیه مصرفی در هر واحد محصول:</label>
                 {bomForm.items.map((it, idx) => (
-                  <div key={idx} className="p-3 bg-slate-950 border border-slate-800 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">ماده اولیه (ورق/پروفیل/پیچ)</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">ماده اولیه (ورق/پروفیل/پیچ)</label>
                       <select
                         required
                         value={it.rawMaterialId}
@@ -786,7 +786,7 @@ export default function ProductionPage() {
                           updated[idx].rawMaterialId = Number(e.target.value);
                           setBomForm({ ...bomForm, items: updated });
                         }}
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       >
                         <option value={0}>-- انتخاب ماده اولیه --</option>
                         {products.map((p) => (
@@ -798,7 +798,7 @@ export default function ProductionPage() {
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">مقدار مصرف خالص (کیلو/عدد)</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">مقدار مصرف خالص (کیلو/عدد)</label>
                       <input
                         type="number"
                         required
@@ -809,12 +809,12 @@ export default function ProductionPage() {
                           setBomForm({ ...bomForm, items: updated });
                         }}
                         placeholder="مقدار"
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-slate-500 text-[10px] mb-1">درصد پرت و افت برشکاری (٪)</label>
+                      <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">درصد پرت و افت برشکاری (٪)</label>
                       <input
                         type="number"
                         value={it.wastePercent}
@@ -824,24 +824,24 @@ export default function ProductionPage() {
                           setBomForm({ ...bomForm, items: updated });
                         }}
                         placeholder="مثال: ۳.۵"
-                        className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                        className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                       />
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewBomModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition shadow-md"
                 >
                   ثبت فرمول ساخت
                 </button>
@@ -853,35 +853,35 @@ export default function ProductionPage() {
 
       {/* مدال استعلام بهای تمام‌شده استاندارد BOM */}
       {costModalOpen && selectedBomCost && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Calculator size={18} className="text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-2xl rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Calculator size={18} className="text-cyan-600 dark:text-cyan-400" />
                 برآورد بهای تمام‌شده استاندارد فرمول ساخت ({selectedBomCost.bomCode})
               </h2>
               <button
                 onClick={() => setCostModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             <div className="space-y-4 text-xs">
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2">
-                <div className="font-bold text-slate-200">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-2">
+                <div className="font-bold text-slate-900 dark:text-slate-200">
                   محصول: {selectedBomCost.productTitle} ({selectedBomCost.bomTitle})
                 </div>
-                <div className="text-slate-400 text-[11px]">
+                <div className="text-slate-500 dark:text-slate-400 text-[11px]">
                   مبنای محاسبات: آخرین نرخ میانگین موزون متحرک اقلام در انبار مواد اولیه (WH-RAW-01)
                 </div>
               </div>
 
               {/* ریز اقلام مواد */}
-              <div className="border border-slate-800 rounded-xl overflow-hidden">
-                <table className="w-full text-right text-slate-300 text-[11px]">
-                  <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+              <div className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                <table className="w-full text-right text-slate-700 dark:text-slate-300 text-[11px]">
+                  <thead className="bg-slate-50 dark:bg-slate-900/80 text-slate-600 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
                     <tr>
                       <th className="p-2">ماده اولیه</th>
                       <th className="p-2">مصرف ناخالص</th>
@@ -889,13 +889,13 @@ export default function ProductionPage() {
                       <th className="p-2">بهای کل استاندارد</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                     {selectedBomCost.items?.map((it: any, i: number) => (
                       <tr key={i}>
                         <td className="p-2">{it.rawMaterialTitle}</td>
                         <td className="p-2 font-mono">{Number(it.grossQuantity).toFixed(2)}</td>
                         <td className="p-2 font-mono">{Number(it.currentAverageUnitCost).toLocaleString('fa-IR')} ت</td>
-                        <td className="p-2 font-mono text-cyan-400 font-bold">{Number(it.totalStandardCost).toLocaleString('fa-IR')} ت</td>
+                        <td className="p-2 font-mono text-cyan-600 dark:text-cyan-400 font-bold">{Number(it.totalStandardCost).toLocaleString('fa-IR')} ت</td>
                       </tr>
                     ))}
                   </tbody>
@@ -903,9 +903,9 @@ export default function ProductionPage() {
               </div>
 
               {/* جمع کل بهای استاندارد */}
-              <div className="p-4 bg-cyan-500/10 border border-cyan-500/30 rounded-2xl flex items-center justify-between font-bold text-sm">
-                <span className="text-cyan-300">بهای تمام‌شده کل برآوردی هر واحد:</span>
-                <span className="text-cyan-400 font-mono text-base">
+              <div className="p-4 bg-cyan-50 dark:bg-cyan-950/20 border border-cyan-200 dark:border-cyan-500/30 rounded-2xl flex items-center justify-between font-bold text-sm">
+                <span className="text-cyan-800 dark:text-cyan-300">بهای تمام‌شده کل برآوردی هر واحد:</span>
+                <span className="text-cyan-600 dark:text-cyan-400 font-mono text-base font-black">
                   {Number(selectedBomCost.totalStandardCost).toLocaleString('fa-IR')} تومان
                 </span>
               </div>
@@ -914,7 +914,7 @@ export default function ProductionPage() {
             <div className="flex justify-end pt-2">
               <button
                 onClick={() => setCostModalOpen(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                className="px-5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
               >
                 بستن
               </button>
@@ -925,16 +925,16 @@ export default function ProductionPage() {
 
       {/* مدال صدور دستور کار جدید (Work Order) */}
       {newOrderModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Plus size={18} className="text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Plus size={18} className="text-cyan-600 dark:text-cyan-400" />
                 صدور دستور کار ساخت کارگاهی (Work Order)
               </h2>
               <button
                 onClick={() => setNewOrderModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -942,12 +942,12 @@ export default function ProductionPage() {
 
             <form onSubmit={handleCreateOrder} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-bold">مشتری سفارش‌دهنده *</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">مشتری سفارش‌دهنده *</label>
                 <select
                   required
                   value={orderForm.customerId}
                   onChange={(e) => setOrderForm({ ...orderForm, customerId: Number(e.target.value) })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500"
                 >
                   <option value={0}>-- انتخاب مشتری --</option>
                   {customers.map((c) => (
@@ -959,12 +959,12 @@ export default function ProductionPage() {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-bold">فرمول ساخت محصول (BOM) *</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">فرمول ساخت محصول (BOM) *</label>
                 <select
                   required
                   value={orderForm.bomId}
                   onChange={(e) => setOrderForm({ ...orderForm, bomId: e.target.value })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-cyan-500"
                 >
                   <option value="">-- انتخاب فرمول ساخت --</option>
                   {boms.map((b) => (
@@ -977,23 +977,23 @@ export default function ProductionPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">تیراژ هدف ساخت *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">تیراژ هدف ساخت *</label>
                   <input
                     type="number"
                     required
                     value={orderForm.targetQuantity}
                     onChange={(e) => setOrderForm({ ...orderForm, targetQuantity: e.target.value })}
                     placeholder="تعداد یا وزن به تن"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">اولویت ساخت</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">اولویت ساخت</label>
                   <select
                     value={orderForm.priority}
                     onChange={(e) => setOrderForm({ ...orderForm, priority: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   >
                     <option value="NORMAL">عادی</option>
                     <option value="HIGH">فوری</option>
@@ -1002,17 +1002,17 @@ export default function ProductionPage() {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setNewOrderModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition shadow-md"
                 >
                   صدور دستور کار (WO)
                 </button>
@@ -1024,30 +1024,30 @@ export default function ProductionPage() {
 
       {/* مدال حواله مصرف مواد اولیه به خط تولید */}
       {issueModalOpen && activeOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Hammer size={18} className="text-cyan-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-xl rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Hammer size={18} className="text-cyan-600 dark:text-cyan-400" />
                 حواله مصرف متریال به پای کار ({activeOrder.orderNumber})
               </h2>
               <button
                 onClick={() => setIssueModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleIssueMaterials} className="space-y-4 text-xs">
-              <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-400 text-[11px]">
+              <div className="p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-400 text-[11px]">
                 ثبت خروج از انبار مواد اولیه (WH-RAW-01) به انبار در جریان ساخت (WH-WIP-01) و صدور اتوماتیک سند حسابداری دوبل.
               </div>
 
               {issueForm.items.map((it, idx) => (
-                <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-950 border border-slate-800 rounded-xl">
+                <div key={idx} className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-xl">
                   <div>
-                    <label className="block text-slate-500 text-[10px] mb-1">ماده اولیه مصرفی</label>
+                    <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">ماده اولیه مصرفی</label>
                     <select
                       required
                       value={it.rawMaterialId}
@@ -1056,7 +1056,7 @@ export default function ProductionPage() {
                         updated[idx].rawMaterialId = Number(e.target.value);
                         setIssueForm({ ...issueForm, items: updated });
                       }}
-                      className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                     >
                       <option value={0}>-- انتخاب کالا --</option>
                       {products.map((p) => (
@@ -1068,7 +1068,7 @@ export default function ProductionPage() {
                   </div>
 
                   <div>
-                    <label className="block text-slate-500 text-[10px] mb-1">مقدار مصرفی (کیلو/عدد)</label>
+                    <label className="block text-slate-500 dark:text-slate-400 text-[10px] mb-1">مقدار مصرفی (کیلو/عدد)</label>
                     <input
                       type="number"
                       required
@@ -1079,23 +1079,23 @@ export default function ProductionPage() {
                         setIssueForm({ ...issueForm, items: updated });
                       }}
                       placeholder="مقدار مصرفی"
-                      className="w-full p-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-100"
+                      className="w-full p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100"
                     />
                   </div>
                 </div>
               ))}
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setIssueModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+                  className="px-6 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition shadow-md"
                 >
                   صدور حواله و سند دوبل WIP
                 </button>
@@ -1107,16 +1107,16 @@ export default function ProductionPage() {
 
       {/* مدال ثبت ضایعات و قراضه برشکاری */}
       {scrapModalOpen && activeOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Scissors size={18} className="text-amber-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Scissors size={18} className="text-amber-600 dark:text-amber-400" />
                 ثبت قراضه و ضایعات برشکاری ({activeOrder.orderNumber})
               </h2>
               <button
                 onClick={() => setScrapModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
@@ -1124,12 +1124,12 @@ export default function ProductionPage() {
 
             <form onSubmit={handleRecordScrap} className="space-y-4 text-xs">
               <div>
-                <label className="block text-slate-400 mb-1 font-bold">کالای ضایعاتی / قراضه *</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">کالای ضایعاتی / قراضه *</label>
                 <select
                   required
                   value={scrapForm.scrapProductId}
                   onChange={(e) => setScrapForm({ ...scrapForm, scrapProductId: Number(e.target.value) })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                 >
                   <option value={0}>-- انتخاب کالای ضایعاتی --</option>
                   {products.map((p) => (
@@ -1142,40 +1142,40 @@ export default function ProductionPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">وزن قراضه (کیلوگرم) *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">وزن قراضه (کیلوگرم) *</label>
                   <input
                     type="number"
                     required
                     value={scrapForm.scrapQuantity}
                     onChange={(e) => setScrapForm({ ...scrapForm, scrapQuantity: e.target.value })}
                     placeholder="وزن قراضه"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1 font-bold">نرخ بازیافت قراضه (تومان/کیلو) *</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">نرخ بازیافت قراضه (تومان/کیلو) *</label>
                   <input
                     type="number"
                     required
                     value={scrapForm.scrapUnitRecoveryPrice}
                     onChange={(e) => setScrapForm({ ...scrapForm, scrapUnitRecoveryPrice: e.target.value })}
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 font-mono font-bold"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setScrapModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-slate-950 font-black rounded-xl text-xs transition shadow-md"
+                  className="px-6 py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-xl text-xs transition shadow-md"
                 >
                   انتقال به انبار ضایعات و کسر از بهای WIP
                 </button>
@@ -1187,66 +1187,66 @@ export default function ProductionPage() {
 
       {/* مدال تکمیل سفارش و رسید انبار محصول نهایی */}
       {completeModalOpen && activeOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <PackageCheck size={18} className="text-emerald-400" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <PackageCheck size={18} className="text-emerald-600 dark:text-emerald-400" />
                 تکمیل قطعی و رسید به انبار محصولات ({activeOrder.orderNumber})
               </h2>
               <button
                 onClick={() => setCompleteModalOpen(false)}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
             <form onSubmit={handleCompleteOrder} className="space-y-4 text-xs">
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-300 text-[11px]">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-emerald-800 dark:text-emerald-300 text-[11px]">
                 محصول ساخته‌شده: {activeOrder.bom?.product?.title} | بهای متریال فعلی: {Number(activeOrder.actualMaterialCost).toLocaleString('fa-IR')} ت
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-bold">تعداد / وزن نهایی تکمیل شده *</label>
+                <label className="block text-slate-700 dark:text-slate-300 mb-1 font-bold">تعداد / وزن نهایی تکمیل شده *</label>
                 <input
                   type="number"
                   required
                   value={completeForm.completedQuantity}
                   onChange={(e) => setCompleteForm({ ...completeForm, completedQuantity: e.target.value })}
-                  className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold"
+                  className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 font-mono font-bold"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-slate-400 mb-1">دستمزد مستقیم تسهیم شده (تومان)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">دستمزد مستقیم تسهیم شده (تومان)</label>
                   <input
                     type="number"
                     value={completeForm.directLaborCost}
                     onChange={(e) => setCompleteForm({ ...completeForm, directLaborCost: e.target.value })}
                     placeholder="۰"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-400 mb-1">سربار ساخت تسهیم شده (تومان)</label>
+                  <label className="block text-slate-700 dark:text-slate-300 mb-1 font-medium">سربار ساخت تسهیم شده (تومان)</label>
                   <input
                     type="number"
                     value={completeForm.allocatedOverheadCost}
                     onChange={(e) => setCompleteForm({ ...completeForm, allocatedOverheadCost: e.target.value })}
                     placeholder="۰"
-                    className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-slate-100"
+                    className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   type="button"
                   onClick={() => setCompleteModalOpen(false)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold transition"
                 >
                   انصراف
                 </button>

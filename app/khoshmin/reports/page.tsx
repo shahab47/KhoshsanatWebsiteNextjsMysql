@@ -34,9 +34,6 @@ export default function ReportsPage() {
   const [incomeData, setIncomeData] = useState<any>(null);
   const [balanceData, setBalanceData] = useState<any>(null);
 
-  // مدال بستن سال مالی
-  const [closeYearModalOpen, setCloseYearModalOpen] = useState(false);
-
   // بارگذاری داده‌ها بر اساس تب فعال
   useEffect(() => {
     loadTabContent(activeTab);
@@ -143,16 +140,18 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto" dir="rtl">
-      {/* سربرگ داشبورد */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/80 p-6 rounded-2xl border border-slate-800 shadow-xl backdrop-blur-md">
+    <div className="space-y-6 pb-12 transition-colors duration-200" dir="rtl">
+      {/* سربرگ داشبورد گزارش‌های مالی */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition-colors">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+          <div className="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-xl border border-blue-100 dark:border-blue-800/50">
             <FileSpreadsheet size={28} />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-white">دفاتر مالی، سامانه مودیان و صورت‌های مالی</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100">
+              دفاتر مالی، سامانه مودیان و صورت‌های مالی
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
               دفتر روزنامه، دفتر کل و معین، تراز آزمایشی متوازن، ترازنامه، صورت سود و زیان و کارپوشه مودیان
             </p>
           </div>
@@ -160,7 +159,7 @@ export default function ReportsPage() {
 
         <button
           onClick={() => loadTabContent(activeTab)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-bold rounded-xl border border-slate-700 transition cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-700 dark:text-slate-200 text-xs sm:text-sm font-bold rounded-xl border border-slate-200 dark:border-slate-600 transition cursor-pointer shadow-sm"
         >
           <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           به‌روزرسانی گزارش
@@ -168,13 +167,13 @@ export default function ReportsPage() {
       </div>
 
       {/* ناوبری تب‌های مالی */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-slate-800 pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2">
         <button
           onClick={() => setActiveTab('modyan')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer ${
             activeTab === 'modyan'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Send size={16} />
@@ -182,10 +181,10 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('journal')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer ${
             activeTab === 'journal'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <BookOpen size={16} />
@@ -193,10 +192,10 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('ledger')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer ${
             activeTab === 'ledger'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <FileText size={16} />
@@ -204,10 +203,10 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('trial')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer ${
             activeTab === 'trial'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <Scale size={16} />
@@ -215,10 +214,10 @@ export default function ReportsPage() {
         </button>
         <button
           onClick={() => setActiveTab('statements')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm transition cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition cursor-pointer ${
             activeTab === 'statements'
-              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-700 shadow-sm'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
         >
           <TrendingUp size={16} />
@@ -229,19 +228,19 @@ export default function ReportsPage() {
       {/* تب ۱: سامانه مودیان */}
       {activeTab === 'modyan' && (
         <div className="space-y-4">
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-slate-300">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col md:flex-row justify-between items-center gap-4 shadow-sm">
+            <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-medium">
               ارسال صورتحساب‌های الکترونیکی کارخانه به سامانه مودیان مطابق الگوی نوع اول و دوم کالا و خدمات
             </div>
-            <div className="text-xs text-slate-400">
-              حافظه مالیاتی کارخانه: <span className="font-mono font-bold text-emerald-400">A12345</span>
+            <div className="text-xs text-slate-500 dark:text-slate-400">
+              شناسه حافظه مالیاتی کارخانه: <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">A12345</span>
             </div>
           </div>
 
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
-                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-3.5">شماره فاکتور</th>
                     <th className="p-3.5">خریدار / مشتری</th>
@@ -252,30 +251,38 @@ export default function ReportsPage() {
                     <th className="p-3.5 text-center">عملیات</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {taxInvoices.map((inv) => (
-                    <tr key={inv.id} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3.5 font-bold font-mono text-slate-100">{inv.invoiceNo}</td>
-                      <td className="p-3.5 font-bold text-slate-200">{inv.customer?.name}</td>
-                      <td className="p-3.5 font-mono text-slate-400">{inv.customer?.nationalId || 'فاقد کد ملی'}</td>
-                      <td className="p-3.5 font-bold text-emerald-400">{formatNum(inv.finalAmount)} تومان</td>
-                      <td className="p-3.5 font-mono text-xs text-slate-300" dir="ltr">
-                        {inv.taxId || 'تولید نشده'}
+                    <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="p-3.5 font-bold font-mono text-slate-900 dark:text-slate-100">{inv.invoiceNo}</td>
+                      <td className="p-3.5 font-bold text-slate-800 dark:text-slate-200">{inv.customer?.name}</td>
+                      <td className="p-3.5 font-mono text-slate-600 dark:text-slate-400">{inv.customer?.nationalId || 'فاقد کد ملی'}</td>
+                      <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-slate-100">
+                        {formatNum(inv.finalAmount)} تومان
+                      </td>
+                      <td className="p-3.5 font-mono text-xs text-blue-700 dark:text-blue-400">
+                        {inv.taxId ? (
+                          <span className="bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                            {inv.taxId}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 dark:text-slate-500">تولید نشده</span>
+                        )}
                       </td>
                       <td className="p-3.5 text-center">
                         <span
-                          className={`text-xs px-2.5 py-0.5 rounded-full font-bold ${
+                          className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold ${
                             inv.taxStatus === 'SUCCESS'
-                              ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                               : inv.taxStatus === 'FAILED'
-                              ? 'bg-red-500/10 text-red-400 border border-red-500/20'
+                              ? 'bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
                               : inv.taxStatus === 'QUEUED'
-                              ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                              : 'bg-slate-800 text-slate-400'
+                              ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                              : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600'
                           }`}
                         >
                           {inv.taxStatus === 'SUCCESS'
-                            ? 'ارسال موفق'
+                            ? 'پذیرفته شده در کارپوشه'
                             : inv.taxStatus === 'FAILED'
                             ? 'خطا در ارسال'
                             : inv.taxStatus === 'QUEUED'
@@ -288,19 +295,19 @@ export default function ReportsPage() {
                           {!inv.taxId ? (
                             <button
                               onClick={() => handleGenerateTaxId(inv.id)}
-                              className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-bold transition cursor-pointer"
+                              className="px-2.5 py-1 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-650 text-slate-800 dark:text-slate-200 rounded-lg text-xs font-bold transition cursor-pointer border border-slate-300 dark:border-slate-600"
                             >
                               تولید TaxID
                             </button>
                           ) : inv.taxStatus !== 'SUCCESS' ? (
                             <button
                               onClick={() => handleSendToModyan(inv.id, inv.invoiceNo)}
-                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition shadow cursor-pointer"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer"
                             >
                               ارسال به مودیان
                             </button>
                           ) : (
-                            <span className="text-emerald-400 font-bold text-xs flex items-center gap-1">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center gap-1">
                               <CheckCircle2 size={14} /> تایید شده
                             </span>
                           )}
@@ -308,6 +315,13 @@ export default function ReportsPage() {
                       </td>
                     </tr>
                   ))}
+                  {taxInvoices.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="text-center py-10 text-slate-400 dark:text-slate-500">
+                        هیچ فاکتور فروشی یافت نشد.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -320,29 +334,29 @@ export default function ReportsPage() {
         <div className="space-y-4">
           {journalData && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-sm">
-                <span className="text-slate-400 block text-xs">تعداد اسناد قطعی:</span>
-                <span className="text-xl font-bold text-white mt-1 block">{formatNum(journalData.total)} سند</span>
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm shadow-sm">
+                <span className="text-slate-500 dark:text-slate-400 block text-xs font-medium">تعداد اسناد قطعی:</span>
+                <span className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1 block">{formatNum(journalData.total)} سند</span>
               </div>
-              <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-sm">
-                <span className="text-slate-400 block text-xs">گردش کل بدهکار:</span>
-                <span className="text-xl font-bold text-emerald-400 mt-1 block">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm shadow-sm">
+                <span className="text-slate-500 dark:text-slate-400 block text-xs font-medium">گردش کل بدهکار:</span>
+                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
                   {formatNum(journalData.summary?.totalDebit)} ریال
                 </span>
               </div>
-              <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-sm">
-                <span className="text-slate-400 block text-xs">وضعیت تراز دفتر:</span>
-                <span className="text-base font-bold text-emerald-400 mt-1 flex items-center gap-1.5">
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-sm shadow-sm">
+                <span className="text-slate-500 dark:text-slate-400 block text-xs font-medium">وضعیت تراز دفتر:</span>
+                <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1.5">
                   <CheckCircle2 size={16} /> تراز ۱۰۰٪ قطعی (بدهکار = بستانکار)
                 </span>
               </div>
             </div>
           )}
 
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
-                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-3.5">شماره سند</th>
                     <th className="p-3.5">تاریخ ثبت</th>
@@ -353,30 +367,37 @@ export default function ReportsPage() {
                     <th className="p-3.5">بستانکار (ریال)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {journalData?.vouchers?.map((voucher: any) =>
                     voucher.entries.map((entry: any, idx: number) => (
-                      <tr key={entry.id} className="hover:bg-slate-800/40 transition">
-                        <td className="p-3 font-mono font-bold text-slate-300">
+                      <tr key={entry.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                        <td className="p-3 font-mono font-bold text-slate-700 dark:text-slate-300">
                           {idx === 0 ? voucher.voucherNo : ''}
                         </td>
-                        <td className="p-3 text-slate-400">
+                        <td className="p-3 text-slate-500 dark:text-slate-400">
                           {idx === 0 ? new Date(voucher.voucherDate).toLocaleDateString('fa-IR') : ''}
                         </td>
-                        <td className="p-3 text-slate-400">{idx === 0 ? voucher.type : ''}</td>
-                        <td className="p-3 font-mono text-emerald-400">{entry.account?.code}</td>
-                        <td className="p-3 text-slate-200">
-                          <span className="font-bold text-slate-100">{entry.account?.name}</span>
-                          <span className="text-slate-500 block text-xs mt-0.5">{entry.description}</span>
+                        <td className="p-3 text-slate-600 dark:text-slate-400">{idx === 0 ? voucher.type : ''}</td>
+                        <td className="p-3 font-mono font-bold text-blue-700 dark:text-blue-400">{entry.account?.code}</td>
+                        <td className="p-3 text-slate-800 dark:text-slate-200">
+                          <span className="font-bold text-slate-900 dark:text-slate-100">{entry.account?.name}</span>
+                          <span className="text-slate-500 dark:text-slate-400 block text-xs mt-0.5">{entry.description}</span>
                         </td>
-                        <td className="p-3 font-bold text-slate-200">
+                        <td className="p-3 font-mono font-bold text-slate-800 dark:text-slate-200">
                           {Number(entry.debit) > 0 ? formatNum(entry.debit) : '-'}
                         </td>
-                        <td className="p-3 font-bold text-slate-200">
+                        <td className="p-3 font-mono font-bold text-slate-800 dark:text-slate-200">
                           {Number(entry.credit) > 0 ? formatNum(entry.credit) : '-'}
                         </td>
                       </tr>
                     ))
+                  )}
+                  {!journalData?.vouchers?.length && (
+                    <tr>
+                      <td colSpan={7} className="text-center py-10 text-slate-400 dark:text-slate-500">
+                        سندی در دفتر روزنامه ثبت نشده است.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -388,13 +409,13 @@ export default function ReportsPage() {
       {/* تب ۳: دفتر معین و کل */}
       {activeTab === 'ledger' && (
         <div className="space-y-4">
-          <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-3 w-full md:w-auto">
-              <label className="text-xs text-slate-400 font-bold whitespace-nowrap">انتخاب حساب معین:</label>
+              <label className="text-xs text-slate-600 dark:text-slate-400 font-bold whitespace-nowrap">انتخاب حساب معین:</label>
               <select
                 value={selectedAccountCode}
                 onChange={(e) => handleAccountChange(e.target.value)}
-                className="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 w-full md:w-80"
+                className="px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 w-full md:w-80 focus:ring-2 focus:ring-blue-500"
               >
                 <option value="110101">۱۱۰۱۰۱ - موجودی نقد و بانک‌ها</option>
                 <option value="110201">۱۱۰۲۰۱ - صندوق و تنخواه‌گردان کارخانه</option>
@@ -419,20 +440,20 @@ export default function ReportsPage() {
             {ledgerData && (
               <div className="flex items-center gap-6 text-xs">
                 <div>
-                  <span className="text-slate-400">مانده پایان دوره: </span>
-                  <span className="font-bold text-sm text-emerald-400">
+                  <span className="text-slate-500 dark:text-slate-400">مانده پایان دوره: </span>
+                  <span className="font-bold text-sm text-emerald-600 dark:text-emerald-400 font-mono">
                     {formatNum(ledgerData.summary?.endingBalance)} ریال
                   </span>
-                  <span className="mr-1 text-slate-300">({ledgerData.summary?.endingDiagnosis})</span>
+                  <span className="mr-1 text-slate-600 dark:text-slate-300 font-bold">({ledgerData.summary?.endingDiagnosis})</span>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
-                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-3.5">سند</th>
                     <th className="p-3.5">تاریخ</th>
@@ -443,26 +464,35 @@ export default function ReportsPage() {
                     <th className="p-3.5 text-center">تشخیص</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {ledgerData?.rows?.map((row: any) => (
-                    <tr key={row.id} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3 font-mono font-bold text-slate-300">{row.voucherNo}</td>
-                      <td className="p-3 text-slate-400">{new Date(row.voucherDate).toLocaleDateString('fa-IR')}</td>
-                      <td className="p-3 text-slate-200">{row.entryDescription || row.voucherDescription}</td>
-                      <td className="p-3 font-bold text-slate-200">
+                    <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="p-3 font-mono font-bold text-slate-700 dark:text-slate-300">{row.voucherNo}</td>
+                      <td className="p-3 text-slate-500 dark:text-slate-400">{new Date(row.voucherDate).toLocaleDateString('fa-IR')}</td>
+                      <td className="p-3 text-slate-800 dark:text-slate-200">{row.description}</td>
+                      <td className="p-3 font-mono font-bold text-slate-800 dark:text-slate-200">
                         {Number(row.debit) > 0 ? formatNum(row.debit) : '-'}
                       </td>
-                      <td className="p-3 font-bold text-slate-200">
+                      <td className="p-3 font-mono font-bold text-slate-800 dark:text-slate-200">
                         {Number(row.credit) > 0 ? formatNum(row.credit) : '-'}
                       </td>
-                      <td className="p-3 font-bold text-emerald-400">{formatNum(row.runningBalance)}</td>
+                      <td className="p-3 font-mono font-bold text-blue-700 dark:text-blue-400">
+                        {formatNum(row.runningBalance)}
+                      </td>
                       <td className="p-3 text-center">
-                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-slate-800 text-slate-300">
+                        <span className="font-bold text-[11px] text-slate-600 dark:text-slate-300">
                           {row.diagnosis}
                         </span>
                       </td>
                     </tr>
                   ))}
+                  {!ledgerData?.rows?.length && (
+                    <tr>
+                      <td colSpan={7} className="text-center py-10 text-slate-400 dark:text-slate-500">
+                        گردشی برای این حساب در بازه زمانی ثبت نشده است.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -470,47 +500,55 @@ export default function ReportsPage() {
         </div>
       )}
 
-      {/* تب ۴: تراز آزمایشی متوازن */}
+      {/* تب ۴: تراز آزمایشی */}
       {activeTab === 'trial' && (
         <div className="space-y-4">
-          <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
-            <div className="flex items-center gap-3 text-xs">
-              <span className="text-slate-400 font-bold">سطح نمایش تراز:</span>
-              <button
-                onClick={() => {
-                  setTrialLevel(3);
-                  loadTabContent('trial');
-                }}
-                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                  trialLevel === 3 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                }`}
-              >
-                سطح معین (جزئیات کامل)
-              </button>
+          <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-600 dark:text-slate-400 font-bold">سطح حساب:</span>
               <button
                 onClick={() => {
                   setTrialLevel(2);
-                  loadTabContent('trial');
+                  fetch(`/api/khoshmin/reports/trial-balance?level=2`)
+                    .then((res) => res.json())
+                    .then((d) => setTrialData(d));
                 }}
-                className={`px-3 py-1.5 rounded-lg font-bold transition cursor-pointer ${
-                  trialLevel === 2 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  trialLevel === 2
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
                 }`}
               >
-                سطح کل (خلاصه مدیریتی)
+                سطح کل (Level 2)
+              </button>
+              <button
+                onClick={() => {
+                  setTrialLevel(3);
+                  fetch(`/api/khoshmin/reports/trial-balance?level=3`)
+                    .then((res) => res.json())
+                    .then((d) => setTrialData(d));
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                  trialLevel === 3
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
+                }`}
+              >
+                سطح معین (Level 3)
               </button>
             </div>
 
             {trialData?.totals && (
-              <div className="text-xs flex items-center gap-2 text-emerald-400 font-bold">
+              <div className="text-xs flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
                 <CheckCircle2 size={16} /> تراز آزمایشی در موازنه کامل است
               </div>
             )}
           </div>
 
-          <div className="bg-slate-900/60 rounded-2xl border border-slate-800 overflow-hidden">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-right text-xs">
-                <thead className="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                <thead className="bg-slate-50 dark:bg-slate-850 text-slate-700 dark:text-slate-300 font-bold border-b border-slate-200 dark:border-slate-700">
                   <tr>
                     <th className="p-3.5">کد حساب</th>
                     <th className="p-3.5">عنوان حساب</th>
@@ -520,30 +558,37 @@ export default function ReportsPage() {
                     <th className="p-3.5">مانده بستانکار</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-850">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/60">
                   {trialData?.rows?.map((row: any) => (
-                    <tr key={row.code} className="hover:bg-slate-800/40 transition">
-                      <td className="p-3 font-mono font-bold text-emerald-400">{row.code}</td>
-                      <td className="p-3 font-bold text-slate-100">{row.name}</td>
-                      <td className="p-3 text-slate-200">{formatNum(row.debitTurnover)}</td>
-                      <td className="p-3 text-slate-200">{formatNum(row.creditTurnover)}</td>
-                      <td className="p-3 font-bold text-emerald-400">
+                    <tr key={row.code} className="hover:bg-slate-50 dark:hover:bg-slate-750/50 transition">
+                      <td className="p-3 font-mono font-bold text-blue-700 dark:text-blue-400">{row.code}</td>
+                      <td className="p-3 font-bold text-slate-900 dark:text-slate-100">{row.name}</td>
+                      <td className="p-3 font-mono text-slate-700 dark:text-slate-300">{formatNum(row.debitTurnover)}</td>
+                      <td className="p-3 font-mono text-slate-700 dark:text-slate-300">{formatNum(row.creditTurnover)}</td>
+                      <td className="p-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
                         {Number(row.debitBalance) > 0 ? formatNum(row.debitBalance) : '-'}
                       </td>
-                      <td className="p-3 font-bold text-amber-400">
+                      <td className="p-3 font-mono font-bold text-amber-600 dark:text-amber-400">
                         {Number(row.creditBalance) > 0 ? formatNum(row.creditBalance) : '-'}
                       </td>
                     </tr>
                   ))}
                   {trialData?.totals && (
-                    <tr className="bg-slate-950 font-black text-slate-100 border-t-2 border-emerald-500/40">
+                    <tr className="bg-slate-100 dark:bg-slate-900 font-black text-slate-900 dark:text-slate-100 border-t-2 border-slate-300 dark:border-slate-600">
                       <td className="p-3.5" colSpan={2}>
                         مجموع ستون‌های تراز آزمایشی (موازنه دوبل)
                       </td>
-                      <td className="p-3.5 text-emerald-400">{formatNum(trialData.totals.sumDebitTurnover)}</td>
-                      <td className="p-3.5 text-emerald-400">{formatNum(trialData.totals.sumCreditTurnover)}</td>
-                      <td className="p-3.5 text-emerald-400">{formatNum(trialData.totals.sumDebitBalance)}</td>
-                      <td className="p-3.5 text-amber-400">{formatNum(trialData.totals.sumCreditBalance)}</td>
+                      <td className="p-3.5 font-mono text-emerald-700 dark:text-emerald-400">{formatNum(trialData.totals.sumDebitTurnover)}</td>
+                      <td className="p-3.5 font-mono text-emerald-700 dark:text-emerald-400">{formatNum(trialData.totals.sumCreditTurnover)}</td>
+                      <td className="p-3.5 font-mono text-emerald-700 dark:text-emerald-400">{formatNum(trialData.totals.sumDebitBalance)}</td>
+                      <td className="p-3.5 font-mono text-amber-700 dark:text-amber-400">{formatNum(trialData.totals.sumCreditBalance)}</td>
+                    </tr>
+                  )}
+                  {!trialData?.rows?.length && (
+                    <tr>
+                      <td colSpan={6} className="text-center py-10 text-slate-400 dark:text-slate-500">
+                        اطلاعات تراز آزمایشی یافت نشد.
+                      </td>
                     </tr>
                   )}
                 </tbody>
@@ -558,37 +603,37 @@ export default function ReportsPage() {
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* صورت سود و زیان */}
-            <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-6 space-y-4">
-              <h2 className="text-base font-bold text-white flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4 shadow-sm">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
                 <span>صورت سود و زیان (Income Statement)</span>
-                <span className="text-xs text-slate-400">دوره مالی جاری</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-normal">دوره مالی جاری</span>
               </h2>
 
               {incomeData && (
                 <div className="space-y-3 text-xs">
-                  <div className="flex justify-between py-1.5 border-b border-slate-850">
-                    <span className="text-slate-400">درآمد حاصل از فروش قطعات و سازه‌ها:</span>
-                    <span className="font-bold text-slate-100">{formatNum(incomeData.revenues?.total)} ریال</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">درآمد حاصل از فروش قطعات و سازه‌ها:</span>
+                    <span className="font-bold font-mono text-slate-900 dark:text-slate-100">{formatNum(incomeData.revenues?.total)} ریال</span>
                   </div>
 
-                  <div className="flex justify-between py-1.5 border-b border-slate-850">
-                    <span className="text-slate-400">کسر می‌شود: بهای تمام‌شده کالای فروش‌رفته (COGS):</span>
-                    <span className="font-bold text-red-400">({formatNum(incomeData.cogs?.total)}) ریال</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">کسر می‌شود: بهای تمام‌شده کالای فروش‌رفته (COGS):</span>
+                    <span className="font-bold font-mono text-red-600 dark:text-red-400">({formatNum(incomeData.cogs?.total)}) ریال</span>
                   </div>
 
-                  <div className="flex justify-between py-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <span className="font-bold text-slate-200">سود ناخالص عملیاتی (Gross Profit):</span>
-                    <span className="font-black text-emerald-400">{formatNum(incomeData.grossProfit)} ریال</span>
+                  <div className="flex justify-between py-2 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">سود ناخالص عملیاتی (Gross Profit):</span>
+                    <span className="font-black font-mono text-emerald-600 dark:text-emerald-400">{formatNum(incomeData.grossProfit)} ریال</span>
                   </div>
 
-                  <div className="flex justify-between py-1.5 border-b border-slate-850">
-                    <span className="text-slate-400">کسر می‌شود: هزینه‌های عمومی، اداری و دستمزد:</span>
-                    <span className="font-bold text-red-400">({formatNum(incomeData.expenses?.total)}) ریال</span>
+                  <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-700">
+                    <span className="text-slate-600 dark:text-slate-400">کسر می‌شود: هزینه‌های عمومی، اداری و دستمزد:</span>
+                    <span className="font-bold font-mono text-red-600 dark:text-red-400">({formatNum(incomeData.expenses?.total)}) ریال</span>
                   </div>
 
-                  <div className="flex justify-between py-3 bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/20 text-sm">
-                    <span className="font-black text-emerald-300">سود (زیان) خالص عملیاتی:</span>
-                    <span className="font-black text-emerald-400">
+                  <div className="flex justify-between py-3 bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800 text-sm">
+                    <span className="font-black text-emerald-800 dark:text-emerald-300">سود (زیان) خالص عملیاتی:</span>
+                    <span className="font-black font-mono text-emerald-700 dark:text-emerald-400">
                       {formatNum(incomeData.netOperatingIncome)} ریال
                     </span>
                   </div>
@@ -597,48 +642,48 @@ export default function ReportsPage() {
             </div>
 
             {/* ترازنامه */}
-            <div className="bg-slate-900/60 rounded-2xl border border-slate-800 p-6 space-y-4">
-              <h2 className="text-base font-bold text-white flex items-center justify-between pb-3 border-b border-slate-800">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4 shadow-sm">
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
                 <span>ترازنامه (Balance Sheet)</span>
-                <span className="text-xs text-emerald-400 font-bold flex items-center gap-1">
+                <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                   <CheckCircle2 size={14} /> دارایی‌ها = بدهی‌ها + سرمایه
                 </span>
               </h2>
 
               {balanceData && (
                 <div className="space-y-3 text-xs">
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div className="font-bold text-slate-300 pb-1 border-b border-slate-850 flex justify-between">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="font-bold text-slate-800 dark:text-slate-200 pb-1 border-b border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>مجموع دارایی‌های جاری (کد ۱):</span>
-                      <span className="text-emerald-400">{formatNum(balanceData.assets?.total)} ریال</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400">{formatNum(balanceData.assets?.total)} ریال</span>
                     </div>
-                    <div className="text-slate-400 space-y-1 pr-2">
+                    <div className="text-slate-600 dark:text-slate-400 space-y-1 pr-2">
                       {balanceData.assets?.items?.map((item: any) => (
                         <div key={item.code} className="flex justify-between text-xs">
                           <span>{item.name}:</span>
-                          <span>{formatNum(item.balance)} ریال</span>
+                          <span className="font-mono">{formatNum(item.balance)} ریال</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div className="font-bold text-slate-300 pb-1 border-b border-slate-850 flex justify-between">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="font-bold text-slate-800 dark:text-slate-200 pb-1 border-b border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>مجموع بدهی‌ها (کد ۲):</span>
-                      <span className="text-amber-400">{formatNum(balanceData.liabilities?.total)} ریال</span>
+                      <span className="font-mono text-amber-600 dark:text-amber-400">{formatNum(balanceData.liabilities?.total)} ریال</span>
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
-                    <div className="font-bold text-slate-300 pb-1 border-b border-slate-850 flex justify-between">
+                  <div className="bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2">
+                    <div className="font-bold text-slate-800 dark:text-slate-200 pb-1 border-b border-slate-200 dark:border-slate-700 flex justify-between">
                       <span>حقوق صاحبان سهام و سود خالص (کد ۳):</span>
-                      <span className="text-blue-400">{formatNum(balanceData.equity?.total)} ریال</span>
+                      <span className="font-mono text-blue-600 dark:text-blue-400">{formatNum(balanceData.equity?.total)} ریال</span>
                     </div>
                   </div>
 
-                  <div className="flex justify-between py-2.5 bg-slate-950 p-3 rounded-xl border border-slate-800 font-bold text-slate-200">
+                  <div className="flex justify-between py-2.5 bg-slate-50 dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-800 dark:text-slate-200">
                     <span>جمع کل بدهی‌ها و حقوق صاحبان سهام:</span>
-                    <span className="text-emerald-400">{formatNum(balanceData.totalLiabilitiesAndEquity)} ریال</span>
+                    <span className="font-mono text-emerald-600 dark:text-emerald-400">{formatNum(balanceData.totalLiabilitiesAndEquity)} ریال</span>
                   </div>
                 </div>
               )}

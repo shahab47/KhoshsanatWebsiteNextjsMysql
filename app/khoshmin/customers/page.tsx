@@ -99,22 +99,22 @@ export default function AdminCustomersPage() {
     if (debtAmount > 0) {
       return (
         <div className="flex flex-col items-end">
-          <p className="font-black text-red-600 text-lg">{Math.abs(debtAmount).toLocaleString()} <span className="text-[10px] font-normal">تومان</span></p>
-          <p className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded-md border border-red-100">بدهکار</p>
+          <p className="font-black text-rose-600 dark:text-rose-400 text-lg">{Math.abs(debtAmount).toLocaleString()} <span className="text-[10px] font-normal">تومان</span></p>
+          <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 px-2 py-0.5 rounded-md border border-rose-100 dark:border-rose-900/40">بدهکار</p>
         </div>
       );
     } else if (debtAmount < 0) {
       return (
         <div className="flex flex-col items-end">
-          <p className="font-black text-emerald-600 text-lg">{Math.abs(debtAmount).toLocaleString()} <span className="text-[10px] font-normal">تومان</span></p>
-          <p className="text-[10px] font-bold text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">بستانکار (طلبکار)</p>
+          <p className="font-black text-emerald-600 dark:text-emerald-400 text-lg">{Math.abs(debtAmount).toLocaleString()} <span className="text-[10px] font-normal">تومان</span></p>
+          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-md border border-emerald-100 dark:border-emerald-900/40">بستانکار (طلبکار)</p>
         </div>
       );
     }
     return (
       <div className="flex flex-col items-end">
-        <p className="font-bold text-gray-400 text-lg">0 <span className="text-[10px] font-normal">تومان</span></p>
-        <p className="text-[10px] font-bold text-gray-300">بی‌حساب / تسویه</p>
+        <p className="font-bold text-slate-400 dark:text-slate-500 text-lg">0 <span className="text-[10px] font-normal">تومان</span></p>
+        <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500">بی‌حساب / تسویه</p>
       </div>
     );
   };
@@ -123,7 +123,7 @@ export default function AdminCustomersPage() {
     return (
       <div className="flex flex-col justify-center items-center h-80 gap-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        <p className="text-gray-500 font-bold animate-pulse">در حال دریافت لیست مشتریان...</p>
+        <p className="text-slate-500 dark:text-slate-400 font-bold animate-pulse">در حال دریافت لیست مشتریان...</p>
       </div>
     );
   }
@@ -133,12 +133,12 @@ export default function AdminCustomersPage() {
       {/* بخش بالای صفحه */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-black text-slate-800">مدیریت مشتریان</h1>
-          <p className="text-slate-500 mt-1">مانیتورینگ تراز مالی، پیام‌های جدید و مدیریت کلی مشتریان</p>
+          <h1 className="text-3xl font-black text-slate-900 dark:text-slate-100">مدیریت مشتریان</h1>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">مانیتورینگ تراز مالی، پیام‌های جدید و مدیریت کلی مشتریان</p>
         </div>
         <Link
           href="/khoshmin/customers/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 transition-all shadow-lg shadow-blue-200 active:scale-95"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20 active:scale-95"
         >
           <UserPlus size={20} />
           <span className="font-bold">افزودن مشتری جدید</span>
@@ -146,7 +146,7 @@ export default function AdminCustomersPage() {
       </div>
 
       {/* فیلترها */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 shadow-sm border border-slate-200 dark:border-slate-700/60">
         <div className="flex flex-col lg:flex-row gap-5">
           <div className="flex-1 relative">
             <Search className="absolute right-4 top-4 text-slate-400" size={20} />
@@ -155,7 +155,7 @@ export default function AdminCustomersPage() {
               placeholder="جستجو بر اساس نام، شرکت، موبایل یا ایمیل..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pr-12 pl-4 py-3.5 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder-slate-400"
+              className="w-full pr-12 pl-4 py-3.5 border border-slate-200 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-400"
             />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0 scrollbar-hide">
@@ -168,10 +168,10 @@ export default function AdminCustomersPage() {
               <button
                 key={btn.id}
                 onClick={() => setFilter(btn.id)}
-                className={`px-5 py-2.5 rounded-xl text-sm font-black whitespace-nowrap transition-all flex items-center gap-2 ${
+                className={`px-5 py-2.5 rounded-xl text-sm font-black whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
                   filter === btn.id
-                    ? `bg-slate-800 text-white shadow-md`
-                    : `bg-slate-100 text-slate-500 hover:bg-slate-200`
+                    ? `bg-slate-900 dark:bg-slate-700 text-white shadow-md`
+                    : `bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700`
                 }`}
               >
                 {btn.icon}
@@ -183,49 +183,49 @@ export default function AdminCustomersPage() {
       </div>
 
       {/* جدول مشتریان */}
-      <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700/60 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-right border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-100">
-                <th className="p-6 text-sm font-black text-slate-600">اطلاعات مشتری</th>
-                <th className="p-6 text-sm font-black text-slate-600">تماس و ارتباط</th>
-                <th className="p-6 text-sm font-black text-slate-600 text-left">تراز مالی نهایی</th>
-                <th className="p-6 text-sm font-black text-slate-600">فعالیت‌های جدید</th>
-                <th className="p-6 text-sm font-black text-slate-600 w-24">عملیات</th>
+              <tr className="bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-700">
+                <th className="p-6 text-sm font-black text-slate-600 dark:text-slate-300">اطلاعات مشتری</th>
+                <th className="p-6 text-sm font-black text-slate-600 dark:text-slate-300">تماس و ارتباط</th>
+                <th className="p-6 text-sm font-black text-slate-600 dark:text-slate-300 text-left">تراز مالی نهایی</th>
+                <th className="p-6 text-sm font-black text-slate-600 dark:text-slate-300">فعالیت‌های جدید</th>
+                <th className="p-6 text-sm font-black text-slate-600 dark:text-slate-300 w-24">عملیات</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
               {filteredCustomers.map((customer) => (
                 <tr
                   key={customer.id}
                   onClick={() => router.push(`/khoshmin/customers/${customer.id}`)}
-                  className={`group cursor-pointer hover:bg-blue-50/40 transition-all duration-200 ${
-                    customer.unreadMessagesCount || customer.newNotesCount ? 'bg-amber-50/10' : ''
+                  className={`group cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-750/50 transition-all duration-200 ${
+                    customer.unreadMessagesCount || customer.newNotesCount ? 'bg-amber-500/5' : ''
                   }`}
                 >
                   <td className="p-6">
                     <div className="flex items-center gap-4">
-                      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-black text-xl shadow-inner group-hover:scale-110 transition-transform">
+                      <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-black text-xl shadow-inner group-hover:scale-105 transition-transform">
                         {customer.name.charAt(0)}
                       </div>
                       <div>
-                        <p className="font-black text-slate-800 text-base group-hover:text-blue-600 transition-colors">{customer.name}</p>
+                        <p className="font-black text-slate-900 dark:text-slate-100 text-base group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{customer.name}</p>
                         {customer.company && (
-                          <p className="text-xs text-slate-400 font-bold mt-0.5">{customer.company}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-bold mt-0.5">{customer.company}</p>
                         )}
                       </div>
                     </div>
                   </td>
                   <td className="p-6">
                     <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                        <Mail size={14} className="text-blue-400" />
+                      <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                        <Mail size={14} className="text-blue-500 dark:text-blue-400" />
                         <span>{customer.email}</span>
                       </div>
                       {customer.phone && (
-                        <div className="flex items-center gap-2 text-xs text-slate-500 font-bold font-mono">
-                          <Phone size={14} className="text-emerald-400" />
+                        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 font-bold font-mono">
+                          <Phone size={14} className="text-emerald-500 dark:text-emerald-400" />
                           <span>{customer.phone}</span>
                         </div>
                       )}
@@ -237,19 +237,19 @@ export default function AdminCustomersPage() {
                   <td className="p-6">
                     <div className="flex flex-wrap gap-2">
                       {(customer.unreadMessagesCount || 0) > 0 && (
-                        <span className="flex items-center gap-1.5 bg-red-50 text-red-600 text-[11px] font-black px-2.5 py-1.5 rounded-xl border border-red-100 animate-pulse">
+                        <span className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 text-[11px] font-black px-2.5 py-1.5 rounded-xl border border-rose-100 dark:border-rose-900/40 animate-pulse">
                           <MessageSquare size={12} />
                           {customer.unreadMessagesCount} پیام جدید
                         </span>
                       )}
                       {(customer.newNotesCount || 0) > 0 && (
-                        <span className="flex items-center gap-1.5 bg-amber-50 text-amber-600 text-[11px] font-black px-2.5 py-1.5 rounded-xl border border-amber-100">
+                        <span className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-400 text-[11px] font-black px-2.5 py-1.5 rounded-xl border border-amber-100 dark:border-amber-900/40">
                           <StickyNote size={12} />
                           {customer.newNotesCount} یادداشت
                         </span>
                       )}
                       {!(customer.unreadMessagesCount || customer.newNotesCount) && (
-                        <span className="text-slate-300 text-[11px] font-bold italic">بدون اعلان جدید</span>
+                        <span className="text-slate-400 dark:text-slate-500 text-[11px] font-bold italic">بدون اعلان جدید</span>
                       )}
                     </div>
                   </td>
@@ -257,18 +257,18 @@ export default function AdminCustomersPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={(e) => { e.stopPropagation(); router.push(`/khoshmin/customers/${customer.id}`); }}
-                        className="p-2.5 text-blue-500 hover:bg-blue-100 rounded-2xl transition-colors"
+                        className="p-2.5 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-2xl transition-colors cursor-pointer"
                         title="مشاهده پروفایل"
                       >
-                        <Eye size={22} />
+                        <Eye size={20} />
                       </button>
                       <button
                         onClick={(e) => handleDelete(e, customer.id, customer.name)}
                         disabled={deletingId === customer.id}
-                        className="p-2.5 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-2xl transition-all disabled:opacity-30"
+                        className="p-2.5 text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 dark:hover:text-rose-400 rounded-2xl transition-all disabled:opacity-30 cursor-pointer"
                         title="حذف دائمی"
                       >
-                        <Trash2 size={22} />
+                        <Trash2 size={20} />
                       </button>
                     </div>
                   </td>
@@ -279,10 +279,10 @@ export default function AdminCustomersPage() {
         </div>
 
         {filteredCustomers.length === 0 && (
-          <div className="text-center py-24 bg-slate-50/30">
-            <AlertCircle className="mx-auto text-slate-200 mb-3" size={64} />
-            <p className="text-slate-400 font-black text-lg">مشتری مورد نظر در لیست یافت نشد.</p>
-            <button onClick={() => { setSearch(''); setFilter('all'); }} className="mt-4 text-blue-600 font-bold hover:underline">
+          <div className="text-center py-24 bg-slate-50 dark:bg-slate-900/30">
+            <AlertCircle className="mx-auto text-slate-300 dark:text-slate-600 mb-3" size={64} />
+            <p className="text-slate-500 dark:text-slate-400 font-black text-lg">مشتری مورد نظر در لیست یافت نشد.</p>
+            <button onClick={() => { setSearch(''); setFilter('all'); }} className="mt-4 text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer">
               نمایش همه مشتریان
             </button>
           </div>

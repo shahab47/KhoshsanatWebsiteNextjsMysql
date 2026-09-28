@@ -5,9 +5,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu, X, Image as ImageIcon, Type, LayoutDashboard, Briefcase,
   Package, LogOut, Users, ChevronLeft, Globe, Building2,
-  GraduationCap, UserPlus, HardDrive, ChevronDown, Settings, TrendingUp, Mail, Landmark, Truck, Factory, UserCheck, FileSpreadsheet
+  GraduationCap, UserPlus, HardDrive, ChevronDown, Settings, TrendingUp, Mail, Landmark, Truck, Factory, UserCheck, FileSpreadsheet,
+  Sun, Moon
 } from 'lucide-react';
 import { ModalProvider, useModal } from '@/app/contexts/ModalContext';
+import { ThemeProvider, useTheme } from '@/app/contexts/ThemeContext';
 import { useRouter, usePathname } from 'next/navigation';
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
@@ -20,6 +22,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { showConfirm, showAlert } = useModal();
+  const { theme, isDark, toggleTheme } = useTheme();
 
   useEffect(() => {
     setIsMounted(true);
@@ -217,9 +220,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col" dir="rtl">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 flex flex-col transition-colors duration-200" dir="rtl">
       {/* هدر دسکتاپ */}
-      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50">
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-50 border-b border-slate-800">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
@@ -248,17 +251,19 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                   </button>
 
                   {openDropdown === group.id && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-gray-100 py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-[110]">
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 py-2 animate-in fade-in slide-in-from-top-2 duration-200 z-[110]">
                       {group.items.map((item) => (
                         <a
                           key={item.href}
                           href={item.href}
                           onClick={() => setOpenDropdown(null)}
                           className={`flex items-center gap-3 px-4 py-2.5 text-sm font-bold transition-colors ${
-                            pathname === item.href ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'
+                            pathname === item.href
+                              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                              : 'text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60'
                           }`}
                         >
-                          <span className={pathname === item.href ? 'text-blue-600' : 'text-gray-400'}>{item.icon}</span>
+                          <span className={pathname === item.href ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}>{item.icon}</span>
                           {item.label}
                         </a>
                       ))}
@@ -268,11 +273,31 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
 
-            <div className="flex items-center gap-3">
-              <a href="/" target="_blank" className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-300 bg-slate-800 px-4 py-2 rounded-xl hover:bg-slate-700 hover:text-white transition">
+            <div className="flex items-center gap-2 sm:gap-3">
+              {/* دکمه تغییر حالت روز / شب */}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-2 rounded-xl transition border border-slate-700 cursor-pointer shadow-sm"
+                title={isDark ? 'تغییر به حالت روز (روشن)' : 'تغییر به حالت شب (تیره)'}
+                aria-label="تغییر حالت روز و شب"
+              >
+                {isDark ? (
+                  <>
+                    <Sun size={16} className="text-amber-400" />
+                    <span className="hidden sm:inline">روز</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={16} className="text-blue-400" />
+                    <span className="hidden sm:inline">شب</span>
+                  </>
+                )}
+              </button>
+
+              <a href="/" target="_blank" className="hidden md:flex items-center gap-2 text-xs font-bold text-slate-300 bg-slate-800 px-3.5 py-2 rounded-xl hover:bg-slate-700 hover:text-white transition border border-slate-700">
                 <Globe size={16} /> مشاهده سایت
               </a>
-              <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-white bg-red-600/90 px-4 py-2 rounded-xl hover:bg-red-600 transition shadow-sm cursor-pointer">
+              <button onClick={handleLogout} className="flex items-center gap-2 text-xs font-bold text-white bg-red-600/90 px-3.5 py-2 rounded-xl hover:bg-red-600 transition shadow-sm cursor-pointer">
                 <LogOut size={16} /> خروج
               </button>
             </div>
@@ -281,16 +306,16 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       </header>
 
       {/* مسیر یاب */}
-      <div className="bg-white border-b border-gray-200 py-3 px-4 sm:px-8 shadow-sm hidden md:block">
+      <div className="bg-white dark:bg-slate-800/90 border-b border-slate-200 dark:border-slate-800 py-3 px-4 sm:px-8 shadow-sm hidden md:block transition-colors">
         <div className="max-w-[1440px] mx-auto">
-          <div className="flex items-center gap-2 text-sm text-gray-500 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
+          <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-medium overflow-x-auto overflow-y-hidden whitespace-nowrap">
             {getBreadcrumbs().map((crumb, idx, arr) => (
               <React.Fragment key={crumb.href}>
-                {idx > 0 && <ChevronLeft size={14} className="text-gray-300 flex-shrink-0" />}
+                {idx > 0 && <ChevronLeft size={14} className="text-slate-300 dark:text-slate-600 flex-shrink-0" />}
                 {idx === arr.length - 1 ? (
-                  <span className="text-blue-600 font-black">{crumb.name}</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-black">{crumb.name}</span>
                 ) : (
-                  <a href={crumb.href} className="hover:text-gray-900 transition-colors">
+                  <a href={crumb.href} className="hover:text-slate-900 dark:hover:text-slate-100 transition-colors">
                     {crumb.name}
                   </a>
                 )}
@@ -309,14 +334,28 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm xl:hidden" onClick={() => setIsMobileMenuOpen(false)}>
           <div 
-            className="absolute right-0 top-0 bottom-0 w-72 bg-[#2D3644] shadow-2xl p-6 flex flex-col animate-in slide-in-from-right duration-300"
+            className="absolute right-0 top-0 bottom-0 w-72 bg-slate-900 shadow-2xl p-6 flex flex-col animate-in slide-in-from-right duration-300"
             onClick={(e) => e.stopPropagation()}
             style={{ overflowY: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <div className="flex justify-between items-center mb-8">
+            <div className="flex justify-between items-center mb-6">
               <span className="text-blue-400 font-black text-lg">منوی مدیریت</span>
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-gray-400 hover:text-white bg-slate-800 p-2 rounded-full cursor-pointer">
                 <X size={20} />
+              </button>
+            </div>
+
+            {/* دکمه تم موبایل */}
+            <div className="mb-6 pb-4 border-b border-slate-800">
+              <button
+                onClick={toggleTheme}
+                className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-800 text-slate-200 text-sm font-bold border border-slate-700"
+              >
+                <span className="flex items-center gap-2">
+                  {isDark ? <Sun size={18} className="text-amber-400" /> : <Moon size={18} className="text-blue-400" />}
+                  {isDark ? 'حالت روز (روشن)' : 'حالت شب (تیره)'}
+                </span>
+                <span className="text-xs text-slate-400 font-normal">تغییر تم</span>
               </button>
             </div>
 
@@ -330,7 +369,7 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all ${
-                        pathname === item.href ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-200 hover:bg-slate-700'
+                        pathname === item.href ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-200 hover:bg-slate-800'
                       }`}
                     >
                       {item.icon} {item.label}
@@ -340,12 +379,12 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
               ))}
             </nav>
 
-            <div className="mt-6 pt-6 border-t border-slate-700 flex flex-col gap-3">
+            <div className="mt-6 pt-6 border-t border-slate-800 flex flex-col gap-3">
               <a
                 href="/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-slate-700 hover:bg-slate-600 transition-colors"
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 transition-colors"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 <Globe size={18} /> مشاهده سایت
@@ -366,8 +405,10 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   return (
-    <ModalProvider>
-      <AdminLayoutInner>{children}</AdminLayoutInner>
-    </ModalProvider>
+    <ThemeProvider>
+      <ModalProvider>
+        <AdminLayoutInner>{children}</AdminLayoutInner>
+      </ModalProvider>
+    </ThemeProvider>
   );
 }

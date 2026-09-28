@@ -30,10 +30,41 @@
   --ks-light-300: #e2e8f0;
   --ks-light-text: #111111;
 
+  /* Cinematic Industrial Brand System */
+  --ks-brand-blue: #2563EB;
+  --ks-brand-graphite: #2D3644;
+  --ks-brand-steel: #6C6C6E;
+  --ks-brand-offwhite: #F5F7FA;
+  --ks-brand-white: #FFFFFF;
+  --ks-brand-night: #11151B;
+
   /* Theme standard background/foreground */
-  --background: #1a1d21;
-  --foreground: #ffffff;
+  --background: #F5F7FA;
+  --foreground: #2D3644;
 }
+
+/* Technical Engineering Grids */
+.engineering-grid-light {
+  background-image: 
+    linear-gradient(to right, rgba(45, 54, 68, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(45, 54, 68, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.engineering-grid-dark {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+.blueprint-grid {
+  background-image: 
+    linear-gradient(to right, rgba(37, 99, 235, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(37, 99, 235, 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
 
 body {
   font-family: var(--font-vazir), 'Vazir', system-ui, -apple-system, sans-serif;
