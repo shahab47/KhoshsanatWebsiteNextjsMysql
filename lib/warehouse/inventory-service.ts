@@ -1,5 +1,5 @@
 import db from '@/lib/db';
-import { Prisma, TransactionType, WarehouseType } from '@prisma/client';
+import { Prisma, TransactionType } from '@prisma/client';
 
 export interface RecordStockReceiptInput {
   warehouseId: string;

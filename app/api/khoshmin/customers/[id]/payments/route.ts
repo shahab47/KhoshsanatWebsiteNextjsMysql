@@ -5,6 +5,9 @@ import db from '@/lib/db';
 import { deleteFromMinio, cleanupRemovedFiles } from '@/lib/minio';
 import { requireAuth } from '@/lib/auth-middleware';
 
+import { ARPostingService } from '@/lib/ar/ar-posting-service';
+import { SettlementService } from '@/lib/ar/settlement-service';
+
 async function syncCustomerBalance(customerId: number) {
   try {
     const validInvoices = await db.invoice.aggregate({
@@ -29,10 +32,16 @@ async function syncInvoicePayments(invoiceId: number) {
   try {
     const invoice = await db.invoice.findUnique({
       where: { id: invoiceId },
-      include: { payments: true }
+      include: { payments: true, allocations: true }
     });
     if (!invoice) return;
-    const paidSum = invoice.payments.reduce((acc, p) => acc + p.amount, 0);
+
+    const allocationsSum = invoice.allocations.reduce((acc, a) => acc + Number(a.amount), 0);
+    const directPaidSum = invoice.payments
+      .filter((p) => !invoice.allocations.some((a) => a.paymentId === p.id))
+      .reduce((acc, p) => acc + p.amount, 0);
+    const paidSum = allocationsSum + directPaidSum;
+
     let status = invoice.status;
     if (status !== 'CANCELLED') {
       if (paidSum >= invoice.finalAmount && invoice.finalAmount > 0) {
@@ -71,7 +80,11 @@ export async function GET(
     }
     const payments = await db.payment.findMany({
       where: { customerId },
-      include: { invoice: true },
+      include: {
+        invoice: true,
+        allocations: { include: { invoice: true } },
+        cheques: true,
+      },
       orderBy: { paymentDate: 'desc' }
     });
     return NextResponse.json(payments);
@@ -92,7 +105,7 @@ export async function POST(
     const customerId = parseInt(id);
     const body = await request.json();
     
-    const { amount, paymentMethod, receiptNo, description, invoiceId, attachmentUrl } = body;
+    const { amount, paymentMethod, receiptNo, description, invoiceId, attachmentUrl, allocations } = body;
     
     if (isNaN(customerId) || !amount || amount <= 0) {
       return NextResponse.json({ error: 'اطلاعات نامعتبر' }, { status: 400 });
@@ -103,8 +116,8 @@ export async function POST(
     const payment = await db.payment.create({
       data: {
         customerId,
-        amount,
-        paymentMethod,
+        amount: Number(amount),
+        paymentMethod: paymentMethod || 'CASH',
         receiptNo: receiptNo || null,
         description: description || null,
         invoiceId: parsedInvoiceId,
@@ -112,14 +125,69 @@ export async function POST(
       }
     });
 
+    // ۱. صدور خودکار سند دوبل حسابداری برای رسید پرداخت
+    try {
+      await ARPostingService.postPaymentVoucher(payment.id);
+    } catch (postError) {
+      console.error('Error posting double-entry voucher for payment:', postError);
+    }
+
+    // ۲. پردازش تخصیص به فاکتورها (دستی یا خودکار)
+    try {
+      if (Array.isArray(allocations) && allocations.length > 0) {
+        await SettlementService.allocatePayment(payment.id, allocations);
+      } else if (parsedInvoiceId) {
+        await SettlementService.autoAllocatePayment(payment.id);
+      }
+    } catch (allocError) {
+      console.error('Error allocating payment:', allocError);
+    }
+
+    // ۲.۵. ثبت مشخصات چک صیادی در صورت انتخاب روش پرداخت چک
+    if (paymentMethod === 'CHECK' && (body.sayadId || body.cheque)) {
+      const chq = body.cheque || body;
+      if (chq.sayadId) {
+        try {
+          await db.cheque.create({
+            data: {
+              type: 'RECEIVABLE',
+              sayadId: chq.sayadId.trim(),
+              chequeNumber: chq.chequeNumber || payment.receiptNo || 'CHQ-UNKNOWN',
+              amount: payment.amount,
+              issueDate: chq.issueDate ? new Date(chq.issueDate) : payment.paymentDate,
+              dueDate: chq.dueDate ? new Date(chq.dueDate) : payment.paymentDate,
+              status: 'RECEIVED',
+              bankName: chq.bankName || 'بانک نامشخص',
+              bankBranch: chq.bankBranch || null,
+              bankAccountNumber: chq.bankAccountNumber || null,
+              drawerName: chq.drawerName || 'صاحب حساب',
+              drawerNationalId: chq.drawerNationalId || null,
+              customerId,
+              paymentId: payment.id,
+              journalVoucherId: payment.journalVoucherId,
+              description: payment.description,
+            },
+          });
+        } catch (chqErr) {
+          console.error('Error creating linked cheque record:', chqErr);
+        }
+      }
+    }
+
     await syncCustomerBalance(customerId);
     if (parsedInvoiceId) {
       await syncInvoicePayments(parsedInvoiceId);
     }
 
-    return NextResponse.json(payment, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'خطا در ثبت پرداخت' }, { status: 500 });
+    const fresh = await db.payment.findUnique({
+      where: { id: payment.id },
+      include: { invoice: true, allocations: { include: { invoice: true } }, cheques: true },
+    });
+
+    return NextResponse.json(fresh || payment, { status: 201 });
+  } catch (error: any) {
+    console.error('Payment create error:', error);
+    return NextResponse.json({ error: error?.message || 'خطا در ثبت پرداخت' }, { status: 500 });
   }
 }
 
@@ -137,7 +205,7 @@ export async function PUT(
     const paymentId = parseInt(url.searchParams.get('paymentId') || '');
     const body = await request.json();
     
-    const { amount, paymentMethod, receiptNo, description, invoiceId, attachmentUrl } = body;
+    const { amount, paymentMethod, receiptNo, description, invoiceId, attachmentUrl, allocations } = body;
 
     if (isNaN(customerId) || isNaN(paymentId)) {
       return NextResponse.json({ error: 'اطلاعات نامعتبر' }, { status: 400 });
@@ -174,11 +242,24 @@ export async function PUT(
       }
     });
 
+    if (Array.isArray(allocations)) {
+      try {
+        await SettlementService.allocatePayment(paymentId, allocations);
+      } catch (err) {
+        console.error('Error re-allocating payment:', err);
+      }
+    }
+
     await syncCustomerBalance(customerId);
     if (oldInvoiceId) await syncInvoicePayments(oldInvoiceId);
     if (newInvoiceId && newInvoiceId !== oldInvoiceId) await syncInvoicePayments(newInvoiceId);
 
-    return NextResponse.json(updated);
+    const fresh = await db.payment.findUnique({
+      where: { id: paymentId },
+      include: { invoice: true, allocations: { include: { invoice: true } } },
+    });
+
+    return NextResponse.json(fresh || updated);
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'خطا در ویرایش پرداخت' }, { status: 500 });
@@ -203,7 +284,8 @@ export async function DELETE(
     }
 
     const existing = await db.payment.findFirst({
-      where: { id: paymentId, customerId }
+      where: { id: paymentId, customerId },
+      include: { allocations: true },
     });
     if (!existing) {
       return NextResponse.json({ error: 'پرداخت یافت نشد' }, { status: 404 });
@@ -214,17 +296,32 @@ export async function DELETE(
       await deleteFromMinio(existing.attachmentUrl);
     }
 
-    const linkedInvoiceId = existing.invoiceId;
+    // در صورت وجود سند حسابداری قطعی، صدور سند معکوس (Reversal) طبق استاندارد تغییرناپذیری مالی
+    if (existing.journalVoucherId) {
+      try {
+        await ARPostingService.reversePaymentVoucher(paymentId, 'ابطال و برگشت رسید پرداخت توسط کاربر');
+      } catch (err) {
+        console.error('Error reversing payment voucher on delete:', err);
+      }
+    }
 
+    const affectedInvoiceIds = existing.allocations.map((a) => a.invoiceId);
+    if (existing.invoiceId && !affectedInvoiceIds.includes(existing.invoiceId)) {
+      affectedInvoiceIds.push(existing.invoiceId);
+    }
+
+    // حذف تخصیص‌ها و خود رکورد پرداخت
+    await db.paymentAllocation.deleteMany({ where: { paymentId } });
     await db.payment.delete({ where: { id: paymentId } });
 
     await syncCustomerBalance(customerId);
-    if (linkedInvoiceId) {
-      await syncInvoicePayments(linkedInvoiceId);
+    for (const invId of affectedInvoiceIds) {
+      await syncInvoicePayments(invId);
     }
 
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json({ error: 'خطا در حذف پرداخت' }, { status: 500 });
+    return NextResponse.json({ success: true, message: 'رسید پرداخت با موفقیت حذف و سند معکوس صادر شد.' });
+  } catch (error: any) {
+    console.error('Payment delete error:', error);
+    return NextResponse.json({ error: 'خطا در حذف پرداخت: ' + (error?.message || '') }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export interface Slide {
   id: number;
@@ -86,14 +87,21 @@ export default function HeroSlider({ slides, settings }: HeroSliderProps) {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 z-10" style={overlayStyle}></div>
           {slides.map((slide, idx) => (
-            <img
+            <div
               key={slide.id}
-              src={slide.imageUrl}
-              alt={slide.title || 'اسلاید'}
-              className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                idx === currentSlideIndex ? 'opacity-100 animate-soft-scale' : 'opacity-0'
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ${
+                idx === currentSlideIndex ? 'opacity-100 animate-soft-scale z-0' : 'opacity-0 pointer-events-none'
               }`}
-            />
+            >
+              <Image
+                src={slide.imageUrl}
+                alt={slide.title || 'اسلاید شرکت مهندسی خوش‌صنعت پایدار'}
+                fill
+                priority={idx === 0}
+                sizes="100vw"
+                className="object-cover"
+              />
+            </div>
           ))}
         </div>
 

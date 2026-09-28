@@ -1,5 +1,4 @@
 import '@tiptap/core';
-import { EditorInstance } from 'novel';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -15,12 +14,5 @@ declare module '@tiptap/core' {
       splitCell: () => ReturnType;
       insertTable: (options: { rows: number; cols: number; withHeaderRow?: boolean }) => ReturnType;
     };
-  }
-}
-
-// همچنین اگر نیاز است خود EditorInstance این متدها را بشناسد
-declare module 'novel' {
-  interface EditorInstance {
-    chain(): any; // به صورت موقت
   }
 }

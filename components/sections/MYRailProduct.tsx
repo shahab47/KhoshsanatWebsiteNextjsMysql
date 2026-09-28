@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Product {
   id: number;
@@ -64,9 +65,9 @@ export default function ProductsMarquee({ initialProducts }: ProductsMarqueeProp
 
     fetch('/api/products')
       .then((res) => res.json())
-      .then((data: any[]) => {
-        if ((data as any).error) throw new Error((data as any).error);
-        setSelectedProducts(prepare18Products(data));
+      .then((data: Product[] | { error?: string }) => {
+        if ('error' in data && data.error) throw new Error(data.error);
+        setSelectedProducts(prepare18Products(data as Product[]));
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
@@ -85,10 +86,11 @@ export default function ProductsMarquee({ initialProducts }: ProductsMarqueeProp
           // کلاس‌های سایه کاملاً حذف شدند تا ظاهر تخت و یکدست باشد
           className={`relative block w-full h-full rounded-2xl md:rounded-3xl overflow-hidden group transition-all duration-300 bg-gray-100 ${bentoClasses[index]}`}
         >
-          <img
+          <Image
             src={product.imageUrl}
             alt={product.title}
-            loading="lazy"
+            fill
+            sizes="(max-width: 768px) 130px, 200px"
             className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700 ease-out"
           />
           
@@ -147,11 +149,12 @@ export default function ProductsMarquee({ initialProducts }: ProductsMarqueeProp
           {/* سمت راست: لوگو و تیتر */}
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="flex-shrink-0 bg-white/5 p-2 rounded-2xl border border-white/10 shadow-sm">
-              <img 
+              <Image 
                 src="/Logo.svg" 
                 alt="لوگو خوش صنعت پایدار" 
-                className="w-12 h-12 md:w-14 md:h-14 object-contain"
-                style={{ filter: 'brightness(0) invert(1)' }}
+                width={56}
+                height={56}
+                className="w-12 h-12 md:w-14 md:h-14 object-contain brightness-0 invert"
               />
             </div>
             <div className="flex flex-col">

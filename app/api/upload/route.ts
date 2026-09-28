@@ -285,9 +285,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       uniqueName = `${Date.now()}-${baseName}.${finalExtension}`;
     }
 
-    let fileUrl = await uploadToMinio(currentBuffer, uniqueName, folder, finalMimeType);
+    const fileUrl = await uploadToMinio(currentBuffer, uniqueName, folder, finalMimeType);
     
-    let successMessage = wasCompressed 
+    const successMessage = wasCompressed 
       ? `فایل آپلود و فشرده شد (کاهش: ${Math.round(compressionRatio)}٪).`
       : 'فایل با موفقیت آپلود شد.';
 

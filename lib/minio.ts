@@ -75,7 +75,7 @@ export function extractKeyFromUrl(fileUrl?: string | null): string | null {
     }
 
     return null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -321,7 +321,7 @@ export async function deleteFilesFromMinio(urlsOrKeys: (string | null | undefine
       for (const singleKey of chunk) {
         try {
           await s3Client.send(new DeleteObjectCommand({ Bucket: bucketName, Key: singleKey }));
-        } catch (singleErr) {}
+        } catch {}
       }
     }
   }
@@ -401,12 +401,11 @@ export async function getAllDatabaseFileUrls(): Promise<string[]> {
       const selectQuery: Record<string, boolean> = {};
       modelTargetFields.forEach(f => { selectQuery[f.name] = true; });
       const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+      const delegate = (prisma as unknown as Record<string, any>)[delegateName];
 
-      // @ts-ignore
-      if (typeof prisma[delegateName]?.findMany !== 'function') continue;
+      if (typeof delegate?.findMany !== 'function') continue;
 
-      // @ts-ignore
-      const records = await prisma[delegateName].findMany({ select: selectQuery });
+      const records = await delegate.findMany({ select: selectQuery });
 
       records.forEach((record: any) => {
         modelTargetFields.forEach(field => {

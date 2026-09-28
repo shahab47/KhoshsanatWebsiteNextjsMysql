@@ -41,10 +41,16 @@ export const metadata: Metadata = {
 };
 
 export default async function EducationPage() {
-  const articles = await db.article.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  type ArticleItem = Awaited<ReturnType<typeof db.article.findMany>>[number];
+  let articles: ArticleItem[] = [];
+  try {
+    articles = await db.article.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (err) {
+    console.warn('پایگاه داده در دسترس نیست؛ مقالات خالی در صفحه آموزش رندر شد:', err);
+  }
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'خانه', path: '/' },

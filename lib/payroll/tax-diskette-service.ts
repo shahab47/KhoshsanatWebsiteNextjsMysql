@@ -72,7 +72,6 @@ export class SalaryTaxDisketteService {
     const whLines: string[] = [];
 
     let totalGrossSalary = new Prisma.Decimal(0);
-    let totalTaxableAmount = new Prisma.Decimal(0);
     let totalTaxCalculated = new Prisma.Decimal(0);
 
     for (const slip of slips) {

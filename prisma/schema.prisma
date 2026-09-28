@@ -25,6 +25,20 @@ model User {
   customerNotes CustomerNote[]
 }
 
+model VerificationToken {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(255)
+  codeHash  String   @db.VarChar(128)
+  purpose   String   @db.VarChar(50) // REGISTER, FORGOT_PASSWORD
+  payload   Json?
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, purpose])
+  @@index([expiresAt])
+}
+
 model Slide {
   id               Int       @id @default(autoincrement())
   imageUrl         String
@@ -113,6 +127,9 @@ model Product {
   usedInBom     BOMItem[]
   stockTxns     StockTransaction[]
   invoiceItems  InvoiceItem[]
+  deliveries    Delivery[]
+  purchaseOrderItems PurchaseOrderItem[]
+  goodsReceiptItems  GoodsReceiptItem[]
 
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
@@ -193,6 +210,7 @@ model Customer {
   payments            Payment[]
   deliveries          Delivery[]
   notes               CustomerNote[]
+  cheques             Cheque[]
   totalDebt           Float             @default(0)
   totalPaid           Float             @default(0)
   status              CustomerStatus    @default(ACTIVE)
@@ -203,6 +221,14 @@ model Customer {
   economicCode        String?           // کد اقتصادی ۱۲ رقمی
   postalCode          String?
   productionOrders    ProductionOrder[]
+
+  // اعتبارسنجی مالی، مدیریت ریسک و وضعیت فعال/بایگانی
+  creditLimit         Decimal           @default(0) @db.Decimal(18, 2) // سقف اعتبار ریالی
+  isCreditBlocked     Boolean           @default(false)                // قفل دستی اعتبار
+  creditBlockReason   String?           // دلیل مسدودسازی اعتبار
+  riskRating          String?           @default("A")                  // رتبه ریسک اعتباری: A, B, C, D
+  isArchived          Boolean           @default(false)                // بایگانی منطقی (جلوگیری از حذف فیزیکی)
+  archivedAt          DateTime?
 }
 
 model CustomerMessage {
@@ -231,7 +257,7 @@ model Invoice {
   id            Int           @id @default(autoincrement())
   invoiceNo     String        @unique
   customerId    Int
-  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   amount        Float
   discount      Float         @default(0)
   tax           Float         @default(0)
@@ -243,7 +269,12 @@ model Invoice {
   paidAmount    Float         @default(0)
   attachmentUrl String?       @db.Text // اضافه شد برای آپلود فایل فاکتور
   payments      Payment[]
+  allocations   PaymentAllocation[]
   items         InvoiceItem[]
+  deliveries    Delivery[]
+
+  // پیوند به سند حسابداری دوبل
+  journalVoucherId   String?
 
   // فیلدهای مالیاتی سامانه مودیان کشور
   taxId              String?         @unique // شماره ۲۲ رقمی منحصر‌به‌فرد مالیاتی
@@ -257,6 +288,7 @@ model Invoice {
   updatedAt     DateTime      @updatedAt
 
   @@index([taxId])
+  @@index([journalVoucherId])
 }
 
 model InvoiceItem {
@@ -275,24 +307,49 @@ model InvoiceItem {
 }
 
 model Payment {
-  id            Int           @id @default(autoincrement())
-  customerId    Int
-  customer      Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  invoiceId     Int?
-  invoice       Invoice?      @relation(fields: [invoiceId], references: [id])
-  amount        Float
-  paymentDate   DateTime      @default(now())
-  paymentMethod PaymentMethod @default(CASH)
-  receiptNo     String?
-  description   String?       @db.Text
-  attachmentUrl String?       @db.Text // اضافه شد برای آپلود رسید/فیش
+  id               Int                 @id @default(autoincrement())
+  customerId       Int
+  customer         Customer            @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  invoiceId        Int?
+  invoice          Invoice?            @relation(fields: [invoiceId], references: [id])
+  amount           Float
+  paymentDate      DateTime            @default(now())
+  paymentMethod    PaymentMethod       @default(CASH)
+  receiptNo        String?
+  description      String?             @db.Text
+  attachmentUrl    String?             @db.Text // اضافه شد برای آپلود رسید/فیش
+  journalVoucherId String?             // پیوند مستقیم به سند دوبل حسابداری
+  allocations      PaymentAllocation[]
+  cheques          Cheque[]
+
+  @@index([journalVoucherId])
+}
+
+model PaymentAllocation {
+  id        String   @id @default(uuid())
+  paymentId Int
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  invoiceId Int
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  amount    Decimal  @db.Decimal(18, 2)
+  createdAt DateTime @default(now())
+  notes     String?
+
+  @@unique([paymentId, invoiceId])
+  @@index([paymentId])
+  @@index([invoiceId])
+}
+
+enum FreightTerm {
+  PAID_BY_CUSTOMER // پس‌کرایه (پرداخت توسط خریدار در مقصد)
+  PAID_BY_COMPANY  // پیش‌کرایه (پرداخت توسط شرکت خوش‌صنعت)
 }
 
 model Delivery {
   id           Int            @id @default(autoincrement())
   deliveryNo   String         @unique
   customerId   Int
-  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer     Customer       @relation(fields: [customerId], references: [id], onDelete: Restrict)
   productName  String
   quantity     Float
   unit         String?
@@ -301,6 +358,45 @@ model Delivery {
   description  String?        @db.Text
   signatureUrl String?
   attachments  Json?
+
+  // ۱. بارنامه، شرکت حمل و مشخصات راننده (Waybill & Logistics)
+  waybillNo            String?         // شماره بارنامه رسمی جاده‌ای
+  driverName           String?         // نام راننده
+  driverNationalId     String?         // کد ملی راننده
+  driverPhone          String?         // شماره تماس راننده
+  truckPlate           String?         // پلاک تریلی / کامیون
+  shippingCompany      String?         // شرکت باربری یا پایانه
+  freightCost          Decimal         @default(0) @db.Decimal(18, 2) // مبلغ کرایه حمل به تومان
+  freightPaymentTerm   FreightTerm     @default(PAID_BY_CUSTOMER)     // پس‌کرایه / پیش‌کرایه
+
+  // ۲. توزین باسکول دیجیتال (Digital Scale Ticket - Single Source of Truth for Weight)
+  scaleGrossKg         Decimal?        @db.Decimal(12, 2) // وزن پر تریلی با بار (ناخالص)
+  scaleTareKg          Decimal?        @db.Decimal(12, 2) // وزن خالی تریلی (تارا)
+  scaleNetKg           Decimal?        @db.Decimal(12, 2) // وزن خالص بار باسکول (ناخالص - تارا)
+  nominalWeightKg      Decimal?        @db.Decimal(12, 2) // وزن محاسباتی یا اسمی بر مبنای متراژ و جدول استاندارد
+  weightVariancePercent Decimal?       @db.Decimal(6, 2)  // درصد مغایرت وزنی با باسکول
+  isToleranceExceeded  Boolean         @default(false)    // آیا اختلاف وزن از حد مجاز ۲٪ تجاوز کرده است؟
+  scaleTicketNo        String?         // شماره قبض باسکول دیجیتال
+  scalePhotoUrl        String?         @db.Text           // تصویر قبض چاپی باسکول دیجیتال
+
+  // ۳. پیوندهای انبارداری، کاردکس و سند بهای تمام‌شده (Warehouse & COGS Lineage)
+  warehouseId          String?
+  warehouse            Warehouse?      @relation(fields: [warehouseId], references: [id])
+  productId            Int?
+  product              Product?        @relation(fields: [productId], references: [id])
+  stockTransactionId   String?
+  journalVoucherId     String?         // پیوند به سند دوبل بهای تمام‌شده COGS
+  invoiceId            Int?
+  invoice              Invoice?        @relation(fields: [invoiceId], references: [id])
+  productionOrderId    String?
+  productionOrder      ProductionOrder? @relation(fields: [productionOrderId], references: [id])
+
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @default(now()) @updatedAt
+
+  @@index([waybillNo])
+  @@index([scaleTicketNo])
+  @@index([journalVoucherId])
 }
 
 enum UserStatus {
@@ -387,69 +483,321 @@ model EmailLog {
 }
 
 // ===========================================================
+// لایه سازمانی، شعب و مراکز هزینه (Multi-Company & Cost Centers)
+// ===========================================================
+
+model Company {
+  id                 String               @id @default(uuid())
+  code               String               @unique // مثلا KS-CO
+  name               String               // شرکت مهندسی خوش‌صنعت پایدار
+  nationalId         String?              // شناسه ملی
+  economicCode       String?              // کد اقتصادی ۱۲ رقمی
+  registrationNo     String?              // شماره ثبت شرکت
+  currency           String               @default("IRR")
+  isDefault          Boolean              @default(false)
+  branches           Branch[]
+  costCenters        CostCenter[]
+  fiscalYears        FiscalYear[]
+  accounts           Account[]
+  vouchers           JournalVoucher[]
+  sequences          DocumentSequence[]
+  accountingMappings AccountingMapping[]
+  bankAccounts       BankAccount[]
+  pettyCashFunds     PettyCashFund[]
+  purchaseOrders     PurchaseOrder[]
+  productionOrders   ProductionOrder[]
+  employees          Employee[]
+  payrollRuns        PayrollRun[]
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+}
+
+model Branch {
+  id          String           @id @default(uuid())
+  companyId   String
+  company     Company          @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  code        String           // مثلا MAIN, FACTORY-1
+  name        String           // دفتر مرکزی / کارخانه ۱
+  isDefault   Boolean          @default(false)
+  vouchers    JournalVoucher[]
+  warehouses  Warehouse[]
+  costCenters CostCenter[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([companyId, code])
+}
+
+model CostCenter {
+  id             String         @id @default(uuid())
+  companyId      String
+  company        Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  branchId       String?
+  branch         Branch?        @relation(fields: [branchId], references: [id])
+  code           String         // مثلا CC-PROD-01
+  name           String         // خط تولید ۱، بازرگانی، اداری
+  journalEntries JournalEntry[]
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([companyId, code])
+}
+
+// ===========================================================
+// دوره‌ها و سال‌های مالی (Fiscal Years & Accounting Periods)
+// ===========================================================
+
+enum PeriodStatus {
+  OPEN
+  SOFT_CLOSED
+  HARD_CLOSED
+}
+
+model FiscalYear {
+  id        String         @id @default(uuid())
+  companyId String
+  company   Company        @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  year      Int            // سال شمسی مثلا 1404 یا 1405
+  title     String         // سال مالی 1405
+  startDate DateTime
+  endDate   DateTime
+  isClosed  Boolean        @default(false)
+  periods   FiscalPeriod[]
+  vouchers  JournalVoucher[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@unique([companyId, year])
+}
+
+model FiscalPeriod {
+  id           String         @id @default(uuid())
+  fiscalYearId String
+  fiscalYear   FiscalYear     @relation(fields: [fiscalYearId], references: [id], onDelete: Restrict)
+  periodNumber Int            // ۱ تا ۱۲
+  title        String         // مثلا فروردین 1405
+  startDate    DateTime
+  endDate      DateTime
+  status       PeriodStatus   @default(OPEN)
+  vouchers     JournalVoucher[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@unique([fiscalYearId, periodNumber])
+}
+
+// ===========================================================
 // لایه حسابداری مالی دوبل و دفاتر قانونی (روزنامه و کل)
 // ===========================================================
 
 enum AccountNature {
   DEBIT
   CREDIT
+  DUAL
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  COGS
+  EXPENSE
+  OFF_BALANCE
 }
 
 model Account {
-  id             String          @id @default(uuid())
-  code           String          @unique // کد حساب (مثلاً 110201)
+  id             String              @id @default(uuid())
+  companyId      String?
+  company        Company?            @relation(fields: [companyId], references: [id])
+  code           String              @unique // کد حساب (مثلاً 110201)
   name           String
-  level          Int             // 1: گروه, 2: کل, 3: معین
+  level          Int                 // 1: گروه, 2: کل, 3: معین
   nature         AccountNature
+  accountType    AccountType         @default(ASSET)
   parentId       String?
-  parent         Account?        @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children       Account[]       @relation("AccountHierarchy")
+  parent         Account?            @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children       Account[]           @relation("AccountHierarchy")
   journalEntries JournalEntry[]
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  debitMappings  AccountingMapping[] @relation("MappingDebit")
+  creditMappings AccountingMapping[] @relation("MappingCredit")
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 
   @@index([code])
+  @@index([level])
 }
 
 enum VoucherStatus {
   DRAFT
   VERIFIED
   FINALIZED
+  CANCELLED
+}
+
+enum VoucherType {
+  GENERAL
+  OPENING
+  CLOSING
+  SALES
+  PURCHASE
+  RECEIPT
+  PAYMENT
+  PAYROLL
+  INVENTORY
+  ADJUSTMENT
+  REVERSAL
 }
 
 model JournalVoucher {
-  id              String         @id @default(uuid())
-  voucherNo       Int            @unique // شماره تصاعدی سند حسابداری
-  voucherDate     DateTime
-  description     String         @db.Text
-  status          VoucherStatus  @default(DRAFT)
-  referenceModule String?        // SALES, PRODUCTION, PAYROLL, WAREHOUSE
-  referenceId     String?        // شناسه رخداد مبدا جهت تطبیق
-  entries         JournalEntry[]
-  createdById     String?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                String          @id @default(uuid())
+  companyId         String?
+  company           Company?        @relation(fields: [companyId], references: [id])
+  branchId          String?
+  branch            Branch?         @relation(fields: [branchId], references: [id])
+  fiscalYearId      String?
+  fiscalYear        FiscalYear?     @relation(fields: [fiscalYearId], references: [id])
+  periodId          String?
+  period            FiscalPeriod?   @relation(fields: [periodId], references: [id])
+  voucherNo         Int             @unique // شماره تصاعدی سند حسابداری
+  voucherDate       DateTime
+  type              VoucherType     @default(GENERAL)
+  description       String          @db.Text
+  status            VoucherStatus   @default(DRAFT)
+  referenceModule   String?         // SALES, INVOICE, PAYMENT, RECEIPT, WAREHOUSE, PAYROLL, SCALE
+  referenceId       String?         // شناسه رخداد مبدا جهت تطبیق و Lineage
+  idempotencyKey    String?         @unique // کلید ضد تکرار سند
+  reversalOfId      String?         @unique // شناسه سند اصلی در صورت برگشت
+  reversedByVoucher JournalVoucher? @relation("VoucherReversal", fields: [reversalOfId], references: [id])
+  reversalVoucher   JournalVoucher? @relation("VoucherReversal")
+  entries           JournalEntry[]
+  totalDebit        Decimal         @default(0) @db.Decimal(18, 2)
+  totalCredit       Decimal         @default(0) @db.Decimal(18, 2)
+  createdById       String?
+  postedById        String?
+  postedAt          DateTime?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
 
   @@index([voucherDate])
+  @@index([status])
+  @@index([referenceModule, referenceId])
 }
 
 model JournalEntry {
-  id          String         @id @default(uuid())
-  voucherId   String
-  voucher     JournalVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
-  accountId   String
-  account     Account        @relation(fields: [accountId], references: [id])
-  detail1Id   String?        // تفصیلی اشخاص، مشتریان یا تامین‌کنندگان
-  detail2Id   String?        // تفصیلی مرکز هزینه یا شناسه سفارش کار
-  debit       Decimal        @default(0) @db.Decimal(18, 2)
-  credit      Decimal        @default(0) @db.Decimal(18, 2)
-  description String?
-  rowOrder    Int
+  id           String         @id @default(uuid())
+  voucherId    String
+  voucher      JournalVoucher @relation(fields: [voucherId], references: [id], onDelete: Cascade)
+  accountId    String
+  account      Account        @relation(fields: [accountId], references: [id])
+  costCenterId String?
+  costCenter   CostCenter?    @relation(fields: [costCenterId], references: [id])
+  detail1Type  String?        // CUSTOMER, SUPPLIER, EMPLOYEE, BANK_ACCOUNT
+  detail1Id    String?        // تفصیلی اشخاص، مشتریان یا تامین‌کنندگان
+  detail2Type  String?        // COST_CENTER, PROJECT, WORK_ORDER
+  detail2Id    String?        // تفصیلی مرکز هزینه یا شناسه سفارش کار
+  debit        Decimal        @default(0) @db.Decimal(18, 2)
+  credit       Decimal        @default(0) @db.Decimal(18, 2)
+  description  String?        @db.Text
+  rowOrder     Int
 
   @@index([voucherId])
   @@index([accountId])
   @@index([detail1Id])
+  @@index([detail2Id])
 }
+
+// ===========================================================
+// موتور شماره‌گذاری اتمیک و ضد تصادم (Concurrency-Safe Sequences)
+// ===========================================================
+
+model DocumentSequence {
+  id         String   @id @default(uuid())
+  companyId  String?
+  company    Company? @relation(fields: [companyId], references: [id])
+  code       String   // VOUCHER, INVOICE, RECEIPT, PAYMENT, WAYBILL, SCALE_TICKET, DELIVERY
+  prefix     String   // مثلا "SAN-", "INV-", "WAY-"
+  currentVal Int      @default(0)
+  padLength  Int      @default(6)
+  updatedAt  DateTime @updatedAt
+
+  @@unique([code])
+}
+
+// ===========================================================
+// موتور نگاشت حساب‌ها (Accounting Mapping Engine)
+// ===========================================================
+
+enum MappingTrigger {
+  SALES_INVOICE
+  SALES_SHIPMENT_COGS
+  CUSTOMER_RECEIPT
+  CUSTOMER_ADVANCE
+  SUPPLIER_PURCHASE
+  SUPPLIER_PAYMENT
+  PAYROLL_EXPENSE
+  INVENTORY_ADJUSTMENT
+  CHEQUE_RECEIPT
+  CHEQUE_DEPOSIT
+  CHEQUE_CLEAR
+  CHEQUE_BOUNCE
+  PETTY_CASH_FUNDING
+  PETTY_CASH_SETTLEMENT
+}
+
+model AccountingMapping {
+  id              String         @id @default(uuid())
+  companyId       String?
+  company         Company?       @relation(fields: [companyId], references: [id])
+  trigger         MappingTrigger
+  debitAccountId  String
+  debitAccount    Account        @relation("MappingDebit", fields: [debitAccountId], references: [id])
+  creditAccountId String
+  creditAccount   Account        @relation("MappingCredit", fields: [creditAccountId], references: [id])
+  description     String?
+  isActive        Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@unique([companyId, trigger])
+}
+
+// ===========================================================
+// رهگیری کامل و ردپای ممیزی تغییرات حساس (Audit Trail)
+// ===========================================================
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  APPROVE
+  POST
+  CANCEL
+  REVERSE
+  EXPORT
+  LOGIN
+  FAILED_LOGIN
+  PERMISSION_CHANGE
+}
+
+model AuditLog {
+  id        String      @id @default(uuid())
+  userId    String?
+  userRole  String?
+  ipAddress String?
+  action    AuditAction
+  entity    String      // Customer, Invoice, Voucher, ScaleTicket...
+  entityId  String
+  oldValue  Json?
+  newValue  Json?
+  reason    String?     @db.Text
+  timestamp DateTime    @default(now())
+
+  @@index([entity, entityId])
+  @@index([timestamp])
+  @@index([action])
+}
+
 
 // ===========================================================
 // انبارداری صنعتی چهارگانه، رهگیری باسکول و کاردکس
@@ -464,10 +812,14 @@ enum WarehouseType {
 
 model Warehouse {
   id           String             @id @default(uuid())
+  branchId     String?
+  branch       Branch?            @relation(fields: [branchId], references: [id])
   code         String             @unique
   name         String
   type         WarehouseType
   transactions StockTransaction[]
+  deliveries   Delivery[]
+  goodsReceipts GoodsReceipt[]
 }
 
 enum TransactionType {
@@ -503,12 +855,19 @@ model StockTransaction {
 
 model BOM {
   id               String            @id @default(uuid())
+  code             String?           @unique // مثلا "BOM-000001"
+  title            String?           // عنوان فرمول ساخت
   productId        Int
   product          Product           @relation("ProductBOM", fields: [productId], references: [id])
   version          Int               @default(1)
   description      String?
+  laborHours       Decimal           @default(0) @db.Decimal(10, 2) // ساعات کار استاندارد تخمینی
+  overheadRate     Decimal           @default(0) @db.Decimal(18, 2) // نرخ سربار استاندارد تخمینی
+  isActive         Boolean           @default(true)
   items            BOMItem[]
   productionOrders ProductionOrder[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model BOMItem {
@@ -530,24 +889,35 @@ enum OrderStatus {
 }
 
 model ProductionOrder {
-  id                 String      @id @default(uuid())
-  orderNumber        String      @unique // مثال: WO-1403-104
-  customerId         Int
-  customer           Customer    @relation(fields: [customerId], references: [id])
-  bomId              String
-  bom                BOM         @relation(fields: [bomId], references: [id])
-  targetQuantity     Decimal     @db.Decimal(12, 2)
-  actualQuantity     Decimal     @default(0) @db.Decimal(12, 2)
-  status             OrderStatus @default(PLANNED)
-  actualMaterialCost Decimal     @default(0) @db.Decimal(18, 2)
-  actualLaborCost    Decimal     @default(0) @db.Decimal(18, 2)
-  actualOverheadCost Decimal     @default(0) @db.Decimal(18, 2)
-  finalCostPerUnit   Decimal     @default(0) @db.Decimal(18, 2)
-  startDate          DateTime?
-  completionDate     DateTime?
-  createdAt          DateTime    @default(now())
+  id                  String      @id @default(uuid())
+  orderNumber         String      @unique // مثال: WO-000001
+  customerId          Int
+  customer            Customer    @relation(fields: [customerId], references: [id])
+  bomId               String
+  bom                 BOM         @relation(fields: [bomId], references: [id])
+  companyId           String?
+  company             Company?    @relation(fields: [companyId], references: [id])
+  targetQuantity      Decimal     @db.Decimal(12, 2)
+  actualQuantity      Decimal     @default(0) @db.Decimal(12, 2)
+  status              OrderStatus @default(PLANNED)
+  priority            String      @default("NORMAL") // NORMAL, URGENT, HIGH
+  targetDate          DateTime?
+  actualMaterialCost  Decimal     @default(0) @db.Decimal(18, 2)
+  actualLaborCost     Decimal     @default(0) @db.Decimal(18, 2)
+  actualOverheadCost  Decimal     @default(0) @db.Decimal(18, 2)
+  finalCostPerUnit    Decimal     @default(0) @db.Decimal(18, 2)
+  startDate           DateTime?
+  completionDate      DateTime?
+  issueVoucherId      String?     // سند حواله مصرف متریال به پای کار (WIP)
+  completionVoucherId String?     // سند رسید محصول نهایی (FG)
+  scrapVoucherId      String?     // سند ضایعات و قراضه انتقالی به انبار ضایعات
+  description         String?     @db.Text
+  deliveries          Delivery[]
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
   @@index([customerId])
+  @@index([status])
 }
 
 // ===========================================================
@@ -567,35 +937,484 @@ enum TaxSendStatus {
 // ===========================================================
 
 model Employee {
-  id            String        @id @default(uuid())
-  personnelCode String        @unique
-  nationalCode  String        @unique
-  insuranceNo   String?
-  firstName     String
-  lastName      String
-  fatherName    String?
-  jobTitle      String
-  workshopCode  String        // کد کارگاه تامین اجتماعی
-  baseDailyWage Decimal       @db.Decimal(15, 2)
-  payslips      PayrollSlip[]
-  createdAt     DateTime      @default(now())
+  id               String        @id @default(uuid())
+  personnelCode    String        @unique // مثلا EMP-000001
+  nationalCode     String        @unique // کد ملی ۱۰ رقمی
+  insuranceNo      String?       // شماره بیمه تامین اجتماعی
+  firstName        String
+  lastName         String
+  fatherName       String?
+  phone            String?       // شماره موبایل
+  jobTitle         String        // عنوان شغلی
+  department       String        @default("PRODUCTION") // PRODUCTION, LOGISTICS, SALES, FINANCE, ADMIN, ENGINEERING
+  workshopCode     String        // کد کارگاه تامین اجتماعی (۱۰ رقمی)
+  baseDailyWage    Decimal       @db.Decimal(15, 2) // دستمزد پایه روزانه (ریال)
+  housingAllowance Decimal       @default(9000000) @db.Decimal(15, 2) // حق مسکن مصوب (ریال)
+  foodSubsidy      Decimal       @default(14000000) @db.Decimal(15, 2) // بن خواربار مصوب (ریال)
+  childCount       Int           @default(0) // تعداد اولاد واجد شرایط
+  childAllowance   Decimal       @default(0) @db.Decimal(15, 2) // حق اولاد ماهانه
+  bankName         String?       // نام بانک عامل
+  bankAccount      String?       // شماره حساب
+  bankIban         String?       // شماره شبا (IR...)
+  maritalStatus    String        @default("MARRIED") // MARRIED, SINGLE
+  isActive         Boolean       @default(true) // وضعیت اشتغال
+  hireDate         DateTime?     @default(now()) // تاریخ استخدام
+  companyId        String?
+  company          Company?      @relation(fields: [companyId], references: [id])
+  payslips         PayrollSlip[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([department])
+  @@index([isActive])
+}
+
+model PayrollRun {
+  id               String        @id @default(uuid())
+  runNumber        String        @unique // e.g. PR-000001
+  year             Int           // سال خورشیدی، مثلا ۱۴۰۵
+  month            Int           // ماه خورشیدی (۱ تا ۱۲)
+  title            String        // مثلا "حقوق و دستمزد فروردین ۱۴۰۵"
+  status           String        @default("DRAFT") // DRAFT, APPROVED, PAID
+  totalEmployees   Int           @default(0)
+  totalGross       Decimal       @default(0) @db.Decimal(18, 2)
+  totalWorkerIns   Decimal       @default(0) @db.Decimal(18, 2)
+  totalEmployerIns Decimal       @default(0) @db.Decimal(18, 2)
+  totalTax         Decimal       @default(0) @db.Decimal(18, 2)
+  totalNet         Decimal       @default(0) @db.Decimal(18, 2)
+  journalVoucherId String?       // سند حسابداری دوبل شناسایی هزینه حقوق و بدهی‌ها
+  paymentVoucherId String?       // سند حسابداری تسویه و واریز بانکی
+  paidAt           DateTime?
+  companyId        String?
+  company          Company?      @relation(fields: [companyId], references: [id])
+  slips            PayrollSlip[]
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@unique([year, month])
 }
 
 model PayrollSlip {
-  id                String    @id @default(uuid())
+  id                String      @id @default(uuid())
+  payrollRunId      String?
+  payrollRun        PayrollRun? @relation(fields: [payrollRunId], references: [id], onDelete: Cascade)
   employeeId        String
-  employee          Employee  @relation(fields: [employeeId], references: [id])
+  employee          Employee    @relation(fields: [employeeId], references: [id])
   year              Int
   month             Int
-  workedDays        Int
-  overtimeHours     Decimal   @default(0) @db.Decimal(6, 2)
-  grossSalary       Decimal   @db.Decimal(18, 2)
-  insuranceWorker   Decimal   @db.Decimal(18, 2) // ۷٪
-  insuranceEmployer Decimal   @db.Decimal(18, 2) // ۲۳٪
-  incomeTax         Decimal   @db.Decimal(18, 2) // ماده ۸۶
-  netSalary         Decimal   @db.Decimal(18, 2)
+  workedDays        Int         // روزهای کارکرد در ماه (معمولا ۳۰ یا ۳۱)
+  baseSalary        Decimal     @default(0) @db.Decimal(18, 2) // مزد پایه کارکرد = کارکرد * دستمزد روزانه
+  housingAllowance  Decimal     @default(0) @db.Decimal(18, 2) // حق مسکن ماهانه
+  foodSubsidy       Decimal     @default(0) @db.Decimal(18, 2) // بن کارگری / خواربار
+  childAllowance    Decimal     @default(0) @db.Decimal(18, 2) // حق اولاد
+  overtimeHours     Decimal     @default(0) @db.Decimal(6, 2) // ساعات اضافه‌کاری
+  overtimeAmount    Decimal     @default(0) @db.Decimal(18, 2) // مبلغ اضافه‌کاری (۱.۴ برابر نرخ ساعتی)
+  bonusAmount       Decimal     @default(0) @db.Decimal(18, 2) // پاداش، کارانه و انگیزش
+  otherAdditions    Decimal     @default(0) @db.Decimal(18, 2) // سایر مزایای مشمول
+  grossSalary       Decimal     @db.Decimal(18, 2) // جمع ناخالص حقوق و مزایا
+  insuredEarnings   Decimal     @default(0) @db.Decimal(18, 2) // مبنای کسر بیمه (مشمول بیمه)
+  insuranceWorker   Decimal     @db.Decimal(18, 2) // ۷٪ سهم کارگر
+  insuranceEmployer Decimal     @db.Decimal(18, 2) // ۲۳٪ سهم کارفرما (۲۰٪ + ۳٪ بیمه بیکاری)
+  taxExemptAmount   Decimal     @default(0) @db.Decimal(18, 2) // معافیت ماهانه ماده ۸۴
+  taxableAmount     Decimal     @default(0) @db.Decimal(18, 2) // درآمد مشمول مالیات
+  incomeTax         Decimal     @db.Decimal(18, 2) // مالیات حقوق ماده ۸۶
+  otherDeductions   Decimal     @default(0) @db.Decimal(18, 2) // سایر کسورات (مساعده، وام و...)
+  netSalary         Decimal     @db.Decimal(18, 2) // خالص پرداختی به پرسنل
+  status            String      @default("DRAFT") // DRAFT, APPROVED, PAID
   journalVoucherId  String?
-  createdAt         DateTime  @default(now())
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   @@unique([employeeId, year, month])
+}
+
+// ===========================================================
+// خزانه‌داری، حساب‌های بانکی، چک‌های صیادی و تنخواه‌گردان
+// ===========================================================
+
+model BankAccount {
+  id             String           @id @default(uuid())
+  companyId      String?
+  company        Company?         @relation(fields: [companyId], references: [id])
+  bankName       String           // نام بانک (ملی، ملت، صادرات، تجارت، پاسارگاد، سپه)
+  branchName     String?          // نام شعبه
+  branchCode     String?          // کد شعبه
+  accountNumber  String           // شماره حساب
+  iban           String?          @unique // شماره شبا (IR...)
+  cardPrefix     String?          // ۴ یا ۱۶ رقم کارت
+  currency       String           @default("IRR")
+  accountId      String?          // پیوند به حساب معین در دفتر کل (کد ۱۱۰۱۰۱)
+  posTerminalId  String?          // شماره ترمینال دستگاه کارتخوان کارخانه
+  isActive       Boolean          @default(true)
+  isDefault      Boolean          @default(false)
+  initialBalance Decimal          @default(0) @db.Decimal(18, 2)
+  cheques          Cheque[]
+  supplierPayments SupplierPayment[]
+  createdAt        DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([companyId])
+  @@index([accountNumber])
+}
+
+enum ChequeType {
+  RECEIVABLE // چک دریافتی از مشتری
+  PAYABLE    // چک پرداختی به تامین‌کننده/هزینه
+}
+
+enum ChequeStatus {
+  RECEIVED             // دریافت شده از مشتری / نزد صندوق
+  IN_PORTFOLIO         // موجود در گاوصندوق کارخانه
+  DEPOSITED            // واگذار شده به بانک جهت وصول (در جریان وصول)
+  CLEARED              // وصول قطعی و واریز به حساب بانکی
+  BOUNCED              // برگشت‌خورده / واخواست شده
+  TRANSFERRED          // خرج‌شده / ظهرنویسی به تامین‌کننده
+  RETURNED_TO_CUSTOMER // عودت داده شده به مشتری
+  CANCELLED            // ابطال‌شده
+}
+
+model Cheque {
+  id                 String       @id @default(uuid())
+  type               ChequeType   @default(RECEIVABLE)
+  sayadId            String       @db.VarChar(16) // شناسه ۱۶ رقمی صیادی
+  chequeNumber       String       // شماره چک
+  amount             Decimal      @db.Decimal(18, 2) // مبلغ چک
+  issueDate          DateTime     // تاریخ صدور
+  dueDate            DateTime     // تاریخ سررسید
+  status             ChequeStatus @default(RECEIVED)
+  
+  // مشخصات بانک و صادرکننده
+  bankName           String       // بانک صادرکننده چک
+  bankBranch         String?
+  bankAccountNumber  String?
+  bankIban           String?
+  drawerName         String       // نام صادرکننده / صاحب حساب
+  drawerNationalId   String?      // کد ملی یا شناسه ملی صادرکننده
+  payeeName          String?      // در وجه
+
+  // پیوندها
+  customerId         Int?
+  customer           Customer?    @relation(fields: [customerId], references: [id])
+  paymentId          Int?
+  payment            Payment?     @relation(fields: [paymentId], references: [id])
+  bankAccountId      String?      // حساب بانکی کارخانه جهت واگذاری یا وصول
+  bankAccount        BankAccount? @relation(fields: [bankAccountId], references: [id])
+  
+  // تواریخ چرخه حیات
+  depositedAt        DateTime?
+  clearedAt          DateTime?
+  bouncedAt          DateTime?
+  bounceReason       String?      // دلیل برگشت چک
+  
+  // تصاویر و سامانه صیاد
+  frontImageUrl      String?      @db.Text
+  backImageUrl       String?      @db.Text
+  sayadRegistered    Boolean      @default(true)
+  journalVoucherId   String?      // آخرین سند دوبل مرتبط
+  description        String?      @db.Text
+  supplierPayments   SupplierPayment[]
+
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  @@index([sayadId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([customerId])
+}
+
+enum PettyCashTxType {
+  FUNDING    // شارژ تنخواه از حساب بانکی
+  EXPENSE    // هزینه تنخواه با فاکتور/رسید
+  REFUND     // عودت مازاد به بانک
+  SETTLEMENT // تسویه صورت وضعیت تنخواه
+}
+
+enum PettyCashStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SETTLED
+}
+
+model PettyCashFund {
+  id             String                 @id @default(uuid())
+  companyId      String?
+  company        Company?               @relation(fields: [companyId], references: [id])
+  code           String                 @unique // مثلا PC-FACTORY-01
+  title          String                 // عنوان تنخواه
+  holderName     String                 // نام تنخواه‌دار
+  holderPhone    String?
+  limitAmount    Decimal                @db.Decimal(18, 2) // سقف مجاز
+  currentBalance Decimal                @default(0) @db.Decimal(18, 2)
+  accountId      String?                // پیوند به ۱۱۰۲۰۱
+  costCenterId   String?
+  isActive       Boolean                @default(true)
+  transactions   PettyCashTransaction[]
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  @@index([companyId])
+}
+
+model PettyCashTransaction {
+  id               String          @id @default(uuid())
+  fundId           String
+  fund             PettyCashFund   @relation(fields: [fundId], references: [id], onDelete: Restrict)
+  type             PettyCashTxType
+  amount           Decimal         @db.Decimal(18, 2)
+  date             DateTime        @default(now())
+  expenseCategory  String?         // ایاب ذهاب، ملزومات مصرفی، ابزار...
+  expenseAccountId String?         // حساب هزینه در دفتر کل
+  costCenterId     String?         // مرکز هزینه
+  receiptNo        String?         // شماره فاکتور/رسید
+  supplierName     String?         // فروشنده
+  receiptUrl       String?         @db.Text
+  journalVoucherId String?
+  status           PettyCashStatus @default(PENDING)
+  description      String?         @db.Text
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@index([fundId])
+  @@index([date])
+}
+
+// ===========================================================
+// تدارکات، خرید مواد اولیه و مدیریت تامین‌کنندگان (Procurement)
+// ===========================================================
+
+model Supplier {
+  id             String            @id @default(uuid())
+  code           String            @unique // مثلا "SUP-000001"
+  name           String            // نام کامل شرکت یا تامین‌کننده
+  companyName    String?           // نام رسمی حقوقی
+  nationalId     String?           @unique // شناسه ملی یا کد ملی
+  economicCode   String?           // کد اقتصادی ۱۲ رقمی
+  phone          String?           // شماره تماس دفتر
+  mobile         String?           // موبایل مسئول فروش
+  address        String?           @db.Text
+  contactPerson  String?           // نام کارشناس فروش
+  
+  // اطلاعات مالی و بانکی
+  bankName       String?           // بانک عامل تامین‌کننده
+  bankAccount    String?           // شماره حساب
+  bankIban       String?           // شماره شبا
+  creditLimit    Decimal           @default(0) @db.Decimal(18, 2)
+  totalPayable   Decimal           @default(0) @db.Decimal(18, 2) // مانده بستانکاری دفتری
+  
+  // وضعیت و رتبه‌بندی
+  rating         String?           @default("A") // A, B, C
+  isActive       Boolean           @default(true)
+  
+  // ارتباطات
+  purchaseOrders PurchaseOrder[]
+  goodsReceipts  GoodsReceipt[]
+  invoices       SupplierInvoice[]
+  payments       SupplierPayment[]
+  
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  APPROVED
+  PARTIALLY_RECEIVED
+  COMPLETED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id               String              @id @default(uuid())
+  orderNo          String              @unique // "PO-000001"
+  supplierId       String
+  supplier         Supplier            @relation(fields: [supplierId], references: [id])
+  companyId        String?
+  company          Company?            @relation(fields: [companyId], references: [id])
+  
+  orderDate        DateTime            @default(now())
+  expectedDate     DateTime?
+  status           PurchaseOrderStatus @default(DRAFT)
+  
+  subtotal         Decimal             @default(0) @db.Decimal(18, 2)
+  taxAmount        Decimal             @default(0) @db.Decimal(18, 2) // ۱۰٪ ارزش افزوده
+  freightCost      Decimal             @default(0) @db.Decimal(18, 2)
+  totalAmount      Decimal             @default(0) @db.Decimal(18, 2)
+  
+  items            PurchaseOrderItem[]
+  goodsReceipts    GoodsReceipt[]
+  invoices         SupplierInvoice[]
+  
+  journalVoucherId String?
+  description      String?             @db.Text
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id              String            @id @default(uuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder     @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  productId       Int
+  product         Product           @relation(fields: [productId], references: [id])
+  
+  orderedQty      Decimal           @db.Decimal(15, 3) // وزن یا تعداد سفارش
+  receivedQty     Decimal           @default(0) @db.Decimal(15, 3) // تحویل شده تا کنون
+  unitPrice       Decimal           @db.Decimal(18, 2)
+  totalPrice      Decimal           @db.Decimal(18, 2)
+  taxRate         Decimal           @default(10.00) @db.Decimal(5, 2)
+  taxAmount       Decimal           @default(0) @db.Decimal(18, 2)
+  finalAmount     Decimal           @db.Decimal(18, 2)
+  
+  uom             String            @default("KG") // KG, BRANCH, METER, TON
+  steelGrade      String?           // ST37, ST52, CK45...
+  heatNumber      String?           // شماره ذوب
+  batchNumber     String?           // شماره بهر
+  
+  goodsReceiptItems GoodsReceiptItem[]
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+enum GoodsReceiptStatus {
+  PENDING_QC
+  COMPLETED
+  REJECTED
+}
+
+model GoodsReceipt {
+  id               String             @id @default(uuid())
+  receiptNo        String             @unique // "GRN-000001"
+  purchaseOrderId  String?
+  purchaseOrder    PurchaseOrder?     @relation(fields: [purchaseOrderId], references: [id])
+  supplierId       String
+  supplier         Supplier           @relation(fields: [supplierId], references: [id])
+  warehouseId      String             // به طور پیش‌فرض WH-RAW-01
+  warehouse        Warehouse          @relation(fields: [warehouseId], references: [id])
+  
+  status           GoodsReceiptStatus @default(COMPLETED)
+  receiptDate      DateTime           @default(now())
+  
+  // توزین باسکول ورود بار (منبع حقیقت وزن)
+  scaleGrossKg     Decimal?           @db.Decimal(12, 3)
+  scaleTareKg      Decimal?           @db.Decimal(12, 3)
+  scaleNetKg       Decimal            @db.Decimal(12, 3)
+  scaleTicketNo    String?
+  scalePhotoUrl    String?
+  
+  // بارنامه جاده‌ای و ناوگان
+  waybillNo        String?
+  driverName       String?
+  driverPhone      String?
+  driverNationalId String?
+  truckPlate       String?
+  
+  // کنترل کیفی و متالورژی
+  qcPassed         Boolean            @default(true)
+  qcNotes          String?
+  heatNumber       String?
+  millTestCertUrl  String?
+  
+  // اقلام تحویلی
+  items            GoodsReceiptItem[]
+  
+  stockTransactionId String?         // پیوند به StockTransaction: PURCHASE_RECEIPT
+  journalVoucherId   String?
+  description      String?            @db.Text
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([supplierId])
+  @@index([warehouseId])
+  @@index([purchaseOrderId])
+}
+
+model GoodsReceiptItem {
+  id                  String             @id @default(uuid())
+  goodsReceiptId      String
+  goodsReceipt        GoodsReceipt       @relation(fields: [goodsReceiptId], references: [id], onDelete: Cascade)
+  purchaseOrderItemId String?
+  purchaseOrderItem   PurchaseOrderItem? @relation(fields: [purchaseOrderItemId], references: [id])
+  productId           Int
+  product             Product            @relation(fields: [productId], references: [id])
+  
+  receivedQty         Decimal            @db.Decimal(15, 3)
+  unitCost            Decimal            @db.Decimal(18, 2)
+  totalCost           Decimal            @db.Decimal(18, 2)
+  
+  steelGrade          String?
+  heatNumber          String?
+  batchNumber         String?
+
+  @@index([goodsReceiptId])
+  @@index([productId])
+}
+
+enum SupplierInvoiceStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+model SupplierInvoice {
+  id               String                @id @default(uuid())
+  invoiceNo        String                // شماره فاکتور اعلامی تامین‌کننده
+  systemNo         String                @unique // "SINV-000001"
+  supplierId       String
+  supplier         Supplier              @relation(fields: [supplierId], references: [id])
+  purchaseOrderId  String?
+  purchaseOrder    PurchaseOrder?        @relation(fields: [purchaseOrderId], references: [id])
+  
+  invoiceDate      DateTime
+  dueDate          DateTime?
+  status           SupplierInvoiceStatus @default(PENDING)
+  
+  amount           Decimal               @db.Decimal(18, 2) // مبلغ بدون مالیات
+  taxAmount        Decimal               @default(0) @db.Decimal(18, 2) // ۱۰٪ ارزش افزوده
+  freightCost      Decimal               @default(0) @db.Decimal(18, 2)
+  finalAmount      Decimal               @db.Decimal(18, 2)
+  paidAmount       Decimal               @default(0) @db.Decimal(18, 2)
+  
+  journalVoucherId String?               // سند شناسایی خرید و بدهی
+  attachmentUrl    String?
+  payments         SupplierPayment[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+
+  @@index([supplierId])
+  @@index([purchaseOrderId])
+}
+
+model SupplierPayment {
+  id                String           @id @default(uuid())
+  paymentNo         String           @unique // "SPAY-000001"
+  supplierId        String
+  supplier          Supplier         @relation(fields: [supplierId], references: [id])
+  supplierInvoiceId String?
+  supplierInvoice   SupplierInvoice? @relation(fields: [supplierInvoiceId], references: [id])
+  
+  amount            Decimal          @db.Decimal(18, 2)
+  paymentDate       DateTime         @default(now())
+  paymentMethod     String           // CASH, BANK_TRANSFER, CHEQUE_ENDORSED, CHEQUE_ISSUED
+  
+  bankAccountId     String?          // در صورت پرداخت بانکی
+  bankAccount       BankAccount?     @relation(fields: [bankAccountId], references: [id])
+  chequeId          String?          // در صورت پرداخت با چک صیادی
+  cheque            Cheque?          @relation(fields: [chequeId], references: [id])
+  
+  receiptNo         String?
+  attachmentUrl     String?
+  journalVoucherId  String?
+  description       String?          @db.Text
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([supplierId])
+  @@index([supplierInvoiceId])
 }

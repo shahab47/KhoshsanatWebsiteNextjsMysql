@@ -21,15 +21,6 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const hasSubmitted = useRef(false);
 
-  useEffect(() => {
-    if (!isOpen) {
-      if (form.attachmentUrl && !hasSubmitted.current) {
-        deleteFileFromCloud(form.attachmentUrl);
-      }
-      hasSubmitted.current = false;
-    }
-  }, [isOpen, form.attachmentUrl]);
-
   const deleteFileFromCloud = async (url: string) => {
     try {
       await fetch('/api/upload', {
@@ -41,6 +32,15 @@ export function CreateInvoiceModal({ isOpen, onClose, onSubmit, submitting }: Pr
       console.error('خطا در حذف فایل:', err);
     }
   };
+
+  useEffect(() => {
+    if (!isOpen) {
+      if (form.attachmentUrl && !hasSubmitted.current) {
+        deleteFileFromCloud(form.attachmentUrl);
+      }
+      hasSubmitted.current = false;
+    }
+  }, [isOpen, form.attachmentUrl]);
 
   if (!isOpen) return null;
 

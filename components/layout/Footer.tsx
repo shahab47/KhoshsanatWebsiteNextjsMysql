@@ -34,14 +34,24 @@ const parseLinks = (rawJson?: string, fallback: any[] = []) => {
 };
 
 export default async function Footer() {
-  // دریافت همزمان تنظیمات فوتر و شبکه‌های اجتماعی
-  const [footerSettings, socialSettings] = await Promise.all([
-    db.setting.findMany({ where: { key: { startsWith: 'FOOTER_' } } }),
-    db.setting.findMany({ where: { key: { startsWith: 'SOCIAL_' } } }),
-  ]);
-
-  const dbTexts = settingsToObject(footerSettings);
-  const socialLinks = settingsToObject(socialSettings);
+  let dbTexts: Record<string, string> = {};
+  let socialLinks: Record<string, string> = {};
+  try {
+    const allSettings = await db.setting.findMany({
+      where: {
+        OR: [
+          { key: { startsWith: 'FOOTER_' } },
+          { key: { startsWith: 'SOCIAL_' } },
+        ],
+      },
+    });
+    const footerSettings = allSettings.filter(s => s.key.startsWith('FOOTER_'));
+    const socialSettings = allSettings.filter(s => s.key.startsWith('SOCIAL_'));
+    dbTexts = settingsToObject(footerSettings);
+    socialLinks = settingsToObject(socialSettings);
+  } catch (err) {
+    console.warn('پایگاه داده در دسترس نیست؛ استفاده از متون پیش‌فرض در Footer:', err);
+  }
 
   // دریافت لوگو از جدول logo با اولویت main-svg
   let logoUrl = '/Logo.svg'; // پیش‌فرض

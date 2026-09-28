@@ -38,17 +38,24 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function ContactPage() {
-  const settings = await db.setting.findMany({
-    where: {
-      key: { in: ['FOOTER_ADDRESS', 'FOOTER_PHONE', 'FOOTER_EMAIL'] },
-    },
-  });
+export const revalidate = 60;
 
-  const texts = settings.reduce((acc, curr) => {
-    acc[curr.key] = curr.value;
-    return acc;
-  }, {} as Record<string, string>);
+export default async function ContactPage() {
+  let texts: Record<string, string> = {};
+  try {
+    const settings = await db.setting.findMany({
+      where: {
+        key: { in: ['FOOTER_ADDRESS', 'FOOTER_PHONE', 'FOOTER_EMAIL'] },
+      },
+    });
+
+    texts = settings.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, string>);
+  } catch (err) {
+    console.warn('پایگاه داده در دسترس نیست؛ استفاده از اطلاعات پیش‌فرض تماس:', err);
+  }
 
   const address = texts.FOOTER_ADDRESS || 'تهران، شهرک صنعتی، خیابان مهندسان، پلاک ۱۲';
   const phone = texts.FOOTER_PHONE || '+98 935 18 77 305';

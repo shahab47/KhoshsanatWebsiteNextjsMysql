@@ -24,27 +24,32 @@ interface PageProps {
 }
 
 async function getProduct(slugOrId: string) {
-  const decoded = decodeURIComponent(slugOrId);
-  const numericId = parseInt(decoded);
+  try {
+    const decoded = decodeURIComponent(slugOrId);
+    const numericId = parseInt(decoded);
 
-  let product = await db.product.findFirst({
-    where: {
-      OR: [
-        { slug: decoded },
-        ...(!isNaN(numericId) ? [{ id: numericId }] : []),
-      ],
-      isActive: true,
-    },
-    include: {
-      subcategory: {
-        include: {
-          category: true,
+    const product = await db.product.findFirst({
+      where: {
+        OR: [
+          { slug: decoded },
+          ...(!isNaN(numericId) ? [{ id: numericId }] : []),
+        ],
+        isActive: true,
+      },
+      include: {
+        subcategory: {
+          include: {
+            category: true,
+          },
         },
       },
-    },
-  });
+    });
 
-  return product;
+    return product;
+  } catch (err) {
+    console.warn('خطا در دریافت محصول یا قطع بودن دیتابیس:', err);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

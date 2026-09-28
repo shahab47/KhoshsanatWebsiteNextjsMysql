@@ -29,6 +29,12 @@ export function CustomerInfoTab({ customerId }: { customerId: string }) {
             address: data.address || '',
             nationalId: data.nationalId || '',
             status: data.status,
+            creditLimit: data.creditLimit ? Number(data.creditLimit) : 0,
+            isCreditBlocked: Boolean(data.isCreditBlocked),
+            creditBlockReason: data.creditBlockReason || '',
+            riskRating: data.riskRating || 'A',
+            economicCode: data.economicCode || '',
+            postalCode: data.postalCode || '',
           });
         } else {
           showAlert('خطا در دریافت اطلاعات مشتری', 'خطا', 'error');
@@ -100,6 +106,12 @@ export function CustomerInfoTab({ customerId }: { customerId: string }) {
       address: customer.address || '',
       nationalId: customer.nationalId || '',
       status: customer.status,
+      creditLimit: customer.creditLimit ? Number(customer.creditLimit) : 0,
+      isCreditBlocked: Boolean(customer.isCreditBlocked),
+      creditBlockReason: customer.creditBlockReason || '',
+      riskRating: customer.riskRating || 'A',
+      economicCode: customer.economicCode || '',
+      postalCode: customer.postalCode || '',
     });
     setErrors({});
     setIsEditing(false);
@@ -226,6 +238,160 @@ export function CustomerInfoTab({ customerId }: { customerId: string }) {
         </div>
       </div>
 
+      {/* بخش اعتبارسنجی مالی، مدیریت ریسک و اطلاعات مودیان */}
+      <div className="bg-slate-50/70 p-6 rounded-2xl border border-slate-200">
+        <h3 className="text-lg font-black text-slate-800 flex items-center justify-between gap-2 mb-6 border-b border-slate-200 pb-3">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-amber-100 text-amber-700 rounded-lg"><CreditCard size={20} /></div>
+            اعتبارسنجی صنعتی، مدیریت ریسک و سامانه مودیان
+          </div>
+          {customer.isCreditBlocked && (
+            <span className="bg-rose-100 text-rose-700 border border-rose-200 text-xs px-3 py-1 rounded-lg font-black">
+              ⛔ اعتبار مسدود است
+            </span>
+          )}
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+              <span className="font-bold w-36 flex items-center gap-1.5 text-sm">سقف اعتبار مجاز:</span>
+              {isEditing ? (
+                <div className="flex-1 flex items-center gap-2">
+                  <input
+                    type="number"
+                    dir="ltr"
+                    name="creditLimit"
+                    value={formData.creditLimit ?? 0}
+                    onChange={handleChange}
+                    className="w-full border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-mono text-left"
+                  />
+                  <span className="text-xs text-slate-500 font-bold whitespace-nowrap">تومان</span>
+                </div>
+              ) : (
+                <span className="flex-1 font-black text-slate-800">
+                  {Number(customer.creditLimit || 0) > 0 ? (
+                    <span>{Number(customer.creditLimit).toLocaleString('fa-IR')} <span className="text-xs font-bold text-slate-500">تومان</span></span>
+                  ) : (
+                    <span className="text-slate-400 text-xs">تعیین نشده (فقط نقدی / نامحدود)</span>
+                  )}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+              <span className="font-bold w-36 flex items-center gap-1.5 text-sm">رتبه ریسک اعتباری:</span>
+              {isEditing ? (
+                <select
+                  name="riskRating"
+                  value={formData.riskRating || 'A'}
+                  onChange={handleChange}
+                  className="flex-1 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 font-bold"
+                >
+                  <option value="A">رتبه A - ممتاز (خوش‌حساب، اعتبار کامل)</option>
+                  <option value="B">رتبه B - خوب (تسهیلات استاندارد با چک)</option>
+                  <option value="C">رتبه C - پرخطر (نیاز به تاییدیه مدیر مالی)</option>
+                  <option value="D">رتبه D - بحرانی (فقط تسویه نقدی پیش از بارگیری)</option>
+                </select>
+              ) : (
+                <span className={`px-3 py-1 rounded-lg text-xs font-black inline-flex items-center gap-1.5 ${
+                  (customer.riskRating || 'A') === 'A' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                  customer.riskRating === 'B' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                  customer.riskRating === 'C' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                  'bg-rose-100 text-rose-800 border border-rose-200'
+                }`}>
+                  رتبه {customer.riskRating || 'A'} - {
+                    (customer.riskRating || 'A') === 'A' ? 'ممتاز (خوش‌حساب)' :
+                    customer.riskRating === 'B' ? 'خوب (استاندارد)' :
+                    customer.riskRating === 'C' ? 'پرخطر' : 'بحرانی (فقط نقد)'
+                  }
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+              <span className="font-bold w-36 flex items-center gap-1.5 text-sm">قفل اعتبار:</span>
+              {isEditing ? (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name="isCreditBlocked"
+                    checked={Boolean(formData.isCreditBlocked)}
+                    onChange={(e) => setFormData((prev: any) => ({ ...prev, isCreditBlocked: e.target.checked }))}
+                    className="w-4 h-4 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
+                  />
+                  <span className="text-sm font-bold text-rose-700">مسدودسازی صدور سفارش و فاکتور نسیه</span>
+                </label>
+              ) : (
+                <span className={`text-xs font-bold ${customer.isCreditBlocked ? 'text-rose-600' : 'text-emerald-600'}`}>
+                  {customer.isCreditBlocked ? 'مسدود شده توسط مدیریت' : 'آزاد (بدون قفل اعتباری)'}
+                </span>
+              )}
+            </div>
+
+            {formData.isCreditBlocked && isEditing && (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+                <span className="font-bold w-36 text-sm">علت مسدودسازی:</span>
+                <input
+                  type="text"
+                  name="creditBlockReason"
+                  value={formData.creditBlockReason || ''}
+                  onChange={handleChange}
+                  placeholder="مثال: چک برگشتی، تاخیر در تسویه فاکتورهای قبلی"
+                  className="flex-1 border border-rose-200 bg-rose-50/50 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                />
+              </div>
+            )}
+            {!isEditing && customer.isCreditBlocked && customer.creditBlockReason && (
+              <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800">
+                <span className="font-bold">علت مسدودسازی اعتبار: </span>
+                {customer.creditBlockReason}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+              <span className="font-bold w-36 text-sm">کد اقتصادی (۱۲ رقمی):</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  dir="ltr"
+                  name="economicCode"
+                  value={formData.economicCode || ''}
+                  onChange={handleChange}
+                  placeholder="کد اقتصادی شرکت"
+                  className="flex-1 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left font-mono text-sm"
+                />
+              ) : (
+                <span className="flex-1 font-mono text-sm">{customer.economicCode || <span className="text-slate-400">ثبت نشده</span>}</span>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-slate-700">
+              <span className="font-bold w-36 text-sm">کد پستی ۱۰ رقمی:</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  dir="ltr"
+                  name="postalCode"
+                  value={formData.postalCode || ''}
+                  onChange={handleChange}
+                  placeholder="کد پستی محل اقامت یا کارخانه"
+                  className="flex-1 border border-slate-200 rounded-xl p-2.5 outline-none focus:ring-2 focus:ring-blue-500 text-left font-mono text-sm"
+                />
+              ) : (
+                <span className="flex-1 font-mono text-sm">{customer.postalCode || <span className="text-slate-400">ثبت نشده</span>}</span>
+              )}
+            </div>
+
+            <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl text-xs text-blue-900 leading-relaxed">
+              💡 <strong>سامانه مودیان و حد مجاز ماده ۶:</strong> اطلاعات اقتصادی و کد ملی مشتری برای صدور صورتحساب الکترونیکی نوع ۱ و ثبت در کارپوشه مالیاتی شرکت خوش‌صنعت پایدار الزامی است.
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="text-left">
         <span className="inline-block bg-gray-100 text-gray-500 px-4 py-2 rounded-xl text-xs font-bold border border-gray-200">
           تاریخ عضویت در سیستم: {new Date(customer.createdAt).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -233,4 +399,4 @@ export function CustomerInfoTab({ customerId }: { customerId: string }) {
       </div>
     </div>
   );
-}
+}

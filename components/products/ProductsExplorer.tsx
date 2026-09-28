@@ -3,6 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Download, ChevronLeft, ChevronRight, Search, Package } from 'lucide-react';
 
 interface Subcategory {
@@ -208,11 +209,12 @@ export default function ProductsExplorer({
                     href={`/products/${encodeURIComponent(product.slug)}`}
                     className="w-full h-[150px] md:h-[200px] overflow-hidden relative bg-gray-100 border-b border-gray-50 flex-shrink-0 block"
                   >
-                    <img
+                    <Image
                       src={product.imageUrl}
                       alt={`تصویر محصول ${product.title}`}
-                      loading="lazy"
-                      className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
+                      fill
+                      sizes="(max-width: 768px) 50vw, 280px"
+                      className="object-cover transform transition-transform duration-500 group-hover:scale-105"
                     />
                   </Link>
 

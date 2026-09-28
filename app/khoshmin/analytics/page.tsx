@@ -44,10 +44,10 @@ export default function AnalyticsDashboardPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
-  const fetchAnalytics = async (selectedRange = range) => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch(`/api/khoshmin/analytics?range=${selectedRange}`);
+      const res = await fetch(`/api/khoshmin/analytics?range=${range}`);
       if (res.ok) {
         const json = await res.json();
         setData(json);
@@ -55,13 +55,32 @@ export default function AnalyticsDashboardPage() {
     } catch (err) {
       console.error('خطا در دریافت آمار:', err);
     } finally {
-      setLoading(false);
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    fetchAnalytics(range);
+    let ignore = false;
+    const loadData = async () => {
+      try {
+        const res = await fetch(`/api/khoshmin/analytics?range=${range}`);
+        if (res.ok && !ignore) {
+          const json = await res.json();
+          setData(json);
+        }
+      } catch (err) {
+        console.error('خطا در دریافت آمار:', err);
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+    return () => {
+      ignore = true;
+    };
   }, [range]);
 
   const maxTimelineVisits = data?.timeline.length
@@ -118,7 +137,7 @@ export default function AnalyticsDashboardPage() {
           ))}
 
           <button
-            onClick={() => fetchAnalytics(range)}
+            onClick={handleRefresh}
             disabled={isRefreshing}
             className="p-2 rounded-xl text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
             title="بروزرسانی داده‌ها"

@@ -32,20 +32,25 @@ interface PageProps {
 
 async function getArticle(identifier?: string) {
   if (!identifier) return null;
-  const decoded = decodeURIComponent(identifier);
-  const numericId = parseInt(decoded);
+  try {
+    const decoded = decodeURIComponent(identifier);
+    const numericId = parseInt(decoded);
 
-  const article = await db.article.findFirst({
-    where: {
-      OR: [
-        { slug: decoded },
-        ...(!isNaN(numericId) ? [{ id: numericId }] : []),
-      ],
-      isActive: true,
-    },
-  });
+    const article = await db.article.findFirst({
+      where: {
+        OR: [
+          { slug: decoded },
+          ...(!isNaN(numericId) ? [{ id: numericId }] : []),
+        ],
+        isActive: true,
+      },
+    });
 
-  return article;
+    return article;
+  } catch (err) {
+    console.warn('خطا در دریافت مقاله یا قطع بودن دیتابیس:', err);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

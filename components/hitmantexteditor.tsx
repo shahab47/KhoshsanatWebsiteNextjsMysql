@@ -373,6 +373,10 @@ const Toolbar: React.FC<{ editor: any }> = ({ editor }) => {
 // ─────────────────────────────────────────────
 // Main Editor Component
 // ─────────────────────────────────────────────
+function BSep() {
+  return <div className="h-4 w-px bg-gray-200 dark:bg-gray-600 mx-0.5 flex-shrink-0" />;
+}
+
 interface AdvancedRichEditorProps {
   initialValue?: Record<string, unknown> | string | any;
   value?: Record<string, unknown> | string | any;
@@ -496,12 +500,6 @@ export default function AdvancedRichEditor({
 
   const bBtn = 'p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 transition-colors cursor-pointer flex-shrink-0';
   const bBtnOn = 'bg-gray-200 dark:bg-gray-600';
-  const BSep = () => <div className="h-4 w-px bg-gray-200 dark:bg-gray-600 mx-0.5 flex-shrink-0" />;
-
-
-  if (!editor) {
-    return null
-  }
   const setBubbleLink = async () => {
     const prev = editor.getAttributes('link').href ?? '';
     const url = await prompt({

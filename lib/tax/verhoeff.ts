@@ -44,9 +44,25 @@ export function calculateVerhoeff(numericStr: string): number {
 /**
  * اعتبارسنجی رقم کنترلی یک رشته مالیاتی یا عددی با الگوریتم ورهوف
  */
-export function validateVerhoeff(fullNumericStr: string): boolean {
+export function validateVerhoeff(taxIdOrNumericStr: string): boolean {
+  if (!taxIdOrNumericStr) return false;
+
+  // در صورتی که رشته شامل حروف انگلیسی باشد (مانند شماره مالیاتی با کد حافظه و هگزادسیمال)
+  if (/[A-Za-z]/.test(taxIdOrNumericStr)) {
+    const rawBase = taxIdOrNumericStr.slice(0, -1);
+    const checkDigit = parseInt(taxIdOrNumericStr.slice(-1), 10);
+    if (isNaN(checkDigit)) return false;
+
+    let numericRepresentation = '';
+    for (let i = 0; i < rawBase.length; i++) {
+      const code = rawBase.toUpperCase().charCodeAt(i);
+      numericRepresentation += code >= 65 ? (code - 55).toString() : rawBase[i];
+    }
+    return calculateVerhoeff(numericRepresentation) === checkDigit;
+  }
+
   let c = 0;
-  const reversedDigits = fullNumericStr.split('').reverse().map(Number);
+  const reversedDigits = taxIdOrNumericStr.split('').reverse().map(Number);
   for (let i = 0; i < reversedDigits.length; i++) {
     c = MULTIPLICATION_TABLE[c][PERMUTATION_TABLE[i % 8][reversedDigits[i]]];
   }

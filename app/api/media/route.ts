@@ -41,11 +41,10 @@ async function findDbUsage(url: string) {
     const modelTargetFields = model.fields.filter(f => targetFieldNames.includes(f.name));
     if (modelTargetFields.length > 0) {
       const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+      const delegate = (prisma as unknown as Record<string, any>)[delegateName];
       try {
-        // @ts-ignore
-        if (typeof prisma[delegateName]?.findMany !== 'function') continue;
-        // @ts-ignore
-        const records = await prisma[delegateName].findMany();
+        if (typeof delegate?.findMany !== 'function') continue;
+        const records = await delegate.findMany();
         records.forEach((record: any) => {
           modelTargetFields.forEach(field => {
             const value = record[field.name];
@@ -80,6 +79,14 @@ async function findDbUsage(url: string) {
     }
   }
   return usages;
+}
+
+async function updateDbRecord(modelName: string, id: number, field: string, value: string | null) {
+  const delegateName = modelName.charAt(0).toLowerCase() + modelName.slice(1);
+  const delegate = (prisma as unknown as Record<string, any>)[delegateName];
+  if (typeof delegate?.update === 'function') {
+    await delegate.update({ where: { id }, data: { [field]: value } });
+  }
 }
 
 export async function GET(request: Request) {
@@ -222,9 +229,7 @@ export async function PUT(request: Request) {
         const newUrl = formatMinioUrl(newObjectName);
         const usages = await findDbUsage(oldUrl);
         for (const usage of usages) {
-          const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-          // @ts-ignore
-          await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: newUrl } });
+          await updateDbRecord(usage.model, usage.id, usage.field, newUrl);
         }
         return NextResponse.json({ success: true, newUrl });
       } 
@@ -247,9 +252,7 @@ export async function PUT(request: Request) {
           const newObjUrl = formatMinioUrl(newObjectName);
           const usages = await findDbUsage(oldObjUrl);
           for (const usage of usages) {
-            const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-            // @ts-ignore
-            await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: newObjUrl } });
+            await updateDbRecord(usage.model, usage.id, usage.field, newObjUrl);
           }
         }
         return NextResponse.json({ success: true });
@@ -273,9 +276,7 @@ export async function PUT(request: Request) {
             const newUrl = formatMinioUrl(newObjectName);
             const usages = await findDbUsage(oldUrl);
             for (const usage of usages) {
-              const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-              // @ts-ignore
-              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: newUrl } });
+              await updateDbRecord(usage.model, usage.id, usage.field, newUrl);
             }
           }
         } else if (item.type === 'folder') {
@@ -295,9 +296,7 @@ export async function PUT(request: Request) {
               const newUrl = formatMinioUrl(newObjectName);
               const usages = await findDbUsage(oldUrl);
               for (const usage of usages) {
-                const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-                // @ts-ignore
-                await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: newUrl } });
+                await updateDbRecord(usage.model, usage.id, usage.field, newUrl);
               }
             }
           }
@@ -328,9 +327,7 @@ export async function DELETE(request: Request) {
           if (removeFromDb) {
             const usages = await findDbUsage(item.url || itemKey);
             for (const usage of usages) {
-              const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-              // @ts-ignore
-              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: null } });
+              await updateDbRecord(usage.model, usage.id, usage.field, null);
             }
           }
         }
@@ -342,9 +339,7 @@ export async function DELETE(request: Request) {
           if (removeFromDb) {
             const usages = await findDbUsage(obj.name);
             for (const usage of usages) {
-              const delegateName = usage.model.charAt(0).toLowerCase() + usage.model.slice(1);
-              // @ts-ignore
-              await prisma[delegateName].update({ where: { id: usage.id }, data: { [usage.field]: null } });
+              await updateDbRecord(usage.model, usage.id, usage.field, null);
             }
           }
         }

@@ -5,17 +5,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   Menu, X, Image as ImageIcon, Type, LayoutDashboard, Briefcase,
   Package, LogOut, Users, ChevronLeft, Globe, Building2,
-  GraduationCap, UserPlus, HardDrive, ChevronDown, Settings, TrendingUp, Mail
+  GraduationCap, UserPlus, HardDrive, ChevronDown, Settings, TrendingUp, Mail, Landmark, Truck, Factory, UserCheck, FileSpreadsheet
 } from 'lucide-react';
 import { ModalProvider, useModal } from '@/app/contexts/ModalContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 function AdminLayoutInner({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-  const [pathname, setPathname] = useState('/khoshmin');
-  const [isMounted, setIsMounted] = useState(false);
+  const pathname = usePathname() || '/khoshmin';
   const [user, setUser] = useState<any>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -23,10 +23,6 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setIsMounted(true);
-    if (typeof window !== 'undefined') {
-      setPathname(window.location.pathname);
-    }
-
     fetch('/api/auth', { credentials: 'include' })
       .then(res => {
         if (!res.ok) throw new Error('خطا در ارتباط با سرور');
@@ -108,6 +104,11 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         { href: '/khoshmin', icon: <LayoutDashboard size={16} />, label: 'داشبورد ادمین' },
         { href: '/khoshmin/analytics', icon: <TrendingUp size={16} />, label: 'آمار و تحلیل بازدید' },
         { href: '/khoshmin/customers', icon: <UserPlus size={16} />, label: 'لیست مشتریان' },
+        { href: '/khoshmin/procurement', icon: <Truck size={16} />, label: 'تدارکات و خرید مواد' },
+        { href: '/khoshmin/production', icon: <Factory size={16} />, label: 'مهندسی تولید و دستور کار' },
+        { href: '/khoshmin/payroll', icon: <UserCheck size={16} />, label: 'پرسنل و حقوق و دستمزد' },
+        { href: '/khoshmin/treasury', icon: <Landmark size={16} />, label: 'خزانه‌داری و چک‌ها' },
+        { href: '/khoshmin/reports', icon: <FileSpreadsheet size={16} />, label: 'دفاتر مالی و سامانه مودیان' },
         { href: '/khoshmin/emails', icon: <Mail size={16} />, label: 'سیستم ایمیل' },
         { href: '/khoshmin/users', icon: <Users size={16} />, label: user?.role === 'MAIN_ADMIN' ? 'مدیریت مدیران' : 'پروفایل من' },
       ]
@@ -188,6 +189,9 @@ function AdminLayoutInner({ children }: { children: React.ReactNode }) {
         case 'users': name = user?.role === 'MAIN_ADMIN' ? 'مدیریت کاربران' : 'مدیریت پروفایل'; break;
         case 'emails': name = 'سیستم ایمیل'; break;
         case 'customers': name = 'مشتریان'; break;
+        case 'procurement': name = 'تدارکات و خرید مواد'; break;
+        case 'production': name = 'مهندسی تولید و دستور کار'; break;
+        case 'treasury': name = 'خزانه‌داری و چک‌ها'; break;
         case 'projects': name = 'پروژه‌ها'; break;
         case 'education': name = 'آکادمی'; break;
         default:

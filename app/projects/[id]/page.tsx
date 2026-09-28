@@ -24,20 +24,25 @@ interface PageProps {
 
 async function getProject(identifier?: string) {
   if (!identifier) return null;
-  const decoded = decodeURIComponent(identifier);
-  const numericId = parseInt(decoded);
+  try {
+    const decoded = decodeURIComponent(identifier);
+    const numericId = parseInt(decoded);
 
-  const project = await db.project.findFirst({
-    where: {
-      OR: [
-        { slug: decoded },
-        ...(!isNaN(numericId) ? [{ id: numericId }] : []),
-      ],
-      isActive: true,
-    },
-  });
+    const project = await db.project.findFirst({
+      where: {
+        OR: [
+          { slug: decoded },
+          ...(!isNaN(numericId) ? [{ id: numericId }] : []),
+        ],
+        isActive: true,
+      },
+    });
 
-  return project;
+    return project;
+  } catch (err) {
+    console.warn('خطا در دریافت پروژه یا قطع بودن دیتابیس:', err);
+    return null;
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {

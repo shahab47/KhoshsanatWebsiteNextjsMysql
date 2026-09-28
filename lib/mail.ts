@@ -22,6 +22,7 @@ export interface SendEmailOptions {
   senderId?: number | null;
   customerId?: number | null;
   replyTo?: string;
+  isSensitive?: boolean;
 }
 
 /**
@@ -113,9 +114,9 @@ export function createTransporter(config: SmtpConfig) {
     tls: {
       rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED === 'false' ? false : true,
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000,
+    connectionTimeout: process.env.NODE_ENV === 'development' ? 3000 : 10000,
+    greetingTimeout: process.env.NODE_ENV === 'development' ? 3000 : 10000,
+    socketTimeout: process.env.NODE_ENV === 'development' ? 4000 : 15000,
   });
 }
 
@@ -307,14 +308,15 @@ export async function testSmtpConnection(
       success: true,
       message: `اتصال با موفقیت برقرار شد و ایمیل تستی به ${testRecipient} ارسال گردید.`,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('SMTP Connection/Test Error:', error);
-    let errorDetail = error?.message || 'خطای نامشخص در اتصال به سرور SMTP';
-    if (error?.code === 'EAUTH') {
+    const err = error as { message?: string; code?: string } | undefined;
+    let errorDetail = err?.message || 'خطای نامشخص در اتصال به سرور SMTP';
+    if (err?.code === 'EAUTH') {
       errorDetail = 'نام کاربری یا رمز عبور سرور SMTP نادرست است (EAUTH).';
-    } else if (error?.code === 'ESOCKET' || error?.code === 'ETIMEDOUT') {
+    } else if (err?.code === 'ESOCKET' || err?.code === 'ETIMEDOUT') {
       errorDetail = 'زمان اتصال به سرور به پایان رسید یا پورت سرور مسدود است (ETIMEDOUT/ESOCKET).';
-    } else if (error?.code === 'ECONNREFUSED') {
+    } else if (err?.code === 'ECONNREFUSED') {
       errorDetail = 'اتصال توسط سرور مقصد رد شد (ECONNREFUSED). لطفاً هاست و پورت را چک کنید.';
     }
     return { success: false, message: errorDetail };
@@ -352,6 +354,15 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ success: b
       replyTo: options.replyTo || senderEmail,
     });
 
+    const isSensitive = options.isSensitive || 
+      options.subject.includes('کد تایید') || 
+      options.subject.includes('رمز عبور') || 
+      options.subject.includes('بازیابی');
+
+    const loggedBody = isSensitive
+      ? '🔒 محتوای امنیتی (کد تایید / OTP) به دلایل حفظ محرمانگی و امنیت حساب کاربری در تاریخچه لاگ ثبت نمی‌گردد.'
+      : (options.html || options.text || '');
+
     // ثبت در تاریخچه لاگ‌ها با وضعیت SENT
     await db.emailLog.create({
       data: {
@@ -360,16 +371,25 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ success: b
         senderName: senderName,
         recipient: recipientStr,
         subject: options.subject,
-        body: options.html || options.text || '',
+        body: loggedBody,
         status: 'SENT',
         customerId: options.customerId || null,
       },
     });
 
     return { success: true, messageId: info.messageId };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error sending email:', error);
-    const errorMsg = error?.message || 'خطا در ارسال ایمیل';
+    const errorMsg = error instanceof Error ? error.message : 'خطا در ارسال ایمیل';
+
+    const isSensitive = options.isSensitive || 
+      options.subject.includes('کد تایید') || 
+      options.subject.includes('رمز عبور') || 
+      options.subject.includes('بازیابی');
+
+    const loggedBody = isSensitive
+      ? '🔒 محتوای امنیتی (کد تایید / OTP) به دلایل حفظ محرمانگی و امنیت حساب کاربری در تاریخچه لاگ ثبت نمی‌گردد.'
+      : (options.html || options.text || '');
 
     // ثبت در لاگ با وضعیت FAILED
     try {
@@ -380,7 +400,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<{ success: b
           senderName: senderName,
           recipient: recipientStr,
           subject: options.subject,
-          body: options.html || options.text || '',
+          body: loggedBody,
           status: 'FAILED',
           errorMessage: errorMsg,
           customerId: options.customerId || null,

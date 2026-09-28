@@ -62,7 +62,19 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, email, phone, company, address, nationalId, status } = body;
+    const {
+      name,
+      email,
+      phone,
+      company,
+      address,
+      nationalId,
+      status,
+      creditLimit,
+      isCreditBlocked,
+      creditBlockReason,
+      riskRating,
+    } = body;
 
     // بررسی تکراری نبودن ایمیل (نباید متعلق به مشتری دیگری باشد)
     if (email) {
@@ -94,7 +106,11 @@ export async function PUT(
         company: company || null,
         address: address || null,
         nationalId: nationalId || null,
-        status: status || 'ACTIVE'
+        status: status || undefined,
+        ...(creditLimit !== undefined ? { creditLimit: Number(creditLimit) } : {}),
+        ...(isCreditBlocked !== undefined ? { isCreditBlocked: Boolean(isCreditBlocked) } : {}),
+        ...(creditBlockReason !== undefined ? { creditBlockReason: creditBlockReason || null } : {}),
+        ...(riskRating !== undefined ? { riskRating } : {}),
       }
     });
 
@@ -105,7 +121,7 @@ export async function PUT(
   }
 }
 
-// متد DELETE
+// متد DELETE با حفاظت کامل ضد حذف آبشاری و پشتیبانی از بایگانی منطقی (Soft Delete)
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -123,6 +139,9 @@ export async function DELETE(
         { status: 400 }
       );
     }
+
+    const url = new URL(request.url);
+    const isSoftRequested = url.searchParams.get('soft') === 'true';
     
     // بررسی وجود مشتری همراه با تمام اسناد و فایل‌های وابسته
     const customer = await db.customer.findUnique({
@@ -131,6 +150,7 @@ export async function DELETE(
         invoices: true,
         payments: true,
         deliveries: true,
+        productionOrders: true,
       }
     });
     
@@ -140,22 +160,62 @@ export async function DELETE(
         { status: 404 }
       );
     }
-    
-    // جمع‌آوری و حذف تمام فایل‌های فاکتورها، رسیدهای پرداخت، امضاها و پیوست‌های تحویل بار این مشتری از MinIO
-    const filesToDelete: string[] = [];
 
+    // بررسی وجود اسناد دوبل در دفتر روزنامه و کل حسابداری
+    const ledgerEntriesCount = await db.journalEntry.count({
+      where: {
+        detail1Type: 'CUSTOMER',
+        detail1Id: customerId.toString(),
+      },
+    });
+
+    const hasFinancialHistory =
+      customer.invoices.length > 0 ||
+      customer.payments.length > 0 ||
+      customer.deliveries.length > 0 ||
+      customer.productionOrders.length > 0 ||
+      ledgerEntriesCount > 0;
+
+    // اگر مشتری سابقه مالی یا عملیاتی دارد، حذف فیزیکی مطلقاً ممنوع است
+    if (hasFinancialHistory) {
+      if (isSoftRequested) {
+        // اجرای بایگانی منطقی
+        const archived = await db.customer.update({
+          where: { id: customerId },
+          data: {
+            isArchived: true,
+            archivedAt: new Date(),
+            status: 'INACTIVE',
+          },
+        });
+        return NextResponse.json({
+          success: true,
+          message: 'مشتری با حفظ کلیه سوابق مالی و دفاتر به بایگانی سیستم منتقل شد.',
+          customer: archived,
+        });
+      }
+
+      return NextResponse.json(
+        {
+          error: 'این مشتری دارای سوابق مالی، فاکتور، پرداخت یا اسناد در دفاتر حسابداری است و طبق قوانین حسابداری امکان حذف فیزیکی آن وجود ندارد. لطفاً از گزینه «بایگانی / غیرفعال‌سازی» استفاده فرمایید.',
+          hasFinancialHistory: true,
+        },
+        { status: 400 }
+      );
+    }
+
+    // در صورتی که مشتری لید یا سرنخ بدون هیچ‌گونه تراکنش مالی باشد، حذف فیزیکی بلامانع است
+    const filesToDelete: string[] = [];
     if (customer.invoices && Array.isArray(customer.invoices)) {
       for (const inv of customer.invoices) {
         if (inv.attachmentUrl) filesToDelete.push(inv.attachmentUrl);
       }
     }
-
     if (customer.payments && Array.isArray(customer.payments)) {
       for (const pay of customer.payments) {
         if (pay.attachmentUrl) filesToDelete.push(pay.attachmentUrl);
       }
     }
-
     if (customer.deliveries && Array.isArray(customer.deliveries)) {
       for (const del of customer.deliveries) {
         if (del.signatureUrl) filesToDelete.push(del.signatureUrl);
@@ -165,20 +225,19 @@ export async function DELETE(
 
     await deleteFilesFromMinio(filesToDelete);
 
-    // حذف مشتری (با توجه به cascade در schema رکوردهای مرتبط در دیتابیس نیز حذف می‌شوند)
     await db.customer.delete({
       where: { id: customerId }
     });
     
     return NextResponse.json(
-      { message: 'مشتری با موفقیت حذف شد' },
+      { message: 'مشتری بدون تراکنش با موفقیت حذف شد' },
       { status: 200 }
     );
   } catch (error) {
     console.error('Error deleting customer:', error);
     return NextResponse.json(
-      { error: 'خطا در حذف مشتری' + (error instanceof Error ? ': ' + error.message : '') },
+      { error: 'خطا در حذف مشتری: ' + (error instanceof Error ? error.message : '') },
       { status: 500 }
     );
   }
-}
+}

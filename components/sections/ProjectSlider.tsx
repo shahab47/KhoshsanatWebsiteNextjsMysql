@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, Variants, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, MapPin, Eye, RotateCw } from 'lucide-react';
 
 interface Project {
@@ -82,9 +83,9 @@ export default function ProjectsShowcase({ initialProjects }: ProjectsShowcasePr
 
     fetch('/api/projects')
       .then((res) => res.json())
-      .then((data: Project[]) => {
-        if ((data as any).error) throw new Error((data as any).error);
-        const activeProjects = data.filter((p) => p.isActive !== false);
+      .then((data: Project[] | { error?: string }) => {
+        if ('error' in data && data.error) throw new Error(data.error);
+        const activeProjects = (data as Project[]).filter((p) => p.isActive !== false);
         setProjects(activeProjects);
 
         if (activeProjects.length > 0) {
@@ -206,11 +207,12 @@ export default function ProjectsShowcase({ initialProjects }: ProjectsShowcasePr
                       
                       {/* روی کارت (Front) */}
                       <div className="absolute inset-0 [backface-visibility:hidden] bg-ks-dark-900 rounded-2xl overflow-hidden">
-                        <img
+                        <Image
                           src={slot.project.imageUrl}
                           alt={slot.project.title}
-                          loading="lazy"
-                          className="absolute inset-0 w-full h-full object-cover"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover"
                         />
                         
                         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/80 pointer-events-none"></div>
@@ -250,12 +252,12 @@ export default function ProjectsShowcase({ initialProjects }: ProjectsShowcasePr
 
                       {/* پشت کارت (Back) */}
                       <div className="absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-ks-dark-950 rounded-2xl overflow-hidden border border-white/10">
-                        
-                        <img
+                        <Image
                           src={slot.project.imageUrl}
                           alt={slot.project.title}
-                          loading="lazy"
-                          className="absolute inset-0 w-full h-full object-cover opacity-20"
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover opacity-20"
                         />
                         
                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-none"></div>

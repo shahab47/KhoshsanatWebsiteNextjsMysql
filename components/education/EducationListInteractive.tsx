@@ -3,6 +3,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BookOpen, Clock, Calendar, Search, ChevronLeft } from 'lucide-react';
 
 interface Article {
@@ -63,13 +64,14 @@ export default function EducationListInteractive({
                   href={`/education/${encodeURIComponent(article.slug)}`}
                   className="relative aspect-video overflow-hidden bg-gray-100 block"
                 >
-                  <img
+                  <Image
                     src={article.imageUrl}
                     alt={`تصویر مقاله ${article.title}`}
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                  <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
+                  <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md z-10">
                     {article.category || 'عمومی'}
                   </div>
                 </Link>

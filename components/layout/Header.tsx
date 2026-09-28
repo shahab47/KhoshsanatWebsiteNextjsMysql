@@ -1,7 +1,7 @@
 // نسخه نهایی Header با پشتیبانی از Next.js Link و عدم نمایش در لاگین و پنل ادمین
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -16,24 +16,13 @@ export default function Header({ logoUrl }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // مدیریت fallback لوگو
-  const [logoSrc, setLogoSrc] = useState<string>('/Logo.svg');
+  // مدیریت fallback لوگو به صورت Derived State
   const [logoError, setLogoError] = useState(false);
-
-  useEffect(() => {
-    if (logoUrl && logoUrl.trim() !== '' && !logoError) {
-      setLogoSrc(logoUrl.trim());
-    } else {
-      setLogoSrc('/Logo.svg');
-    }
-  }, [logoUrl, logoError]);
+  const logoSrc = !logoError && logoUrl && logoUrl.trim() !== '' ? logoUrl.trim() : '/Logo.svg';
 
   const handleImageError = useCallback(() => {
-    if (!logoError && logoSrc !== '/Logo.svg') {
-      setLogoError(true);
-      setLogoSrc('/Logo.svg');
-    }
-  }, [logoError, logoSrc]);
+    setLogoError(true);
+  }, []);
 
   // اسکرول صفحه اصلی
   useEffect(() => {
@@ -48,9 +37,13 @@ export default function Header({ logoUrl }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // بستن منوی موبایل با تغییر مسیر
+  // بستن منوی موبایل با تغییر مسیر بدون cascading render
+  const prevPathname = useRef(pathname);
   useEffect(() => {
-    setIsMobileMenuOpen(false);
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname;
+      setIsMobileMenuOpen(false);
+    }
   }, [pathname]);
 
   // قفل اسکرول هنگام باز بودن منو موبایل

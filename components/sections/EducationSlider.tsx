@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, Variants, useReducedMotion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface Article {
   id: number;
@@ -13,7 +14,7 @@ interface Article {
   author?: string;
   readTime?: number;
   imageUrl: string;
-  media?: any[];
+  media?: unknown[];
   isActive: boolean;
 }
 
@@ -26,12 +27,6 @@ interface SlotData {
 const INTERVAL_TIME = 4500;
 const TOTAL_SLOTS = 4;
 const CYCLE_TIME = INTERVAL_TIME * TOTAL_SLOTS;
-
-const cardVariants: Variants = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { duration: 0.8, ease: 'easeOut' } },
-  exit: { opacity: 0, transition: { duration: 0.8, ease: 'easeIn' } },
-};
 
 interface EducationShowcaseProps {
   initialArticles?: Article[];
@@ -68,9 +63,9 @@ export default function EducationShowcase({ initialArticles }: EducationShowcase
 
     fetch('/api/education')
       .then((res) => res.json())
-      .then((data: Article[]) => {
-        if ((data as any).error) throw new Error((data as any).error);
-        const activeArticles = data.filter((a) => a.isActive);
+      .then((data: Article[] | { error?: string }) => {
+        if ('error' in data && data.error) throw new Error(data.error);
+        const activeArticles = (data as Article[]).filter((a) => a.isActive);
         setArticles(activeArticles);
 
         if (activeArticles.length > 0) {
@@ -144,11 +139,12 @@ export default function EducationShowcase({ initialArticles }: EducationShowcase
               >
                 <Link href={`/education/${slot.article.slug}`} className="block w-full h-full relative focus:outline-none focus:ring-2 focus:ring-ks-blue-500 rounded-2xl">
                   
-                  <img
+                  <Image
                     src={slot.article.imageUrl}
                     alt={slot.article.title}
-                    loading="lazy"
-                    className="absolute inset-0 w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[1.2s] ease-out"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    className="object-cover transform group-hover:scale-105 transition-transform duration-[1.2s] ease-out"
                   />
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none transition-opacity duration-300"></div>

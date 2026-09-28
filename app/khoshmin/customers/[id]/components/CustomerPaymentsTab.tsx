@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Save, X, Banknote, FileText, Loader2, Paperclip, CheckCircle2, UploadCloud, Printer, Download, Share2, Image as ImageIcon, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X, Banknote, FileText, Loader2, Paperclip, CheckCircle2, UploadCloud, Printer, Download, Share2, Image as ImageIcon, Eye, FileCheck, ExternalLink, ShieldCheck } from 'lucide-react';
 import { useModal } from '@/app/contexts/ModalContext';
 
 // ==========================================
@@ -199,8 +199,34 @@ interface RecordPaymentModalProps {
 
 function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }: RecordPaymentModalProps) {
   const { showAlert, showConfirm } = useModal();
-  const [form, setForm] = useState<{amount: number, paymentMethod: string, receiptNo: string, description: string, invoiceId: string, attachmentUrls: string[]}>({ 
-    amount: 0, paymentMethod: 'CASH', receiptNo: '', description: '', invoiceId: '', attachmentUrls: [] 
+  const [form, setForm] = useState<{
+    amount: number;
+    paymentMethod: string;
+    receiptNo: string;
+    description: string;
+    invoiceId: string;
+    attachmentUrls: string[];
+    sayadId: string;
+    chequeNumber: string;
+    dueDate: string;
+    bankName: string;
+    bankBranch: string;
+    drawerName: string;
+    drawerNationalId: string;
+  }>({ 
+    amount: 0, 
+    paymentMethod: 'CASH', 
+    receiptNo: '', 
+    description: '', 
+    invoiceId: '', 
+    attachmentUrls: [],
+    sayadId: '',
+    chequeNumber: '',
+    dueDate: '',
+    bankName: '',
+    bankBranch: '',
+    drawerName: '',
+    drawerNationalId: '',
   });
   const [tempUploadedUrls, setTempUploadedUrls] = useState<string[]>([]);
   const originalFormRef = useRef(form);
@@ -228,7 +254,21 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
         onConfirm: async () => {
           // حذف فایل‌های موقتی آپلود شده
           await deleteFilesFromCloud(tempUploadedUrls);
-          setForm({ amount: 0, paymentMethod: 'CASH', receiptNo: '', description: '', invoiceId: '', attachmentUrls: [] });
+          setForm({
+            amount: 0,
+            paymentMethod: 'CASH',
+            receiptNo: '',
+            description: '',
+            invoiceId: '',
+            attachmentUrls: [],
+            sayadId: '',
+            chequeNumber: '',
+            dueDate: '',
+            bankName: '',
+            bankBranch: '',
+            drawerName: '',
+            drawerNationalId: '',
+          });
           setTempUploadedUrls([]);
           onClose();
         },
@@ -244,21 +284,66 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
       showAlert('مبلغ را به درستی وارد کنید.', 'خطا', 'error');
       return;
     }
+
+    if (form.paymentMethod === 'CHECK') {
+      if (!form.sayadId || !/^\d{16}$/.test(form.sayadId.trim())) {
+        showAlert('شناسه صیاد باید دقیقاً ۱۶ رقم عددی باشد.', 'خطا', 'error');
+        return;
+      }
+      if (!form.chequeNumber.trim()) {
+        showAlert('لطفاً شماره چک (سریال) را وارد کنید.', 'خطا', 'error');
+        return;
+      }
+      if (!form.dueDate) {
+        showAlert('لطفاً تاریخ سررسید چک را وارد کنید.', 'خطا', 'error');
+        return;
+      }
+      if (!form.bankName) {
+        showAlert('لطفاً بانک صادرکننده چک را انتخاب کنید.', 'خطا', 'error');
+        return;
+      }
+      if (!form.drawerName.trim()) {
+        showAlert('لطفاً نام صاحب حساب چک را وارد کنید.', 'خطا', 'error');
+        return;
+      }
+    }
     
     const submitData = {
       ...form,
-      attachmentUrl: form.attachmentUrls.length > 0 ? JSON.stringify(form.attachmentUrls) : null
+      attachmentUrl: form.attachmentUrls.length > 0 ? JSON.stringify(form.attachmentUrls) : null,
+      cheque: form.paymentMethod === 'CHECK' ? {
+        sayadId: form.sayadId.trim(),
+        chequeNumber: form.chequeNumber.trim(),
+        dueDate: form.dueDate,
+        bankName: form.bankName,
+        bankBranch: form.bankBranch.trim() || null,
+        drawerName: form.drawerName.trim(),
+        drawerNationalId: form.drawerNationalId.trim() || null,
+      } : undefined
     };
 
     await onSubmit(submitData);
     // پس از ذخیره، فایل‌های موقتی دیگر نیازی به حذف ندارند
     setTempUploadedUrls([]);
-    setForm({ amount: 0, paymentMethod: 'CASH', receiptNo: '', description: '', invoiceId: '', attachmentUrls: [] });
+    setForm({
+      amount: 0,
+      paymentMethod: 'CASH',
+      receiptNo: '',
+      description: '',
+      invoiceId: '',
+      attachmentUrls: [],
+      sayadId: '',
+      chequeNumber: '',
+      dueDate: '',
+      bankName: '',
+      bankBranch: '',
+      drawerName: '',
+      drawerNationalId: '',
+    });
     onClose();
   };
 
   const handleAttachmentChange = (newUrls: string[]) => {
-    // تشخیص فایل‌های جدید اضافه شده
     const addedUrls = newUrls.filter(url => !form.attachmentUrls.includes(url));
     setTempUploadedUrls(prev => [...prev, ...addedUrls]);
     setForm(prev => ({ ...prev, attachmentUrls: newUrls }));
@@ -272,7 +357,7 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl animate-in zoom-in-95 duration-300 max-h-[90vh] overflow-y-auto custom-scrollbar">
         
         <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4 sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
@@ -292,14 +377,132 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
             <div>
               <label className="block text-sm font-bold text-gray-700 mb-1">روش پرداخت</label>
               <select value={form.paymentMethod} onChange={(e) => setForm({ ...form, paymentMethod: e.target.value })} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none focus:ring-2 focus:ring-emerald-500">
-                <option value="CASH">نقدی</option><option value="CARD">کارت خوان</option><option value="TRANSFER">انتقال بانکی</option><option value="CHECK">چک</option><option value="OTHER">سایر</option>
+                <option value="CASH">نقدی</option>
+                <option value="CARD">کارت خوان</option>
+                <option value="TRANSFER">انتقال بانکی</option>
+                <option value="CHECK">چک صیادی</option>
+                <option value="OTHER">سایر</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-1">شماره رسید</label>
+              <label className="block text-sm font-bold text-gray-700 mb-1">شماره رسید / پیگیری</label>
               <input type="text" value={form.receiptNo} onChange={(e) => setForm({ ...form, receiptNo: e.target.value })} className="w-full p-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-800 outline-none focus:ring-2 focus:ring-emerald-500" />
             </div>
           </div>
+
+          {/* فیلدهای چک صیادی در صورت انتخاب روش پرداخت چک */}
+          {form.paymentMethod === 'CHECK' && (
+            <div className="p-4 bg-amber-50/70 border border-amber-200 rounded-2xl space-y-3 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-amber-900 font-bold text-sm border-b border-amber-200/60 pb-2">
+                <FileCheck size={18} className="text-amber-600" />
+                <span>مشخصات چک صیادی (سامانه پیچک / بانک مرکزی)</span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">شناسه ۱۶ رقمی صیاد *</label>
+                  <input
+                    type="text"
+                    maxLength={16}
+                    dir="ltr"
+                    placeholder="1234567890123456"
+                    value={form.sayadId}
+                    onChange={(e) => setForm({ ...form, sayadId: e.target.value.replace(/\D/g, '') })}
+                    className="w-full p-2.5 border border-amber-300 rounded-xl bg-white text-gray-900 font-mono tracking-widest text-center text-sm outline-none focus:ring-2 focus:ring-amber-500 font-bold"
+                    required
+                  />
+                  <span className="text-[10px] text-gray-500 mt-0.5 block">
+                    {form.sayadId.length}/16 رقم وارد شده
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">شماره چک (سریال) *</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: 123456/78"
+                    value={form.chequeNumber}
+                    onChange={(e) => setForm({ ...form, chequeNumber: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">سررسید چک *</label>
+                  <input
+                    type="date"
+                    value={form.dueDate}
+                    onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">بانک صادرکننده *</label>
+                  <select
+                    value={form.bankName}
+                    onChange={(e) => setForm({ ...form, bankName: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  >
+                    <option value="">انتخاب بانک...</option>
+                    <option value="بانک ملت">بانک ملت</option>
+                    <option value="بانک ملی ایران">بانک ملی ایران</option>
+                    <option value="بانک صادرات ایران">بانک صادرات ایران</option>
+                    <option value="بانک تجارت">بانک تجارت</option>
+                    <option value="بانک سپه">بانک سپه</option>
+                    <option value="بانک پاسارگاد">بانک پاسارگاد</option>
+                    <option value="بانک سامان">بانک سامان</option>
+                    <option value="بانک پارسیان">بانک پارسیان</option>
+                    <option value="بانک آینده">بانک آینده</option>
+                    <option value="بانک کشاورزی">بانک کشاورزی</option>
+                    <option value="بانک مسکن">بانک مسکن</option>
+                    <option value="بانک شهر">بانک شهر</option>
+                    <option value="بانک رفاه کارگران">بانک رفاه کارگران</option>
+                    <option value="سایر بانک‌ها">سایر بانک‌ها</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">شعبه بانک (اختیاری)</label>
+                  <input
+                    type="text"
+                    placeholder="مثال: شعبه بازار آهن"
+                    value={form.bankBranch}
+                    onChange={(e) => setForm({ ...form, bankBranch: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">صاحب حساب / صادرکننده *</label>
+                  <input
+                    type="text"
+                    placeholder="نام شخص یا شرکت صادرکننده"
+                    value={form.drawerName}
+                    onChange={(e) => setForm({ ...form, drawerName: e.target.value })}
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-gray-700 mb-1">کد ملی / شناسه ملی صادرکننده</label>
+                  <input
+                    type="text"
+                    maxLength={11}
+                    dir="ltr"
+                    placeholder="۱۰ یا ۱۱ رقم"
+                    value={form.drawerNationalId}
+                    onChange={(e) => setForm({ ...form, drawerNationalId: e.target.value.replace(/\D/g, '') })}
+                    className="w-full p-2.5 border border-gray-200 rounded-xl bg-white text-gray-900 text-sm outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">فاکتور مرتبط (اختیاری)</label>
@@ -314,7 +517,7 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
           <MultiFileUpload 
             urls={form.attachmentUrls} 
             onChange={handleAttachmentChange} 
-            title="مستندات (عکس فیش‌ها و رسیدها)" 
+            title="مستندات (عکس فیش‌ها و چک)" 
           />
 
           <div>
@@ -337,6 +540,19 @@ function RecordPaymentModal({ isOpen, onClose, onSubmit, invoices, submitting }:
 // ==========================================
 // کامپوننت اصلی مدیریت پرداختی‌ها
 // ==========================================
+interface ChequeItem {
+  id: number;
+  sayadId: string;
+  chequeNumber: string;
+  dueDate: string;
+  issueDate?: string;
+  status: string;
+  bankName: string;
+  bankBranch?: string | null;
+  drawerName: string;
+  drawerNationalId?: string | null;
+}
+
 interface Payment {
   id: number;
   amount: number;
@@ -347,6 +563,8 @@ interface Payment {
   attachmentUrl?: string | null; 
   invoice?: { id: number; invoiceNo: string } | null;
   invoiceId?: string | number | null;
+  journalVoucherId?: number | null;
+  cheques?: ChequeItem[];
 }
 
 interface CustomerPaymentsTabProps {
@@ -520,7 +738,30 @@ export function CustomerPaymentsTab({ customerId, onUpdate }: CustomerPaymentsTa
   };
 
   const getPaymentMethodText = (method: string) => {
-    switch (method) { case 'CASH': return 'نقدی'; case 'CHECK': return 'چک'; case 'CARD': return 'کارت خوان'; case 'TRANSFER': return 'انتقال بانکی'; default: return method; }
+    switch (method) {
+      case 'CASH': return 'نقدی';
+      case 'CHECK': return 'چک صیادی';
+      case 'CARD': return 'کارت‌خوان';
+      case 'TRANSFER': return 'انتقال بانکی';
+      default: return method;
+    }
+  };
+
+  const getChequeStatusBadge = (status: string) => {
+    switch (status) {
+      case 'RECEIVED':
+        return { label: 'نزد صندوق (دریافت شده)', color: 'bg-amber-100 text-amber-850 border-amber-300' };
+      case 'DEPOSITED':
+        return { label: 'در جریان وصول (واگذار به بانک)', color: 'bg-blue-100 text-blue-850 border-blue-300' };
+      case 'CLEARED':
+        return { label: 'وصول شده', color: 'bg-emerald-100 text-emerald-800 border-emerald-300' };
+      case 'BOUNCED':
+        return { label: 'برگشت‌خورده ⚠️', color: 'bg-red-100 text-red-800 border-red-300' };
+      case 'TRANSFERRED':
+        return { label: 'واگذار به غیر (خرج شده)', color: 'bg-purple-100 text-purple-800 border-purple-300' };
+      default:
+        return { label: status, color: 'bg-gray-100 text-gray-800 border-gray-300' };
+    }
   };
 
   // توابع کمکی برای نمایش فایل‌ها در حالت عادی
@@ -605,6 +846,11 @@ export function CustomerPaymentsTab({ customerId, onUpdate }: CustomerPaymentsTa
                             <span className="text-3xl font-black text-emerald-600">{p.amount ? p.amount.toLocaleString('fa-IR') : '0'}</span>
                             <span className="text-sm font-bold text-gray-500 mr-2 uppercase">تومان</span>
                           </div>
+                          {p.journalVoucherId && (
+                            <span className="mr-auto bg-gray-100 text-gray-700 text-xs px-2.5 py-1 rounded-lg font-mono border border-gray-200">
+                              سند حسابداری #{p.journalVoucherId}
+                            </span>
+                          )}
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-3 text-sm text-gray-600 pr-3 border-r-2 border-emerald-100">
@@ -645,6 +891,56 @@ export function CustomerPaymentsTab({ customerId, onUpdate }: CustomerPaymentsTa
                             </div>
                           )}
                         </div>
+
+                        {/* نمایش جزئیات و وضعیت چک صیادی در صورت وجود */}
+                        {p.cheques && p.cheques.length > 0 && (
+                          <div className="mt-4 p-4 bg-amber-50/60 border border-amber-200/80 rounded-2xl">
+                            <div className="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-2 mb-3">
+                              <div className="flex items-center gap-2">
+                                <FileCheck size={18} className="text-amber-700" />
+                                <span className="text-xs font-black text-amber-900">چک صیادی متصل به این پرداخت</span>
+                              </div>
+                              <a
+                                href="/khoshmin/treasury"
+                                className="text-[11px] font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1 hover:underline"
+                              >
+                                <span>مدیریت در خزانه‌داری</span>
+                                <ExternalLink size={12} />
+                              </a>
+                            </div>
+
+                            {p.cheques.map((chq) => {
+                              const badge = getChequeStatusBadge(chq.status);
+                              return (
+                                <div key={chq.id} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-700">
+                                  <div>
+                                    <span className="text-gray-500 block text-[10px]">شناسه ۱۶ رقمی صیاد:</span>
+                                    <span className="font-mono font-bold text-gray-900 tracking-wider">
+                                      {chq.sayadId.replace(/(\d{4})/g, '$1 ').trim()}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500 block text-[10px]">وضعیت وصول:</span>
+                                    <span className={`inline-block px-2.5 py-0.5 rounded-full font-bold border text-[11px] ${badge.color}`}>
+                                      {badge.label}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500 block text-[10px]">بانک و صادرکننده:</span>
+                                    <span className="font-bold text-gray-900">
+                                      {chq.bankName} {chq.bankBranch ? `(${chq.bankBranch})` : ''} - {chq.drawerName}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500 block text-[10px]">تاریخ سررسید:</span>
+                                    <span className="font-bold text-gray-900">{new Date(chq.dueDate).toLocaleDateString('fa-IR')}</span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         {p.description && <p className="mt-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-xl border border-gray-100 italic leading-relaxed">{p.description}</p>}
                       </div>
                     )}

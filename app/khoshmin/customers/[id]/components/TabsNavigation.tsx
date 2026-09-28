@@ -2,10 +2,10 @@
 // مسیر فایل: src/app/khoshmin/customers/[id]/_components/TabsNavigation.tsx
 
 import { useEffect, useState } from 'react';
-import { User, MessageSquare, StickyNote, FileText, CreditCard, Truck } from 'lucide-react';
+import { User, MessageSquare, StickyNote, FileText, CreditCard, Truck, BookOpen } from 'lucide-react';
 import { useModal } from '@/app/contexts/ModalContext';
 
-type TabType = 'info' | 'messages' | 'notes' | 'invoices' | 'payments' | 'deliveries';
+export type TabType = 'info' | 'messages' | 'notes' | 'invoices' | 'payments' | 'deliveries' | 'statement';
 
 interface TabsNavigationProps {
   activeTab: TabType;
@@ -47,11 +47,12 @@ export function TabsNavigation({ activeTab, setActiveTab, customerId, refreshTri
 
   const tabs = [
     { id: 'info' as TabType, label: 'اطلاعات مشتری', icon: <User size={18} /> },
-    { id: 'messages' as TabType, label: 'پیام‌ها', icon: <MessageSquare size={18} />, count: counts.messages, isAlert: true },
-    { id: 'notes' as TabType, label: 'یادداشت‌ها', icon: <StickyNote size={18} />, count: counts.notes, isAlert: true },
+    { id: 'statement' as TabType, label: 'گردش حساب و معین', icon: <BookOpen size={18} /> },
     { id: 'invoices' as TabType, label: 'فاکتورها', icon: <FileText size={18} />, count: counts.invoices, isAlert: false },
     { id: 'payments' as TabType, label: 'پرداختی‌ها', icon: <CreditCard size={18} />, count: counts.payments, isAlert: false },
     { id: 'deliveries' as TabType, label: 'تحویل بار', icon: <Truck size={18} />, count: counts.deliveries, isAlert: false },
+    { id: 'messages' as TabType, label: 'پیام‌ها', icon: <MessageSquare size={18} />, count: counts.messages, isAlert: true },
+    { id: 'notes' as TabType, label: 'یادداشت‌ها', icon: <StickyNote size={18} />, count: counts.notes, isAlert: true },
   ];
 
   if (loading) return <div className="border-b border-gray-200 h-14 bg-gray-50/30 animate-pulse rounded-t-2xl"></div>;

@@ -67,3 +67,7 @@ next-env.d.ts
 .hermes/kanban/
 .hermes/state/
 .hermes/cron/
+
+# database backups
+/backups/
+*.sql

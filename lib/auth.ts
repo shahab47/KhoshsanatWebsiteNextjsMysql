@@ -1,6 +1,6 @@
 // مسیر فایل: src/lib/auth.ts
 
-import { jwtVerify, SignJWT } from 'jose';
+import { jwtVerify, SignJWT, JWTPayload } from 'jose';
 
 const secretKey = process.env.JWT_SECRET;
 if (!secretKey) {
@@ -8,7 +8,7 @@ if (!secretKey) {
 }
 const key = new TextEncoder().encode(secretKey);
 
-export async function signToken(payload: any) {
+export async function signToken(payload: JWTPayload) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
@@ -20,7 +20,7 @@ export async function verifyToken(token: string) {
   try {
     const { payload } = await jwtVerify(token, key);
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

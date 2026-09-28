@@ -46,19 +46,25 @@ export default function ConfirmModal({ isOpen, options, onClose }: ConfirmModalP
     placeholder = '',
   } = options || {};
 
-  // تنظیم مقدار پیش‌فرض اینپوت هنگام باز شدن
-  useEffect(() => {
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setInputValue(defaultValue);
       setIsSubmitting(false);
-      if (isPrompt) {
-        setTimeout(() => {
-          inputRef.current?.focus();
-          inputRef.current?.select();
-        }, 100);
-      }
     }
-  }, [isOpen, defaultValue, isPrompt]);
+  }
+
+  // فوکوس روی اینپوت هنگام باز شدن پرامپت
+  useEffect(() => {
+    if (isOpen && isPrompt) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isPrompt]);
 
   const handleConfirm = useCallback(async () => {
     if (isSubmitting) return;

@@ -50,7 +50,7 @@ export default function AnalyticsTracker() {
             keepalive: true,
           }).catch(() => {});
         }
-      } catch (err) {
+      } catch {
         // نادیده گرفتن خطاهای کلاینتی رهگیری برای پایداری ۱۰۰٪ برنامه
       }
     };

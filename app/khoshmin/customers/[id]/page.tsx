@@ -2,8 +2,9 @@
 'use client';
 
 import { useEffect, useState, useRef, use } from 'react';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
-import { TabsNavigation } from './components/TabsNavigation';
+import { TabsNavigation, TabType } from './components/TabsNavigation';
 import { FinancialSummaryCards } from './components/FinancialSummaryCards';
 import { CustomerInfoTab } from './components/CustomerInfoTab';
 import { CustomerMessagesTab } from './components/CustomerMessagesTab';
@@ -11,8 +12,7 @@ import { CustomerNotesTab } from './components/CustomerNotesTab';
 import { CustomerInvoicesTab } from './components/CustomerInvoicesTab';
 import { CustomerPaymentsTab } from './components/CustomerPaymentsTab';
 import { CustomerDeliveriesTab } from './components/CustomerDeliveriesTab';
-
-type TabType = 'info' | 'messages' | 'notes' | 'invoices' | 'payments' | 'deliveries';
+import { CustomerStatementTab } from './components/CustomerStatementTab';
 
 // تغییر نوع props برای دریافت params به عنوان Promise (استاندارد Next.js 15)
 export default function CustomerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -90,12 +90,12 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
   };
 
   if (loading) return <div className="flex justify-center items-center h-96"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
-  if (error) return <div className="text-center py-12"><p className="text-red-500">{error}</p><a href="/khoshmin/customers" className="text-blue-600">بازگشت</a></div>;
+  if (error) return <div className="text-center py-12"><p className="text-red-500">{error}</p><Link href="/khoshmin/customers" className="text-blue-600">بازگشت</Link></div>;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
-        <a href="/khoshmin/customers" className="p-2 hover:bg-gray-100 rounded-lg transition"><ArrowLeft size={20} /></a>
+        <Link href="/khoshmin/customers" className="p-2 hover:bg-gray-100 rounded-lg transition"><ArrowLeft size={20} /></Link>
         <h1 className="text-2xl font-bold text-gray-800">{customerName}</h1>
       </div>
 
@@ -110,6 +110,7 @@ export default function CustomerDetailPage({ params }: { params: Promise<{ id: s
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
         {activeTab === 'info' && <CustomerInfoTab customerId={customerId} />}
+        {activeTab === 'statement' && <CustomerStatementTab customerId={customerId} />}
         {activeTab === 'messages' && <CustomerMessagesTab customerId={customerId} />}
         {activeTab === 'notes' && <CustomerNotesTab customerId={customerId} />}
         {activeTab === 'invoices' && <CustomerInvoicesTab customerId={customerId} onUpdate={() => setRefreshCounts(prev => prev + 1)} />}

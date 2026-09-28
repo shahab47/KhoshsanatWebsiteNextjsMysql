@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Search, Mail, Phone, Eye, UserPlus, DollarSign, Trash2, MessageSquare, StickyNote, AlertCircle } from 'lucide-react';
@@ -34,11 +34,7 @@ export default function AdminCustomersPage() {
   const [filter, setFilter] = useState('all');
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchCustomers();
-  }, []);
-
-  const fetchCustomers = async () => {
+  const fetchCustomers = useCallback(async () => {
     try {
       const res = await fetch('/api/khoshmin/customers');
       if (!res.ok) throw new Error('خطا در دریافت مشتریان');
@@ -50,7 +46,11 @@ export default function AdminCustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showAlert]);
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const handleDelete = async (e: React.MouseEvent, id: number, name: string) => {
     e.stopPropagation();

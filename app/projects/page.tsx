@@ -54,10 +54,16 @@ function getGridSpan(size: string) {
 }
 
 export default async function ProjectsPage() {
-  const projects = await db.project.findMany({
-    where: { isActive: true },
-    orderBy: { createdAt: 'desc' },
-  });
+  type ProjectItem = Awaited<ReturnType<typeof db.project.findMany>>[number];
+  let projects: ProjectItem[] = [];
+  try {
+    projects = await db.project.findMany({
+      where: { isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  } catch (err) {
+    console.warn('پایگاه داده در دسترس نیست؛ لیست خالی پروژه‌ها رندر شد:', err);
+  }
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'خانه', path: '/' },

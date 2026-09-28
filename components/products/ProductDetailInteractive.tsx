@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Download, FileText, Loader2 } from 'lucide-react';
 import { sanitizeHtml } from '@/lib/seo';
 import { useModal } from '@/app/contexts/ModalContext';
@@ -81,11 +82,14 @@ export default function ProductDetailInteractive({
     <>
       {/* سمت راست: تصاویر گالری و تصویر اصلی */}
       <div className="w-full lg:w-1/2 flex flex-col gap-4">
-        <div className="w-full aspect-[4/3] rounded-[8px] overflow-hidden bg-gray-100 border border-gray-200">
-          <img
+        <div className="relative w-full aspect-[4/3] rounded-[8px] overflow-hidden bg-gray-100 border border-gray-200">
+          <Image
             src={mainImage}
             alt={`تصویر اصلی محصول ${product.title}`}
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-[1.03]"
+            fill
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            priority
+            className="object-cover transition-transform duration-500 hover:scale-[1.03]"
           />
         </div>
 
@@ -94,14 +98,16 @@ export default function ProductDetailInteractive({
           <div className="flex gap-4 overflow-x-auto pb-2 custom-scrollbar">
             <button
               onClick={() => setMainImage(product.imageUrl)}
-              className={`w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-[8px] overflow-hidden border-2 transition-all cursor-pointer ${
+              className={`relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-[8px] overflow-hidden border-2 transition-all cursor-pointer ${
                 mainImage === product.imageUrl ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
               }`}
               aria-label="تصویر اصلی"
             >
-              <img
+              <Image
                 src={product.imageUrl}
-                className="w-full h-full object-cover"
+                fill
+                sizes="96px"
+                className="object-cover"
                 alt="تصویر اصلی محصول"
               />
             </button>
@@ -109,14 +115,16 @@ export default function ProductDetailInteractive({
               <button
                 key={idx}
                 onClick={() => setMainImage(imgUrl)}
-                className={`w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-[8px] overflow-hidden border-2 transition-all cursor-pointer ${
+                className={`relative w-20 h-20 md:w-24 md:h-24 flex-shrink-0 rounded-[8px] overflow-hidden border-2 transition-all cursor-pointer ${
                   mainImage === imgUrl ? 'border-blue-600' : 'border-transparent hover:border-gray-300'
                 }`}
                 aria-label={`تصویر ${idx + 1} محصول`}
               >
-                <img
+                <Image
                   src={imgUrl}
-                  className="w-full h-full object-cover"
+                  fill
+                  sizes="96px"
+                  className="object-cover"
                   alt={`تصویر گالری ${idx + 1} ${product.title}`}
                 />
               </button>
@@ -161,6 +169,7 @@ export default function ProductDetailInteractive({
           style={{ backgroundColor: '#ffffff', color: '#1f2937' }}
         >
           <div className="flex items-start gap-6 pb-8 mb-8" style={{ borderBottom: '2px solid #2563eb' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={product.imageUrl}
               alt={product.title}

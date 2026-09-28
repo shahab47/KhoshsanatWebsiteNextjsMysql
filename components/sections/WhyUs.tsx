@@ -5,17 +5,23 @@ import ImageWithFallback from '@/components/ui/ImageWithFallback'; // اضافه
 import { sanitizeHtml } from '@/lib/seo';
 
 export default async function WhyUs() {
-  const settings = await db.setting.findMany({
-    where: { key: { startsWith: 'ABOUT_' } }
-  });
-  const featuresDb = await db.setting.findMany({
-    where: { key: { startsWith: 'FEATURE_' } }
-  });
-
-  const dbTexts = [...settings, ...featuresDb].reduce((acc, curr) => {
-    acc[curr.key] = curr.value;
-    return acc;
-  }, {} as Record<string, string>);
+  let dbTexts: Record<string, string> = {};
+  try {
+    const allSettings = await db.setting.findMany({
+      where: {
+        OR: [
+          { key: { startsWith: 'ABOUT_' } },
+          { key: { startsWith: 'FEATURE_' } },
+        ],
+      },
+    });
+    dbTexts = allSettings.reduce((acc, curr) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, string>);
+  } catch (err) {
+    console.warn('پایگاه داده در دسترس نیست؛ استفاده از متون پیش‌فرض در WhyUs:', err);
+  }
 
   // دریافت لوگو از جدول logo با اولویت main-svg
   let logoUrl = '/Logo.svg';

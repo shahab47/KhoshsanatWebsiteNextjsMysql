@@ -153,7 +153,7 @@ function CategoryField({
           ))}
           {isNew && (
             <div onClick={handleCreate} className="px-3 py-2 hover:bg-emerald-50 cursor-pointer text-sm text-emerald-600 border-t border-gray-100 flex items-center gap-2">
-              <Plus size={14} /> ایجاد "{search}"
+              <Plus size={14} /> ایجاد &quot;{search}&quot;
             </div>
           )}
           {filtered.length === 0 && !isNew && (

@@ -41,25 +41,39 @@ export const metadata: Metadata = {
 };
 
 export default async function ProductsPage() {
-  const [categories, products, companyCatalogSetting] = await Promise.all([
-    db.category.findMany({
-      where: { isActive: true },
-      include: {
-        subcategories: {
-          where: { isActive: true },
-          orderBy: { order: 'asc' },
+  type CategoryItem = Awaited<ReturnType<typeof db.category.findMany<{ include: { subcategories: true } }>>>[number];
+  type ProductItem = Awaited<ReturnType<typeof db.product.findMany>>[number];
+
+  let categories: CategoryItem[] = [];
+  let products: ProductItem[] = [];
+  let companyCatalogSetting: { id: number; key: string; value: string } | null = null;
+
+  try {
+    const [catRes, prodRes, catalogRes] = await Promise.all([
+      db.category.findMany({
+        where: { isActive: true },
+        include: {
+          subcategories: {
+            where: { isActive: true },
+            orderBy: { order: 'asc' },
+          },
         },
-      },
-      orderBy: { order: 'asc' },
-    }),
-    db.product.findMany({
-      where: { isActive: true },
-      orderBy: { order: 'asc' },
-    }),
-    db.setting.findUnique({
-      where: { key: 'company_catalog_url' },
-    }),
-  ]);
+        orderBy: { order: 'asc' },
+      }),
+      db.product.findMany({
+        where: { isActive: true },
+        orderBy: { order: 'asc' },
+      }),
+      db.setting.findUnique({
+        where: { key: 'company_catalog_url' },
+      }),
+    ]);
+    categories = catRes;
+    products = prodRes;
+    companyCatalogSetting = catalogRes;
+  } catch (err) {
+    console.warn('پایگاه داده در دسترس نیست؛ لیست خالی محصولات در صفحه محصولات رندر شد:', err);
+  }
 
   const breadcrumbSchema = generateBreadcrumbSchema([
     { name: 'خانه', path: '/' },

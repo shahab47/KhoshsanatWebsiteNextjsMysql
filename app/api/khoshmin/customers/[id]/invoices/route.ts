@@ -5,6 +5,10 @@ import db from '@/lib/db';
 import { deleteFromMinio, cleanupRemovedFiles } from '@/lib/minio';
 import { requireAuth } from '@/lib/auth-middleware';
 
+import { CreditService } from '@/lib/ar/credit-service';
+import { ARPostingService } from '@/lib/ar/ar-posting-service';
+import { SequenceService } from '@/lib/accounting/sequence-service';
+
 async function syncCustomerBalance(customerId: number) {
   try {
     const validInvoices = await db.invoice.aggregate({
@@ -29,10 +33,16 @@ async function syncInvoicePayments(invoiceId: number) {
   try {
     const invoice = await db.invoice.findUnique({
       where: { id: invoiceId },
-      include: { payments: true }
+      include: { payments: true, allocations: true }
     });
     if (!invoice) return;
-    const paidSum = invoice.payments.reduce((acc, p) => acc + p.amount, 0);
+
+    const allocationsSum = invoice.allocations.reduce((acc, a) => acc + Number(a.amount), 0);
+    const directPaidSum = invoice.payments
+      .filter((p) => !invoice.allocations.some((a) => a.paymentId === p.id))
+      .reduce((acc, p) => acc + p.amount, 0);
+    const paidSum = allocationsSum + directPaidSum;
+
     let status = invoice.status;
     if (status !== 'CANCELLED') {
       if (paidSum >= invoice.finalAmount && invoice.finalAmount > 0) {
@@ -71,7 +81,11 @@ export async function GET(
     }
     const invoices = await db.invoice.findMany({
       where: { customerId },
-      include: { payments: true, items: true },
+      include: {
+        payments: true,
+        allocations: { include: { payment: true } },
+        items: true,
+      },
       orderBy: { issueDate: 'desc' }
     });
     return NextResponse.json(invoices);
@@ -110,10 +124,24 @@ export async function POST(
       return NextResponse.json({ error: 'مبلغ تخفیف نمی‌تواند بیشتر از مبلغ فاکتور باشد' }, { status: 400 });
     }
 
-    const lastInvoice = await db.invoice.findFirst({ orderBy: { id: 'desc' } });
-    const lastNumber = lastInvoice ? parseInt(lastInvoice.invoiceNo.split('-')[1] || '0') : 0;
-    const invoiceNo = `INV-${String(lastNumber + 1).padStart(6, '0')}`;
     const finalAmount = Math.max(0, numAmount - numDiscount + numTax);
+
+    // اعتبارسنجی سقف اعتبار مشتری قبل از صدور فاکتور
+    const creditCheck = await CreditService.validateNewInvoice(customerId, finalAmount);
+    if (!creditCheck.allowed) {
+      return NextResponse.json({ error: creditCheck.reason }, { status: 400 });
+    }
+
+    // تولید شماره فاکتور از طریق موتور توالی اتمیک یا پشتیبان
+    let invoiceNo = '';
+    try {
+      const seq = await SequenceService.nextNumber('INVOICE');
+      invoiceNo = seq.formattedNumber;
+    } catch {
+      const lastInvoice = await db.invoice.findFirst({ orderBy: { id: 'desc' } });
+      const lastNumber = lastInvoice ? parseInt(lastInvoice.invoiceNo.split('-')[1] || '0') : 0;
+      invoiceNo = `INV-${String(lastNumber + 1).padStart(6, '0')}`;
+    }
 
     const invoice = await db.invoice.create({
       data: {
@@ -132,11 +160,24 @@ export async function POST(
       }
     });
 
+    // صدور خودکار سند دوبل حسابداری
+    try {
+      await ARPostingService.postInvoiceVoucher(invoice.id);
+    } catch (postError) {
+      console.error('Error posting double-entry voucher for invoice:', postError);
+    }
+
     await syncCustomerBalance(customerId);
 
-    return NextResponse.json(invoice, { status: 201 });
-  } catch (error) {
-    return NextResponse.json({ error: 'خطا در ایجاد فاکتور' }, { status: 500 });
+    const fresh = await db.invoice.findUnique({
+      where: { id: invoice.id },
+      include: { payments: true, allocations: true, items: true },
+    });
+
+    return NextResponse.json(fresh || invoice, { status: 201 });
+  } catch (error: any) {
+    console.error('Invoice creation error:', error);
+    return NextResponse.json({ error: error?.message || 'خطا در ایجاد فاکتور' }, { status: 500 });
   }
 }
 
@@ -165,6 +206,15 @@ export async function PUT(
     });
     if (!existing) {
       return NextResponse.json({ error: 'فاکتور یافت نشد' }, { status: 404 });
+    }
+
+    // اگر فاکتور به حالت ابطال (CANCELLED) تغییر می‌یابد و سند داشته باشد، سند معکوس صادر شود
+    if (status === 'CANCELLED' && existing.status !== 'CANCELLED' && existing.journalVoucherId) {
+      try {
+        await ARPostingService.reverseInvoiceVoucher(invoiceId, 'ابطال فاکتور توسط کاربر در سامانه');
+      } catch (revError) {
+        console.error('Error reversing invoice voucher:', revError);
+      }
     }
 
     const newAmount = amount !== undefined ? Number(amount) : existing.amount;
@@ -208,7 +258,7 @@ export async function PUT(
 
     const freshInvoice = await db.invoice.findUnique({
       where: { id: invoiceId },
-      include: { payments: true, items: true }
+      include: { payments: true, allocations: true, items: true }
     });
 
     return NextResponse.json(freshInvoice || updated);
@@ -237,7 +287,7 @@ export async function DELETE(
 
     const existing = await db.invoice.findFirst({
       where: { id: invoiceId, customerId },
-      include: { payments: true }
+      include: { payments: true, allocations: true }
     });
     if (!existing) {
       return NextResponse.json({ error: 'فاکتور یافت نشد' }, { status: 404 });
@@ -248,20 +298,42 @@ export async function DELETE(
       await deleteFromMinio(existing.attachmentUrl);
     }
 
-    // آزاد کردن پرداخت‌های متصل به فاکتور و حذف فاکتور در تراکنش
-    await db.$transaction([
-      db.payment.updateMany({
+    // در صورتی که سند حسابداری صادر شده باشد، طبق قانون تغییرناپذیری مالی سند معکوس صادر شده و وضعیت ابطال می‌شود
+    if (existing.journalVoucherId) {
+      try {
+        await ARPostingService.reverseInvoiceVoucher(invoiceId, 'ابطال و برگشت فاکتور حذف‌شده');
+      } catch (err) {
+        console.error('Error issuing reversal voucher on delete:', err);
+      }
+
+      await db.paymentAllocation.deleteMany({ where: { invoiceId } });
+      await db.payment.updateMany({
         where: { invoiceId },
-        data: { invoiceId: null }
-      }),
-      db.invoiceItem.deleteMany({ where: { invoiceId } }),
-      db.invoice.delete({ where: { id: invoiceId } })
-    ]);
+        data: { invoiceId: null },
+      });
+
+      await db.invoice.update({
+        where: { id: invoiceId },
+        data: { status: 'CANCELLED' },
+      });
+    } else {
+      // فاکتور فاقد سند رسمی قابل حذف فیزیکی است
+      await db.$transaction([
+        db.paymentAllocation.deleteMany({ where: { invoiceId } }),
+        db.payment.updateMany({
+          where: { invoiceId },
+          data: { invoiceId: null }
+        }),
+        db.invoiceItem.deleteMany({ where: { invoiceId } }),
+        db.invoice.delete({ where: { id: invoiceId } })
+      ]);
+    }
 
     await syncCustomerBalance(customerId);
 
-    return NextResponse.json({ success: true, message: 'فاکتور با موفقیت حذف شد و پرداخت‌های آن آزاد شدند' });
-  } catch (error) {
-    return NextResponse.json({ error: 'خطا در حذف فاکتور' }, { status: 500 });
+    return NextResponse.json({ success: true, message: 'فاکتور با موفقیت ابطال و تسویه‌های آن آزاد شدند.' });
+  } catch (error: any) {
+    console.error('Invoice delete error:', error);
+    return NextResponse.json({ error: 'خطا در حذف/ابطال فاکتور: ' + (error?.message || '') }, { status: 500 });
   }
 }
